@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AVNRT — Reentrant Tachycardia Visualizer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0c1117;
+    --bg-2: #11171f;
+    --panel: #151c26;
+    --panel-2: #1a2230;
+    --border: #2a3445;
+    --text: #e6e9ef;
+    --muted: #8b95a7;
+    --gold: #d4af6a;
+    --gold-dim: #a98a4e;
+    --fast: #6fa8ff;       /* Fast pathway impulse = biru */
+    --fast-dim: #345a8a;
+    --slow: #f59e6b;       /* Slow pathway impulse = oranye */
+    --slow-dim: #8a5034;
+    --pathway-base: #3a4452; /* Neutral grey-blue for resting pathway tissue */
+    --refractory: #8b95a7;   /* Lighter grey for blocked-impulse trail (contrasts pathway base) */
+    --danger: #ef4444;
+    --success: #4ade80;
+    --atrium: #c084fc;
+    --his: #facc15;
+    --sa: #06b6d4;
+  }
+  html,body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;}
+  .font-serif{font-family:'Cormorant Garamond',serif;}
+  .font-mono{font-family:'JetBrains Mono',monospace;}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;}
+  .panel-inner{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;}
+  .gold{color:var(--gold);}
+  .btn{
+    border:1px solid var(--border);
+    background:var(--panel-2);
+    color:var(--text);
+    padding:.6rem 1rem;
+    border-radius:10px;
+    font-weight:500;
+    letter-spacing:.02em;
+    transition:all .18s ease;
+    font-size:.875rem;
+  }
+  .btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold);transform:translateY(-1px);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-primary{border-color:var(--gold-dim);color:var(--gold);}
+  .btn-primary:hover:not(:disabled){background:rgba(212,175,106,.08);}
+  .btn-danger{border-color:#5a2828;color:#fca5a5;}
+  .btn-danger:hover:not(:disabled){background:rgba(239,68,68,.08);border-color:var(--danger);color:var(--danger);}
+  .btn-info{border-color:#1e4858;color:#67e8f9;}
+  .btn-info:hover:not(:disabled){background:rgba(6,182,212,.08);border-color:var(--sa);color:var(--sa);}
+  .chip{
+    display:inline-flex;align-items:center;gap:.4rem;
+    padding:.25rem .6rem;border-radius:999px;
+    font-size:.7rem;font-weight:500;letter-spacing:.05em;text-transform:uppercase;
+    border:1px solid var(--border);background:var(--panel-2);
+  }
+  .dot{width:.5rem;height:.5rem;border-radius:50%;display:inline-block;}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;background:transparent;width:100%;
+  }
+  input[type=range]::-webkit-slider-runnable-track{
+    height:4px;background:var(--border);border-radius:999px;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;
+    width:16px;height:16px;border-radius:50%;
+    background:var(--gold);margin-top:-6px;cursor:pointer;
+    box-shadow:0 0 0 3px rgba(212,175,106,.15);
+  }
+  input[type=range]::-moz-range-track{height:4px;background:var(--border);border-radius:999px;}
+  input[type=range]::-moz-range-thumb{
+    width:16px;height:16px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;
+  }
+  .log-entry{
+    border-left:2px solid var(--border);
+    padding:.4rem .75rem;
+    font-size:.78rem;
+    color:var(--muted);
+    animation:slideIn .35s ease;
+  }
+  .log-entry.active{border-left-color:var(--gold);color:var(--text);background:rgba(212,175,106,.04);}
+  .log-entry.danger{border-left-color:var(--danger);color:#fca5a5;}
+  .log-entry.success{border-left-color:var(--success);color:#86efac;}
+  .log-entry.info{border-left-color:var(--sa);color:#a5f3fc;}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:translateX(0);}}
+  .glow-fast{filter:drop-shadow(0 0 6px var(--fast));}
+  .glow-slow{filter:drop-shadow(0 0 6px var(--slow));}
+  .glow-sa{filter:drop-shadow(0 0 6px var(--sa));}
+  .glow-refractory{filter:drop-shadow(0 0 4px var(--refractory));}
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:999px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--gold-dim);}
+
+  .status-banner{
+    background:linear-gradient(90deg,rgba(212,175,106,.08) 0%,transparent 100%);
+    border-left:3px solid var(--gold);
+  }
+  .status-banner.danger{
+    background:linear-gradient(90deg,rgba(239,68,68,.10) 0%,transparent 100%);
+    border-left-color:var(--danger);
+  }
+  .status-banner.success{
+    background:linear-gradient(90deg,rgba(74,222,128,.08) 0%,transparent 100%);
+    border-left-color:var(--success);
+  }
+  .status-banner.info{
+    background:linear-gradient(90deg,rgba(6,182,212,.10) 0%,transparent 100%);
+    border-left-color:var(--sa);
+  }
+
+  /* Toggle radio */
+  .type-toggle{
+    display:flex;background:var(--bg-2);border:1px solid var(--border);
+    border-radius:10px;padding:3px;gap:3px;
+  }
+  .type-toggle input{display:none;}
+  .type-toggle label{
+    flex:1;text-align:center;padding:.5rem .75rem;
+    border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:500;
+    color:var(--muted);transition:all .18s ease;
+    letter-spacing:.02em;
+  }
+  .type-toggle input:checked + label{
+    background:var(--panel-2);color:var(--gold);
+    box-shadow:inset 0 0 0 1px var(--gold-dim);
+  }
+
+  .tooltip-trigger{position:relative;cursor:help;border-bottom:1px dotted var(--muted);}
+  .tooltip-trigger:hover .tooltip-body{opacity:1;pointer-events:auto;transform:translateY(0);}
+  .tooltip-body{
+    position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(4px);
+    background:var(--panel-2);border:1px solid var(--gold-dim);color:var(--text);
+    padding:.6rem .8rem;border-radius:8px;font-size:.7rem;width:240px;
+    opacity:0;pointer-events:none;transition:all .18s ease;z-index:50;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);font-weight:400;
+  }
+</style>
+</head>
+<body class="min-h-screen">
+
+<div class="max-w-[1400px] mx-auto p-4 md:p-6">
+
+  <!-- HEADER -->
+  <header class="mb-5">
+    <div class="flex items-baseline justify-between flex-wrap gap-2">
+      <div>
+        <h1 class="font-serif text-3xl md:text-4xl gold tracking-wide">AVNRT — Dual Pathway Reentry</h1>
+        <p class="text-sm text-[color:var(--muted)] font-light mt-1">
+          AV Nodal Reentrant Tachycardia · Typical vs Atypical Visualizer
+        </p>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <span class="chip"><span class="dot" style="background:var(--sa)"></span>SA Impulse</span>
+        <span class="chip"><span class="dot" style="background:var(--fast)"></span>Fast Pathway</span>
+        <span class="chip"><span class="dot" style="background:var(--slow)"></span>Slow Pathway</span>
+        <span class="chip"><span class="dot" style="background:var(--refractory)"></span>Blocked Impulse</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- STATUS BANNER -->
+  <div id="statusBanner" class="status-banner rounded-lg px-4 py-3 mb-4 flex items-center gap-3">
+    <span id="statusIcon" class="text-lg gold">○</span>
+    <div>
+      <div id="statusTitle" class="font-medium text-sm">Idle</div>
+      <div id="statusDetail" class="text-xs text-[color:var(--muted)]">Pilih mode dan tipe AVNRT untuk memulai.</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
+
+    <!-- LEFT: CIRCUIT + ECG -->
+    <div class="space-y-4">
+
+      <!-- CIRCUIT SVG -->
+      <div class="panel p-4 md:p-6">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h2 class="font-serif text-xl gold">AV Node — Dual Pathway Circuit</h2>
+          <div class="flex items-center gap-3">
+            <span id="modeIndicator" class="chip font-mono text-[10px]">
+              <span class="dot" style="background:var(--gold)"></span>TYPICAL · SLOW-FAST
+            </span>
+            <span id="cycleCounter" class="font-mono text-xs text-[color:var(--muted)]">Cycles: 0</span>
+          </div>
+        </div>
+        <div class="bg-[color:var(--bg-2)] rounded-lg border border-[color:var(--border)] p-2">
+          <svg id="circuit" viewBox="0 0 760 540" class="w-full h-auto" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <radialGradient id="atriumGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#c084fc" stop-opacity="0.9"/>
+                <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.4"/>
+              </radialGradient>
+              <radialGradient id="hisGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#facc15" stop-opacity="0.9"/>
+                <stop offset="100%" stop-color="#a16207" stop-opacity="0.4"/>
+              </radialGradient>
+              <radialGradient id="saGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.9"/>
+                <stop offset="100%" stop-color="#0891b2" stop-opacity="0.4"/>
+              </radialGradient>
+            </defs>
+
+            <!-- SA NODE -->
+            <circle cx="380" cy="40" r="22" fill="url(#saGrad)" stroke="#06b6d4" stroke-width="1.5"/>
+            <text x="380" y="44" text-anchor="middle" fill="#0c1117" font-family="Outfit" font-size="11" font-weight="700">SA</text>
+            <text x="380" y="80" text-anchor="middle" fill="var(--sa)" font-family="Outfit" font-size="10">Sinoatrial Node</text>
+
+            <!-- Connector SA -> Atrium -->
+            <line id="saToAtrium" x1="380" y1="62" x2="380" y2="115" stroke="#4a5568" stroke-width="2" stroke-linecap="round"/>
+
+            <!-- Atrium label box (shifted down for SA) -->
+            <rect x="280" y="115" width="200" height="50" rx="10" fill="url(#atriumGrad)" opacity="0.25" stroke="#c084fc" stroke-width="1"/>
+            <text x="380" y="135" text-anchor="middle" fill="#c084fc" font-family="Cormorant Garamond" font-size="16" font-weight="500">Atrium</text>
+            <text x="380" y="152" text-anchor="middle" fill="#8b95a7" font-size="9" font-family="Outfit">Proximal junction</text>
+
+            <!-- His bundle label box -->
+            <rect x="280" y="450" width="200" height="55" rx="10" fill="url(#hisGrad)" opacity="0.25" stroke="#facc15" stroke-width="1"/>
+            <text x="380" y="475" text-anchor="middle" fill="#facc15" font-family="Cormorant Garamond" font-size="16" font-weight="500">His Bundle</text>
+            <text x="380" y="493" text-anchor="middle" fill="#8b95a7" font-size="9" font-family="Outfit">Distal junction</text>
+
+            <!-- Atrium -> Proximal common path -->
+            <line id="atriumToProx" x1="380" y1="165" x2="380" y2="200" stroke="#4a5568" stroke-width="3" stroke-linecap="round"/>
+            <!-- Distal common -> His -->
+            <line id="distalToHis" x1="380" y1="410" x2="380" y2="450" stroke="#4a5568" stroke-width="3" stroke-linecap="round"/>
+
+            <!-- Junction dots -->
+            <circle id="proxDot" cx="380" cy="205" r="6" fill="#d4af6a"/>
+            <text x="395" y="210" fill="#8b95a7" font-size="10" font-family="JetBrains Mono">P</text>
+            <circle id="distalDot" cx="380" cy="405" r="6" fill="#d4af6a"/>
+            <text x="395" y="410" fill="#8b95a7" font-size="10" font-family="JetBrains Mono">D</text>
+
+            <!-- FAST PATHWAY (left) — neutral grey base; impulse trail provides color identity -->
+            <path id="fastPath" d="M 380 205 C 200 225, 200 385, 380 405"
+                  fill="none" stroke="var(--pathway-base)" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
+            <text x="170" y="298" fill="var(--fast)" font-family="Cormorant Garamond" font-size="20" font-weight="600" text-anchor="middle">Fast</text>
+            <text x="170" y="317" fill="var(--fast)" font-family="Cormorant Garamond" font-size="20" font-weight="600" text-anchor="middle">Pathway</text>
+            <text x="170" y="337" fill="#8b95a7" font-size="10" font-family="Outfit" text-anchor="middle">β · cepat · ERP panjang</text>
+
+            <!-- SLOW PATHWAY (right) — neutral grey base; impulse trail provides color identity -->
+            <path id="slowPath" d="M 380 205 C 560 225, 560 385, 380 405"
+                  fill="none" stroke="var(--pathway-base)" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
+            <text x="600" y="298" fill="var(--slow)" font-family="Cormorant Garamond" font-size="20" font-weight="600" text-anchor="middle">Slow</text>
+            <text x="600" y="317" fill="var(--slow)" font-family="Cormorant Garamond" font-size="20" font-weight="600" text-anchor="middle">Pathway</text>
+            <text x="600" y="337" fill="#8b95a7" font-size="10" font-family="Outfit" text-anchor="middle">α · lambat · ERP pendek</text>
+
+            <!-- Block markers (X) -->
+            <g id="fastBlock" opacity="0">
+              <circle cx="200" cy="305" r="14" fill="none" stroke="var(--danger)" stroke-width="2.5"/>
+              <line x1="190" y1="295" x2="210" y2="315" stroke="var(--danger)" stroke-width="2.5"/>
+              <line x1="210" y1="295" x2="190" y2="315" stroke="var(--danger)" stroke-width="2.5"/>
+            </g>
+            <g id="slowBlock" opacity="0">
+              <circle cx="560" cy="305" r="14" fill="none" stroke="var(--danger)" stroke-width="2.5"/>
+              <line x1="550" y1="295" x2="570" y2="315" stroke="var(--danger)" stroke-width="2.5"/>
+              <line x1="570" y1="295" x2="550" y2="315" stroke="var(--danger)" stroke-width="2.5"/>
+            </g>
+            <!-- Proximal block (for concealed conduction during AVNRT) -->
+            <g id="proxBlock" opacity="0">
+              <circle cx="380" cy="185" r="14" fill="none" stroke="var(--danger)" stroke-width="2.5"/>
+              <line x1="370" y1="175" x2="390" y2="195" stroke="var(--danger)" stroke-width="2.5"/>
+              <line x1="390" y1="175" x2="370" y2="195" stroke="var(--danger)" stroke-width="2.5"/>
+            </g>
+            <!-- Collision marker -->
+            <g id="collisionMarker" opacity="0">
+              <circle cx="0" cy="0" r="10" fill="none" stroke="#fbbf24" stroke-width="2"/>
+              <circle cx="0" cy="0" r="4" fill="#fbbf24"/>
+            </g>
+
+            <!-- Trails group (renders behind particles) -->
+            <g id="trails"></g>
+
+            <!-- Particles group -->
+            <g id="particles"></g>
+
+            <!-- Direction arrows -->
+            <g id="arrowsFast" opacity="0.5">
+              <polygon points="245,245 252,241 252,249" fill="var(--fast)"/>
+              <polygon points="245,365 252,361 252,369" fill="var(--fast)"/>
+            </g>
+            <g id="arrowsSlow" opacity="0.5">
+              <polygon points="515,245 508,241 508,249" fill="var(--slow)"/>
+              <polygon points="515,365 508,361 508,369" fill="var(--slow)"/>
+            </g>
+          </svg>
+        </div>
+
+        <div class="flex flex-wrap gap-x-5 gap-y-2 mt-3 text-xs text-[color:var(--muted)] font-mono">
+          <span>SA = Sinoatrial node</span>
+          <span>P = Proximal junction</span>
+          <span>D = Distal junction</span>
+          <span class="text-[color:var(--danger)]">✕ = Conduction block</span>
+          <span style="color:#fbbf24">⊙ = Collision</span>
+        </div>
+      </div>
+
+      <!-- ECG STRIP -->
+      <div class="panel p-4 md:p-6">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h2 class="font-serif text-xl gold">ECG · Lead II</h2>
+          <div class="flex items-center gap-3 flex-wrap">
+            <span id="rhythmLabel" class="chip font-mono text-[10px]">
+              <span class="dot" style="background:var(--success)"></span>SINUS
+            </span>
+            <span id="hrLabel" class="font-mono text-xs text-[color:var(--muted)]">HR: -- bpm</span>
+          </div>
+        </div>
+        <div class="bg-[color:var(--bg-2)] rounded-lg border border-[color:var(--border)] p-2">
+          <canvas id="ecgCanvas" width="1200" height="200" class="w-full h-[200px]"></canvas>
+        </div>
+        <div class="flex flex-wrap gap-x-5 gap-y-1 mt-2 text-[11px] text-[color:var(--muted)] font-mono">
+          <span>25 mm/s · 10 mm/mV</span>
+          <span>Narrow QRS</span>
+          <span id="prInfo">PR: normal</span>
+          <span id="pWaveInfo" class="gold">P-wave: normal positif</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: CONTROLS + LOG -->
+    <div class="space-y-4">
+
+      <!-- AVNRT TYPE TOGGLE -->
+      <div class="panel p-4">
+        <h2 class="font-serif text-lg gold mb-2">AVNRT Type</h2>
+        <div class="type-toggle mb-3">
+          <input type="radio" name="avnrtType" id="typeTypical" value="typical" checked>
+          <label for="typeTypical">
+            <div class="text-[10px] uppercase tracking-wider opacity-70">Typical</div>
+            <div>Slow–Fast</div>
+          </label>
+          <input type="radio" name="avnrtType" id="typeAtypical" value="atypical">
+          <label for="typeAtypical">
+            <div class="text-[10px] uppercase tracking-wider opacity-70">Atypical</div>
+            <div>Fast–Slow</div>
+          </label>
+        </div>
+        <div id="typeExplain" class="text-[11px] text-[color:var(--muted)] leading-relaxed">
+          <span class="gold">~90% kasus.</span> Antegrade lewat <span style="color:var(--slow)">slow</span>,
+          retrograde lewat <span style="color:var(--fast)">fast</span>.
+          <span class="tooltip-trigger gold">Short RP
+            <span class="tooltip-body">P retrograde tertanam dalam QRS atau muncul sebagai pseudo-S di II/III/aVF dan pseudo-r' di V1. RP &lt; 70 ms.</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- CONTROLS -->
+      <div class="panel p-4">
+        <h2 class="font-serif text-lg gold mb-3">Simulation Controls</h2>
+        <div class="space-y-2">
+          <button id="btnSinus" class="btn btn-primary w-full text-left">
+            <div class="flex items-center justify-between">
+              <span>▶ Sinus Rhythm</span>
+              <span class="text-[10px] text-[color:var(--muted)] font-mono">normal</span>
+            </div>
+          </button>
+          <button id="btnPAC" class="btn btn-primary w-full text-left">
+            <div class="flex items-center justify-between">
+              <span>⚡ Trigger PAC → AVNRT</span>
+              <span class="text-[10px] text-[color:var(--muted)] font-mono">premature</span>
+            </div>
+          </button>
+          <button id="btnSATest" class="btn btn-info w-full text-left" disabled>
+            <div class="flex items-center justify-between">
+              <span>◐ Test SA Impulse</span>
+              <span class="text-[10px] text-[color:var(--muted)] font-mono">selama AVNRT</span>
+            </div>
+          </button>
+          <button id="btnReset" class="btn btn-danger w-full text-left">
+            <div class="flex items-center justify-between">
+              <span>■ Reset / Stop</span>
+              <span class="text-[10px] text-[color:var(--muted)] font-mono">vagal / adenosin</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Speed slider -->
+        <div class="mt-4 pt-3 border-t border-[color:var(--border)]">
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-xs text-[color:var(--muted)] uppercase tracking-wider">Simulation Speed</label>
+            <span id="speedLabel" class="font-mono text-xs gold">1.0×</span>
+          </div>
+          <input id="speedSlider" type="range" min="0.2" max="2.0" step="0.1" value="1.0" />
+          <div class="flex justify-between text-[10px] text-[color:var(--muted)] font-mono mt-1">
+            <span>0.2× slow-mo</span>
+            <span>2.0× fast</span>
+          </div>
+        </div>
+
+        <!-- Pathway states -->
+        <div class="mt-4 pt-3 border-t border-[color:var(--border)]">
+          <div class="text-xs text-[color:var(--muted)] uppercase tracking-wider mb-2">Pathway State</div>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="flex items-center gap-2"><span class="dot" style="background:var(--fast)"></span>Fast (β)</span>
+              <span id="fastState" class="font-mono chip text-[10px]">RESTING</span>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="flex items-center gap-2"><span class="dot" style="background:var(--slow)"></span>Slow (α)</span>
+              <span id="slowState" class="font-mono chip text-[10px]">RESTING</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EVENT LOG -->
+      <div class="panel p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-serif text-lg gold">Event Log</h2>
+          <button id="btnClearLog" class="text-[10px] text-[color:var(--muted)] hover:text-[color:var(--gold)] font-mono uppercase">Clear</button>
+        </div>
+        <div id="logContainer" class="space-y-1.5 max-h-[280px] overflow-y-auto pr-1">
+          <div class="log-entry">Sistem siap. Pilih tipe AVNRT dan mode simulasi.</div>
+        </div>
+      </div>
+
+      <!-- TEACHING NOTE -->
+      <div class="panel p-4">
+        <h2 class="font-serif text-lg gold mb-2">Konsep Kunci</h2>
+        <ul class="text-xs text-[color:var(--muted)] space-y-1.5 leading-relaxed">
+          <li><span class="gold font-medium">Sinus normal:</span> Fast tiba dulu di D → kirim retrograde turun slow → collision dengan slow antegrade</li>
+          <li><span class="gold font-medium">Typical:</span> antegrade slow, retrograde fast → <em>short RP</em>, P buried/pseudo-S</li>
+          <li><span class="gold font-medium">Atypical:</span> antegrade fast, retrograde slow → <em>long RP</em>, P negatif setelah QRS</li>
+          <li><span class="gold font-medium">Concealed:</span> impuls SA tiba saat AVNRT aktif → block di proksimal (pathway refrakter)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <footer class="mt-6 text-center text-[10px] text-[color:var(--muted)] font-mono tracking-wider">
+    AVNRT VISUALIZER · TYPICAL & ATYPICAL · EDUCATIONAL USE
+  </footer>
+</div>
+
+<script>
+/* ========================================================================
+   AVNRT VISUALIZER — Typical (Slow-Fast) & Atypical (Fast-Slow)
+   Features:
+   - SA node descent visualization with split at proximal junction
+   - Normal sinus rhythm with fast→retrograde collision in slow pathway
+   - PAC-triggered reentry (both typical and atypical modes)
+   - Concealed conduction test (SA impulse during AVNRT)
+   - Type-specific ECG morphology (pseudo-S vs inverted P after QRS)
+   ======================================================================== */
+
+(() => {
+  'use strict';
+
+  // ========== DOM ==========
+  const svg = document.getElementById('circuit');
+  const fastPath = document.getElementById('fastPath');
+  const slowPath = document.getElementById('slowPath');
+  const fastBlock = document.getElementById('fastBlock');
+  const slowBlock = document.getElementById('slowBlock');
+  const proxBlock = document.getElementById('proxBlock');
+  const collisionMarker = document.getElementById('collisionMarker');
+  const particlesGroup = document.getElementById('particles');
+  const trailsGroup = document.getElementById('trails');
+  const saToAtrium = document.getElementById('saToAtrium');
+  const atriumToProx = document.getElementById('atriumToProx');
+  const distalToHis = document.getElementById('distalToHis');
+
+  const btnSinus = document.getElementById('btnSinus');
+  const btnPAC = document.getElementById('btnPAC');
+  const btnSATest = document.getElementById('btnSATest');
+  const btnReset = document.getElementById('btnReset');
+  const btnClearLog = document.getElementById('btnClearLog');
+  const speedSlider = document.getElementById('speedSlider');
+  const speedLabel = document.getElementById('speedLabel');
+  const typeTypical = document.getElementById('typeTypical');
+  const typeAtypical = document.getElementById('typeAtypical');
+  const typeExplain = document.getElementById('typeExplain');
+  const modeIndicator = document.getElementById('modeIndicator');
+
+  const fastStateEl = document.getElementById('fastState');
+  const slowStateEl = document.getElementById('slowState');
+  const cycleCounter = document.getElementById('cycleCounter');
+  const logContainer = document.getElementById('logContainer');
+  const statusBanner = document.getElementById('statusBanner');
+  const statusIcon = document.getElementById('statusIcon');
+  const statusTitle = document.getElementById('statusTitle');
+  const statusDetail = document.getElementById('statusDetail');
+  const rhythmLabel = document.getElementById('rhythmLabel');
+  const hrLabel = document.getElementById('hrLabel');
+  const prInfo = document.getElementById('prInfo');
+  const pWaveInfo = document.getElementById('pWaveInfo');
+
+  const ecgCanvas = document.getElementById('ecgCanvas');
+  const ecgCtx = ecgCanvas.getContext('2d');
+
+  // ========== PATH GEOMETRY ==========
+  const fastLen = fastPath.getTotalLength();
+  const slowLen = slowPath.getTotalLength();
+
+  // Coordinates for SA descent and atrium→proximal segment
+  const SA_Y = 62;
+  const ATRIUM_TOP_Y = 165;
+  const PROX_X = 380;
+  const PROX_Y = 205;
+  const DISTAL_X = 380;
+  const DISTAL_Y = 405;
+  const HIS_TOP_Y = 450;
+
+  // ========== CONFIG (all timing in ms, tweak freely) ==========
+  const CONFIG = {
+    // Conduction durations
+    fastConductionMs: 700,         // konduksi fast (antegrade atau retrograde)
+    slowConductionMs: 1400,        // konduksi slow (antegrade atau retrograde)
+
+    // Refractory periods (ERP)
+    fastERP_ms: 1800,              // ERP fast panjang (=> unidirectional block saat PAC)
+    slowERP_ms: 400,               // ERP slow pendek
+
+    // ERP shortened during sustained tachycardia (rate-dependent shortening)
+    fastERP_avnrt_ms: 900,
+    slowERP_avnrt_ms: 250,
+
+    // Other segments
+    saToProxMs: 350,               // SA → atrium → proksimal junction
+    distalToHisMs: 200,            // distal junction → His bundle
+
+    // Sinus rhythm parameters
+    sinusIntervalMs: 3000,         // R-R interval at sinus
+
+    // PAC coupling — must fall in vulnerable window
+    // For typical: PAC at t=2000 from sinus → fast still refractory (ERP ends ~2150),
+    // slow already recovered (ERP ends ~1550). PAC blocks fast, conducts slow.
+    pacCouplingMs: 2000,           // setelah sinus beat sebelumnya
+
+    // AVNRT cycle length
+    avnrtCycleMs: 1100,            // total cycle saat reentri established
+  };
+
+  // ========== STATE ==========
+  let speedFactor = 1.0;
+  let pathwayState = {
+    fast: { state: 'resting', refractoryEndTime: 0 },
+    slow: { state: 'resting', refractoryEndTime: 0 }
+  };
+  let mode = 'idle';                // 'idle' | 'sinus' | 'pac' | 'avnrt'
+  let avnrtType = 'typical';        // 'typical' (slow-fast) | 'atypical' (fast-slow)
+  let cycleCount = 0;
+  let activeTimeouts = [];
+  let activeParticles = [];
+  let reentryActive = false;
+  let ecgState = {
+    rhythm: 'flatline',             // 'flatline' | 'sinus' | 'avnrt_typical' | 'avnrt_atypical'
+  };
+
+  // ========== UTILITIES ==========
+  const scaledDuration = (ms) => ms / speedFactor;
+
+  function setTimeoutTracked(fn, ms) {
+    const id = setTimeout(() => {
+      activeTimeouts = activeTimeouts.filter(t => t !== id);
+      fn();
+    }, ms);
+    activeTimeouts.push(id);
+    return id;
+  }
+
+  function clearAllTimeouts() {
+    activeTimeouts.forEach(t => clearTimeout(t));
+    activeTimeouts = [];
+  }
+
+  function clearAllParticles() {
+    activeParticles.forEach(p => {
+      if (p.element && p.element.parentNode) p.element.parentNode.removeChild(p.element);
+      if (p.trail && p.trail.parentNode) p.trail.parentNode.removeChild(p.trail);
+      p.cancelled = true;
+    });
+    activeParticles = [];
+  }
+
+  // ========== LOG & STATUS ==========
+  function log(message, type = 'normal') {
+    const entry = document.createElement('div');
+    const klass = type === 'active' ? 'active' : type === 'danger' ? 'danger' : type === 'success' ? 'success' : type === 'info' ? 'info' : '';
+    entry.className = 'log-entry ' + klass;
+    const ts = new Date().toLocaleTimeString('id-ID', {hour12: false});
+    entry.innerHTML = `<span class="font-mono text-[10px] opacity-60">${ts}</span> · ${message}`;
+    logContainer.insertBefore(entry, logContainer.firstChild);
+    while (logContainer.children.length > 40) {
+      logContainer.removeChild(logContainer.lastChild);
+    }
+  }
+
+  function setStatus(title, detail, type = 'normal') {
+    statusBanner.classList.remove('danger', 'success', 'info');
+    if (type !== 'normal') statusBanner.classList.add(type);
+    statusIcon.textContent = type === 'danger' ? '⚡' : type === 'success' ? '●' : type === 'info' ? '◐' : '○';
+    statusIcon.style.color = type === 'danger' ? 'var(--danger)' :
+                              type === 'success' ? 'var(--success)' :
+                              type === 'info' ? 'var(--sa)' : 'var(--gold)';
+    statusTitle.textContent = title;
+    statusDetail.textContent = detail;
+  }
+
+  // ========== PATHWAY UI ==========
+  function updatePathwayUI() {
+    const stateMap = {
+      resting: { label: 'RESTING', color: 'var(--muted)' },
+      conducting: { label: 'CONDUCTING', color: 'var(--gold)' },
+      refractory: { label: 'REFRACTORY', color: 'var(--danger)' }
+    };
+    const fs = stateMap[pathwayState.fast.state];
+    const ss = stateMap[pathwayState.slow.state];
+    fastStateEl.textContent = fs.label;
+    fastStateEl.style.color = fs.color;
+    fastStateEl.style.borderColor = fs.color;
+    slowStateEl.textContent = ss.label;
+    slowStateEl.style.color = ss.color;
+    slowStateEl.style.borderColor = ss.color;
+  }
+
+  function setPathwayState(pathway, state, refractoryMs = 0) {
+    pathwayState[pathway].state = state;
+    if (state === 'refractory') {
+      pathwayState[pathway].refractoryEndTime = Date.now() + refractoryMs;
+      setTimeoutTracked(() => {
+        if (pathwayState[pathway].state === 'refractory' &&
+            Date.now() >= pathwayState[pathway].refractoryEndTime - 10) {
+          pathwayState[pathway].state = 'resting';
+          updatePathwayUI();
+        }
+      }, refractoryMs);
+    }
+    updatePathwayUI();
+  }
+
+  // ========== TRAIL HELPERS ==========
+  /**
+   * Create a "trail" path element that mimics the original pathway's geometry.
+   * Used to draw the colored comet-tail segment behind moving impulses.
+   */
+  function createTrailElement(originalPathEl, color, opacity = 0.7, strokeWidth = 7) {
+    const trail = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    trail.setAttribute('d', originalPathEl.getAttribute('d'));
+    trail.setAttribute('fill', 'none');
+    trail.setAttribute('stroke', color);
+    trail.setAttribute('stroke-width', strokeWidth);
+    trail.setAttribute('stroke-linecap', 'round');
+    trail.setAttribute('opacity', opacity);
+    // Initially invisible
+    trail.setAttribute('stroke-dasharray', '0 99999');
+    trail.setAttribute('stroke-dashoffset', '0');
+    return trail;
+  }
+
+  /**
+   * Set a trail path to display only the segment between [startUnit, endUnit]
+   * along the path of total length pathLen.
+   * Uses SVG stroke-dasharray trick:
+   *   dasharray = "${visible} ${pathLen}"   → one dash of `visible` length, then big gap
+   *   dashoffset = "${-startUnit}"          → shifts the dash to start at position startUnit
+   */
+  function setTrailSegment(trail, startUnit, endUnit, pathLen) {
+    const visible = Math.max(0, endUnit - startUnit);
+    trail.setAttribute('stroke-dasharray', `${visible} ${pathLen}`);
+    trail.setAttribute('stroke-dashoffset', `${-startUnit}`);
+  }
+
+  /**
+   * Brief white flash at (x, y). Used for both split and collision events.
+   * Per user spec: minimalist — solid white circle, simple fade, no expansion.
+   */
+  function showWhiteFlash(x, y, opts = {}) {
+    const flash = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    flash.setAttribute('cx', x);
+    flash.setAttribute('cy', y);
+    flash.setAttribute('r', opts.radius || 11);
+    flash.setAttribute('fill', '#ffffff');
+    flash.setAttribute('opacity', '1');
+    flash.style.filter = 'drop-shadow(0 0 6px #ffffff)';
+    particlesGroup.appendChild(flash);
+
+    const durationMs = opts.durationMs || 320;
+    const startTime = performance.now();
+    function fade(now) {
+      const elapsed = now - startTime;
+      const frac = Math.min(elapsed / durationMs, 1);
+      flash.setAttribute('opacity', String(1 - frac));
+      if (frac < 1) {
+        requestAnimationFrame(fade);
+      } else if (flash.parentNode) {
+        flash.parentNode.removeChild(flash);
+      }
+    }
+    requestAnimationFrame(fade);
+  }
+
+  // ========== PARTICLE ANIMATION (path-based with comet tail + ERP fade) ==========
+  /**
+   * Animate a ball along an SVG path with a per-impulse comet trail.
+   *
+   * Two phases:
+   *   1. CONDUCT — ball moves; trail grows behind ball over `durationMs`.
+   *   2. ERP    — ball gone; trail's far end retreats toward ball's stop position
+   *               over `erpMs` to visualize tissue recovery.
+   *
+   * Options:
+   *   pathEl, pathLen          required — SVG path & cached length
+   *   reverse                  false = start→end (antegrade), true = end→start (retrograde)
+   *   durationMs               conduction time
+   *   erpMs                    trail fade duration (visualizes refractory recovery)
+   *   color, glowClass, radius ball appearance
+   *   tailColor                trail color (defaults to ball color)
+   *   blockAtFraction          if set, ball stops at this fraction and shows block marker
+   *   blockMarker              'fast' | 'slow' | 'prox'
+   *   shouldStop(frac, pt)     callback returning true to stop the ball (collision)
+   *   onComplete, onBlocked,
+   *   onStopped(pt, frac)      callbacks invoked at end of CONDUCT phase
+   */
+  function animateOnPath(opts) {
+    const erpMs = (opts.erpMs != null) ? opts.erpMs : 600;
+    const tailColor = opts.tailColor || opts.color;
+
+    // Trail element — clone of the pathway geometry
+    const trail = createTrailElement(opts.pathEl, tailColor, 0.75, 7);
+    trailsGroup.appendChild(trail);
+
+    // Ball element
+    const ball = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    ball.setAttribute('r', opts.radius || 7);
+    ball.setAttribute('fill', opts.color);
+    ball.setAttribute('class', opts.glowClass || '');
+    particlesGroup.appendChild(ball);
+
+    const particleObj = { element: ball, trail: trail, cancelled: false };
+    activeParticles.push(particleObj);
+
+    const startTime = performance.now();
+    const conductDuration = opts.durationMs;
+    const blockFraction = (opts.blockAtFraction != null) ? opts.blockAtFraction : null;
+    const pathLen = opts.pathLen;
+    const reverse = !!opts.reverse;
+
+    // Phase state
+    let phase = 'conduct';
+    let erpStartTime = 0;
+    let lastBallDist = reverse ? pathLen : 0;  // path-unit distance where ball stopped
+
+    function showBlockMarker(which) {
+      const el = which === 'fast' ? fastBlock
+              : which === 'slow' ? slowBlock
+              : which === 'prox' ? proxBlock : null;
+      if (!el) return;
+      el.style.opacity = '1';
+      setTimeoutTracked(() => { el.style.opacity = '0'; }, 1200);
+    }
+
+    /**
+     * Transition from CONDUCT to ERP phase.
+     * Removes the ball (fade), keeps the trail to fade over erpMs.
+     */
+    function enterERP(reason, finalDist, finalPt) {
+      if (phase !== 'conduct') return;
+      phase = 'erp';
+      erpStartTime = performance.now();
+      lastBallDist = finalDist;
+
+      // Block marker
+      if (reason === 'block' && opts.blockMarker) {
+        showBlockMarker(opts.blockMarker);
+      }
+
+      // Fade out and remove the ball
+      ball.style.transition = 'opacity 200ms ease, r 200ms ease';
+      ball.style.opacity = '0';
+      setTimeoutTracked(() => {
+        if (ball.parentNode) ball.parentNode.removeChild(ball);
+      }, 220);
+
+      // Fire callbacks
+      if (reason === 'complete' && opts.onComplete) opts.onComplete();
+      else if (reason === 'block' && opts.onBlocked) opts.onBlocked();
+      else if (reason === 'stopped' && opts.onStopped) opts.onStopped(finalPt);
+    }
+
+    function loop(now) {
+      if (particleObj.cancelled) return;
+
+      if (phase === 'conduct') {
+        const elapsed = now - startTime;
+        let fraction = Math.min(elapsed / conductDuration, 1);
+
+        // Ball position along path
+        const ballDist = reverse ? pathLen * (1 - fraction) : pathLen * fraction;
+        const pt = opts.pathEl.getPointAtLength(ballDist);
+        ball.setAttribute('cx', pt.x);
+        ball.setAttribute('cy', pt.y);
+
+        // Trail grows behind ball
+        // Non-reverse: trail from 0 (start) to ballDist (current)
+        // Reverse:     trail from ballDist (current) to pathLen (start)
+        const segStart = reverse ? ballDist : 0;
+        const segEnd   = reverse ? pathLen  : ballDist;
+        setTrailSegment(trail, segStart, segEnd, pathLen);
+
+        // External stop check (collision)
+        if (opts.shouldStop && opts.shouldStop(fraction, pt)) {
+          enterERP('stopped', ballDist, pt);
+          requestAnimationFrame(loop);
+          return;
+        }
+
+        // Block check
+        if (blockFraction !== null && fraction >= blockFraction) {
+          const bDist = reverse ? pathLen * (1 - blockFraction) : pathLen * blockFraction;
+          const bPt = opts.pathEl.getPointAtLength(bDist);
+          ball.setAttribute('cx', bPt.x);
+          ball.setAttribute('cy', bPt.y);
+          // Snap trail to block position
+          const bSegStart = reverse ? bDist : 0;
+          const bSegEnd   = reverse ? pathLen : bDist;
+          setTrailSegment(trail, bSegStart, bSegEnd, pathLen);
+          enterERP('block', bDist, bPt);
+          requestAnimationFrame(loop);
+          return;
+        }
+
+        // Natural completion
+        if (fraction >= 1) {
+          enterERP('complete', ballDist, pt);
+          requestAnimationFrame(loop);
+          return;
+        }
+
+        requestAnimationFrame(loop);
+        return;
+      }
+
+      // ERP phase — opacity fades over erpMs while trail keeps its conduct-end shape.
+      //
+      // Rationale: this is the most EP-faithful AND visually clean approach.
+      // - Trail length stays fixed at what it was at the end of conduct.
+      // - Opacity decreases linearly from 0.75 → 0 over erpMs (= tissue recovery time).
+      // - Both endpoints stay anchored at the pathway endpoints → visual continuity
+      //   is preserved at junctions (proximal & distal) even when multiple trails
+      //   coexist (e.g., antegrade-slow + retrograde-fast-on-slow after sinus collision).
+      const erpElapsed = now - erpStartTime;
+      const erpFraction = Math.min(erpElapsed / erpMs, 1);
+      const fadeOpacity = 0.75 * (1 - erpFraction);
+      trail.setAttribute('opacity', String(fadeOpacity));
+
+      if (erpFraction >= 1) {
+        // Cleanup
+        if (trail.parentNode) trail.parentNode.removeChild(trail);
+        particleObj.cancelled = true;
+        activeParticles = activeParticles.filter(p => p !== particleObj);
+        return;
+      }
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+    return particleObj;
+  }
+
+  // Linear movement (for SA descent and short segments)
+  function animateLinear(opts) {
+    const particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    particle.setAttribute('r', opts.radius || 7);
+    particle.setAttribute('fill', opts.color);
+    particle.setAttribute('class', opts.glowClass || '');
+    particlesGroup.appendChild(particle);
+
+    const particleObj = { element: particle, cancelled: false };
+    activeParticles.push(particleObj);
+
+    const startTime = performance.now();
+    function step(now) {
+      if (particleObj.cancelled) return;
+      const elapsed = now - startTime;
+      const fraction = Math.min(elapsed / opts.durationMs, 1);
+      const x = opts.x1 + (opts.x2 - opts.x1) * fraction;
+      const y = opts.y1 + (opts.y2 - opts.y1) * fraction;
+      particle.setAttribute('cx', x);
+      particle.setAttribute('cy', y);
+
+      if (fraction < 1) {
+        requestAnimationFrame(step);
+      } else {
+        if (particle.parentNode) particle.parentNode.removeChild(particle);
+        particleObj.cancelled = true;
+        activeParticles = activeParticles.filter(p => p !== particleObj);
+        if (opts.onComplete) opts.onComplete();
+      }
+    }
+    requestAnimationFrame(step);
+    return particleObj;
+  }
+
+  function showCollisionAt(x, y) {
+    // Per user spec: minimalist — single white flash, simple fade, no animation/expansion
+    showWhiteFlash(x, y, { radius: 12, durationMs: 350 });
+  }
+
+  // ========== ECG WAVEFORM ==========
+  const ECG_CFG = {
+    pxPerMs: 0.06,
+    baselineY: 100,
+  };
+
+  let ecgAnimating = false;
+  let ecgLastTimestamp = 0;
+  let ecgBuffer = new Float32Array(ecgCanvas.width);
+  let ecgBeatPhase = 0;
+
+  function resetECG() {
+    ecgBuffer.fill(ECG_CFG.baselineY);
+    ecgState.rhythm = 'flatline';
+    rhythmLabel.innerHTML = '<span class="dot" style="background:var(--muted)"></span>FLATLINE';
+    hrLabel.textContent = 'HR: -- bpm';
+    prInfo.textContent = 'PR: --';
+    pWaveInfo.textContent = 'P-wave: --';
+    drawECG();
+  }
+
+  function startECGAnimation() {
+    if (ecgAnimating) return;
+    ecgAnimating = true;
+    ecgLastTimestamp = performance.now();
+    requestAnimationFrame(ecgLoop);
+  }
+
+  function ecgLoop(timestamp) {
+    if (!ecgAnimating) return;
+    const dt = timestamp - ecgLastTimestamp;
+    ecgLastTimestamp = timestamp;
+    const dx = dt * ECG_CFG.pxPerMs;
+    const shiftPx = Math.max(1, Math.round(dx));
+
+    for (let i = 0; i < ecgBuffer.length - shiftPx; i++) {
+      ecgBuffer[i] = ecgBuffer[i + shiftPx];
+    }
+    for (let i = ecgBuffer.length - shiftPx; i < ecgBuffer.length; i++) {
+      ecgBuffer[i] = generateNextECGSample();
+    }
+
+    drawECG();
+    requestAnimationFrame(ecgLoop);
+  }
+
+  function generateNextECGSample() {
+    const msPerPx = 1 / ECG_CFG.pxPerMs;
+    ecgBeatPhase += msPerPx;
+    const b = ECG_CFG.baselineY;
+
+    if (ecgState.rhythm === 'flatline') {
+      return b + (Math.random() - 0.5) * 0.6;
+    }
+    if (ecgState.rhythm === 'sinus') {
+      const cycleLen = scaledDuration(CONFIG.sinusIntervalMs);
+      if (ecgBeatPhase >= cycleLen) ecgBeatPhase %= cycleLen;
+      return sinusWaveform(ecgBeatPhase, cycleLen);
+    }
+    if (ecgState.rhythm === 'avnrt_typical') {
+      const cycleLen = scaledDuration(CONFIG.avnrtCycleMs);
+      if (ecgBeatPhase >= cycleLen) ecgBeatPhase %= cycleLen;
+      return avnrtTypicalWaveform(ecgBeatPhase, cycleLen);
+    }
+    if (ecgState.rhythm === 'avnrt_atypical') {
+      const cycleLen = scaledDuration(CONFIG.avnrtCycleMs);
+      if (ecgBeatPhase >= cycleLen) ecgBeatPhase %= cycleLen;
+      return avnrtAtypicalWaveform(ecgBeatPhase, cycleLen);
+    }
+    return b;
+  }
+
+  function sinusWaveform(t, cycleLen) {
+    // Reference cycle: 2400ms. Scale waveform timing proportionally.
+    const scale = cycleLen / 2400;
+    const b = ECG_CFG.baselineY;
+    const tS = t / scale;
+    // P-wave 0-100ms (upright)
+    if (tS < 100) return b - 10 * Math.sin(Math.PI * tS / 100);
+    // PR segment 100-180ms
+    if (tS < 180) return b;
+    // Q 180-200
+    if (tS < 200) return b + 4 * ((tS - 180) / 20);
+    // R 200-220
+    if (tS < 220) return b + 4 - 60 * ((tS - 200) / 20);
+    // S 220-250
+    if (tS < 250) return b - 56 + 75 * ((tS - 220) / 30);
+    // ST 250-340
+    if (tS < 340) return b + 2;
+    // T-wave 340-500 (upright)
+    if (tS < 500) return b - 16 * Math.sin(Math.PI * (tS - 340) / 160);
+    return b;
+  }
+
+  /**
+   * Typical AVNRT (slow-fast): retrograde P buried in QRS → manifests as
+   * pseudo-S in inferior leads (a small downward notch at the end of QRS).
+   * RP interval very short (<70ms).
+   */
+  function avnrtTypicalWaveform(t, cycleLen) {
+    // Reference cycle 1100ms (~136 bpm equivalent in raw timing)
+    const scale = cycleLen / 1100;
+    const b = ECG_CFG.baselineY;
+    const tS = t / scale;
+    // q 0-15
+    if (tS < 15) return b + 2 * (tS / 15);
+    // R upstroke 15-40
+    if (tS < 40) return b + 2 - 65 * ((tS - 15) / 25);
+    // S downstroke 40-65
+    if (tS < 65) return b - 63 + 78 * ((tS - 40) / 25);
+    // PSEUDO-S NOTCH (buried retrograde P) — small additional negative deflection at 65-95ms
+    // This is the hallmark of typical AVNRT in inferior leads
+    if (tS < 95) return b + 15 - 8 * Math.sin(Math.PI * (tS - 65) / 30);
+    // ST segment 95-220
+    if (tS < 220) return b + 1;
+    // T-wave 220-380 (upright)
+    if (tS < 380) return b - 12 * Math.sin(Math.PI * (tS - 220) / 160);
+    return b;
+  }
+
+  /**
+   * Atypical AVNRT (fast-slow): retrograde conduction via SLOW pathway
+   * → inverted P-wave appears LATE, distinctly after QRS (long RP).
+   * The P shows up superimposed on the ST/T region.
+   */
+  function avnrtAtypicalWaveform(t, cycleLen) {
+    const scale = cycleLen / 1100;
+    const b = ECG_CFG.baselineY;
+    const tS = t / scale;
+    // Narrow QRS first (clean, no pseudo-S because retrograde P is far away)
+    if (tS < 15) return b + 2 * (tS / 15);
+    if (tS < 40) return b + 2 - 65 * ((tS - 15) / 25);
+    if (tS < 65) return b - 63 + 78 * ((tS - 40) / 25);
+    // Brief ST 65-150
+    if (tS < 150) return b + 1;
+    // INVERTED P-WAVE 150-260 (long RP — retrograde via slow pathway)
+    // Drawn as a clear downward (inverted) deflection on the ST segment
+    if (tS < 260) {
+      const pPhase = (tS - 150) / 110;
+      return b + 14 * Math.sin(Math.PI * pPhase);  // positive on canvas = downward on ECG
+    }
+    // Small T-wave 260-400
+    if (tS < 400) return b - 8 * Math.sin(Math.PI * (tS - 260) / 140);
+    return b;
+  }
+
+  function drawECG() {
+    const w = ecgCanvas.width;
+    const h = ecgCanvas.height;
+    ecgCtx.fillStyle = '#11171f';
+    ecgCtx.fillRect(0, 0, w, h);
+
+    // Grid
+    ecgCtx.strokeStyle = 'rgba(212,175,106,0.08)';
+    ecgCtx.lineWidth = 1;
+    for (let x = 0; x < w; x += 25) {
+      ecgCtx.beginPath(); ecgCtx.moveTo(x, 0); ecgCtx.lineTo(x, h); ecgCtx.stroke();
+    }
+    for (let y = 0; y < h; y += 25) {
+      ecgCtx.beginPath(); ecgCtx.moveTo(0, y); ecgCtx.lineTo(w, y); ecgCtx.stroke();
+    }
+    ecgCtx.strokeStyle = 'rgba(212,175,106,0.18)';
+    for (let x = 0; x < w; x += 125) {
+      ecgCtx.beginPath(); ecgCtx.moveTo(x, 0); ecgCtx.lineTo(x, h); ecgCtx.stroke();
+    }
+    for (let y = 0; y < h; y += 125) {
+      ecgCtx.beginPath(); ecgCtx.moveTo(0, y); ecgCtx.lineTo(w, y); ecgCtx.stroke();
+    }
+
+    // Waveform
+    const isAvnrt = ecgState.rhythm.startsWith('avnrt');
+    ecgCtx.strokeStyle = isAvnrt ? '#fca5a5' : '#86efac';
+    ecgCtx.lineWidth = 1.8;
+    ecgCtx.beginPath();
+    ecgCtx.moveTo(0, ecgBuffer[0]);
+    for (let x = 1; x < w; x++) ecgCtx.lineTo(x, ecgBuffer[x]);
+    ecgCtx.stroke();
+  }
+
+  // ========== TYPE TOGGLE ==========
+  function updateTypeUI() {
+    if (avnrtType === 'typical') {
+      modeIndicator.innerHTML = '<span class="dot" style="background:var(--gold)"></span>TYPICAL · SLOW-FAST';
+      typeExplain.innerHTML = `
+        <span class="gold">~90% kasus.</span> Antegrade lewat <span style="color:var(--slow)">slow</span>,
+        retrograde lewat <span style="color:var(--fast)">fast</span>.
+        <span class="tooltip-trigger gold">Short RP
+          <span class="tooltip-body">P retrograde tertanam dalam QRS atau muncul sebagai pseudo-S di II/III/aVF dan pseudo-r' di V1. RP &lt; 70 ms.</span>
+        </span>`;
+    } else {
+      modeIndicator.innerHTML = '<span class="dot" style="background:var(--gold)"></span>ATYPICAL · FAST-SLOW';
+      typeExplain.innerHTML = `
+        <span class="gold">~10% kasus.</span> Antegrade lewat <span style="color:var(--fast)">fast</span>,
+        retrograde lewat <span style="color:var(--slow)">slow</span>.
+        <span class="tooltip-trigger gold">Long RP
+          <span class="tooltip-body">P retrograde negatif muncul jelas setelah QRS pada segmen ST atau gelombang T. RP &gt; PR. Inferior leads (II, III, aVF) menunjukkan P invertted yang dalam.</span>
+        </span>`;
+    }
+  }
+
+  // ========== SIMULATION SEQUENCES ==========
+
+  /**
+   * One complete sinus beat:
+   * SA → atrium → proximal junction → SPLIT into fast & slow antegrade
+   * Fast reaches distal first → goes to His AND sends retrograde down slow
+   * Retrograde-slow collides with antegrade-slow in slow pathway → both annihilate
+   */
+  function runOneSinusBeat(onCycleEnd) {
+    const fastDur = scaledDuration(CONFIG.fastConductionMs);
+    const slowDur = scaledDuration(CONFIG.slowConductionMs);
+    const fastERP = scaledDuration(CONFIG.fastERP_ms);
+    const slowERP = scaledDuration(CONFIG.slowERP_ms);
+    const saToProx = scaledDuration(CONFIG.saToProxMs);
+    const distalToHisDur = scaledDuration(CONFIG.distalToHisMs);
+
+    // Step 1: SA → proximal junction
+    log('Impuls SA → atrium → proksimal junction', 'info');
+    animateLinear({
+      x1: PROX_X, y1: SA_Y, x2: PROX_X, y2: PROX_Y,
+      durationMs: saToProx,
+      color: 'var(--sa)', glowClass: 'glow-sa', radius: 8,
+      onComplete: () => {
+        log('Impuls di proksimal: terbelah ke fast & slow', 'normal');
+
+        // ==== SPLIT FLASH at proximal junction ====
+        showWhiteFlash(PROX_X, PROX_Y, { radius: 10, durationMs: 280 });
+
+        // ==== Shared collision state ====
+        // Both ante-slow and retro-fast (going DOWN slow tissue) check this.
+        // Whichever detects collision first sets `detected = true`; the other ball
+        // sees this on its next frame and also stops, so neither escapes the collision.
+        const collision = { detected: false, x: 0, y: 0 };
+        const slowAntegrade = { fraction: 0, active: true };
+        const slowRetro = { fraction: 1, active: false }; // fraction in slowPath coords (proximal=0, distal=1)
+
+        // ==== FAST PATHWAY ANTEGRADE ====
+        setPathwayState('fast', 'conducting');
+        animateOnPath({
+          pathEl: fastPath, pathLen: fastLen,
+          reverse: false, durationMs: fastDur,
+          erpMs: fastERP,
+          color: 'var(--fast)', glowClass: 'glow-fast',
+          onComplete: () => {
+            log('Fast tiba di distal junction → forward ke His + retrograde turun slow', 'active');
+            setPathwayState('fast', 'refractory', fastERP);
+
+            // (a) Forward to His bundle
+            animateLinear({
+              x1: DISTAL_X, y1: DISTAL_Y, x2: DISTAL_X, y2: HIS_TOP_Y,
+              durationMs: distalToHisDur,
+              color: 'var(--his)', glowClass: '', radius: 6,
+              onComplete: () => {
+                log('Impuls mencapai His bundle → depolarisasi ventrikel', 'success');
+              }
+            });
+
+            // (b) Retrograde DOWN slow pathway — this is the fast-origin impulse
+            //     traveling through slow tissue from distal toward proximal.
+            //     It collides with the antegrade-slow ball somewhere in the middle.
+            slowRetro.active = true;
+            animateOnPath({
+              pathEl: slowPath, pathLen: slowLen,
+              reverse: true, durationMs: slowDur,
+              erpMs: slowERP,
+              color: 'var(--fast)', tailColor: 'var(--fast)',
+              glowClass: 'glow-fast', radius: 6,
+              shouldStop: (frac, pt) => {
+                // Retrograde position in slowPath coords (proximal=0, distal=1)
+                slowRetro.fraction = 1 - frac;
+                // Trigger collision when antegrade has reached this point
+                if (!collision.detected && slowAntegrade.active &&
+                    slowAntegrade.fraction >= slowRetro.fraction) {
+                  collision.detected = true;
+                  collision.x = pt.x;
+                  collision.y = pt.y;
+                  return true;
+                }
+                // Also stop if collision already triggered by the other ball
+                return collision.detected;
+              },
+              onStopped: (pt) => {
+                slowRetro.active = false;
+                if (collision.detected) {
+                  // Avoid double-logging if both onStopped fire in quick succession
+                  if (!collision.logged) {
+                    collision.logged = true;
+                    log('💥 Collision di slow pathway: antegrade × retrograde → kedua impuls anihilasi', 'normal');
+                    showCollisionAt(collision.x, collision.y);
+                  }
+                }
+              },
+              onComplete: () => { slowRetro.active = false; }
+            });
+          }
+        });
+
+        // ==== SLOW PATHWAY ANTEGRADE ====
+        setPathwayState('slow', 'conducting');
+        animateOnPath({
+          pathEl: slowPath, pathLen: slowLen,
+          reverse: false, durationMs: slowDur,
+          erpMs: slowERP,
+          color: 'var(--slow)', glowClass: 'glow-slow',
+          shouldStop: (frac, pt) => {
+            slowAntegrade.fraction = frac;
+            // Trigger collision when antegrade meets retrograde
+            if (!collision.detected && slowRetro.active &&
+                frac >= slowRetro.fraction) {
+              collision.detected = true;
+              collision.x = pt.x;
+              collision.y = pt.y;
+              return true;
+            }
+            return collision.detected;
+          },
+          onStopped: (pt) => {
+            slowAntegrade.active = false;
+            setPathwayState('slow', 'refractory', slowERP);
+            if (collision.detected && !collision.logged) {
+              collision.logged = true;
+              log('💥 Collision di slow pathway: antegrade × retrograde → kedua impuls anihilasi', 'normal');
+              showCollisionAt(collision.x, collision.y);
+            }
+          },
+          onComplete: () => {
+            slowAntegrade.active = false;
+            setPathwayState('slow', 'refractory', slowERP);
+          }
+        });
+        slowAntegrade.active = true;
+
+        // Schedule next beat
+        if (onCycleEnd) {
+          setTimeoutTracked(onCycleEnd, scaledDuration(CONFIG.sinusIntervalMs - CONFIG.saToProxMs));
+        }
+      }
+    });
+  }
+
+  function startSinusRhythm() {
+    stopAll(false);
+    mode = 'sinus';
+    cycleCount = 0;
+    ecgState.rhythm = 'sinus';
+    ecgBeatPhase = 0;
+    rhythmLabel.innerHTML = '<span class="dot" style="background:var(--success)"></span>SINUS';
+    hrLabel.textContent = `HR: ${Math.round(60000/CONFIG.sinusIntervalMs)} bpm`;
+    prInfo.textContent = 'PR: ~160 ms';
+    pWaveInfo.textContent = 'P-wave: positif (atrial depolarization)';
+    setStatus('Sinus Rhythm', 'SA fires → kedua pathway. Fast tiba dulu, retrograde turun slow, collision di slow.', 'success');
+    log('Sinus rhythm dimulai', 'active');
+    btnSATest.disabled = true;
+    startECGAnimation();
+    runSinusLoop();
+  }
+
+  function runSinusLoop() {
+    if (mode !== 'sinus') return;
+    cycleCount++;
+    cycleCounter.textContent = `Cycles: ${cycleCount}`;
+    runOneSinusBeat(runSinusLoop);
+  }
+
+  /**
+   * PAC trigger: run one sinus beat first, then fire PAC during vulnerable window.
+   * PAC encounters fast (refractory → block) and slow (recovered → conducts).
+   * Then retrograde via fast → reentry established.
+   * For ATYPICAL: roles reversed — PAC blocked in slow, conducts via fast, retrograde via slow.
+   *
+   * Wait — typical AVNRT requires antegrade-slow and retrograde-fast.
+   * Atypical requires antegrade-fast and retrograde-slow.
+   *
+   * In typical: the blocked pathway is fast (because fast has LONGER ERP).
+   *   PAC arrives → fast still refractory → PAC blocked in fast, goes through slow.
+   *   This is what happens with normal ERP relationship (fast ERP > slow ERP).
+   *
+   * In atypical: the blocked pathway is slow.
+   *   This is rarer because normally slow ERP < fast ERP.
+   *   Conceptually, this occurs when retrograde slow pathway has SHORTER ERP than retrograde fast,
+   *   OR when a PVC (not PAC) triggers it from below.
+   *   For visualization purposes, we'll show atypical as: PAC arrives, blocks in SLOW,
+   *   conducts via FAST, then retrograde via SLOW.
+   *   (We use a different ERP relationship for atypical mode.)
+   */
+  function triggerPAC() {
+    stopAll(false);
+    mode = 'pac';
+    cycleCount = 0;
+    ecgState.rhythm = 'sinus';
+    ecgBeatPhase = 0;
+    rhythmLabel.innerHTML = '<span class="dot" style="background:var(--success)"></span>SINUS → PAC';
+    hrLabel.textContent = `HR: ${Math.round(60000/CONFIG.sinusIntervalMs)} bpm`;
+    prInfo.textContent = 'PR: normal';
+    pWaveInfo.textContent = 'P-wave: positif → PAC ektopik';
+    setStatus('Preparing PAC', 'Satu beat sinus dijalankan dulu untuk setup pathway refractoriness.', 'normal');
+    log(`Mode PAC dimulai → tipe: ${avnrtType.toUpperCase()}`, 'active');
+    btnSATest.disabled = true;
+    startECGAnimation();
+
+    // Step 1: setup beat — runs once
+    runOneSinusBeat(null);
+
+    // Step 2: fire PAC after coupling interval
+    // For TYPICAL: short coupling — fast still refractory, slow recovered
+    // For ATYPICAL: longer coupling — both initially recovered, then force slow refractoriness
+    //   via a "trigger impulse" pattern just before PAC
+    const pacDelay = (avnrtType === 'typical')
+      ? scaledDuration(CONFIG.pacCouplingMs)
+      : scaledDuration(CONFIG.pacCouplingMs + 700); // wait longer for fast to recover then artificially refract slow
+
+    setTimeoutTracked(() => {
+      if (mode !== 'pac') return;
+
+      // For atypical: pre-condition slow into refractory state to simulate
+      // the reversed ERP scenario that makes atypical AVNRT possible.
+      // (Physiologically this occurs when retrograde slow ERP < antegrade fast ERP,
+      //  or when triggered by a junctional/PVC extrasystole; for visualization clarity
+      //  we explicitly mark slow as refractory at the moment PAC arrives.)
+      if (avnrtType === 'atypical') {
+        // Pre-condition slow into a SHORT refractory state — just long enough
+        // to block antegrade at PAC moment, but recover before fast finishes antegrade
+        // and tries retrograde-slow. (fast antegrade = 700ms, so 800ms refractory works.)
+        log('Slow pathway di-set refrakter (skenario atypical setup)', 'normal');
+        setPathwayState('slow', 'refractory', scaledDuration(800));
+      }
+
+      log('⚡ PAC fires dari atrium!', 'danger');
+
+      animateLinear({
+        x1: PROX_X, y1: ATRIUM_TOP_Y - 30, x2: PROX_X, y2: PROX_Y,
+        durationMs: scaledDuration(180),
+        color: 'var(--atrium)', glowClass: '', radius: 8,
+        onComplete: () => {
+          // Split flash at proximal junction — PAC attempts both pathways
+          showWhiteFlash(PROX_X, PROX_Y, { radius: 10, durationMs: 280 });
+          setStatus('PAC Triggered', 'Impuls prematur tiba di proksimal — siap masuk ke pathway.', 'danger');
+          runPACSequence();
+        }
+      });
+    }, pacDelay);
+  }
+
+  function runPACSequence() {
+    if (mode !== 'pac') return;
+
+    const fastDur = scaledDuration(CONFIG.fastConductionMs);
+    const slowDur = scaledDuration(CONFIG.slowConductionMs);
+    const fastERP = scaledDuration(CONFIG.fastERP_ms);
+    const slowERP = scaledDuration(CONFIG.slowERP_ms);
+    const blockTrailMs = scaledDuration(500); // short fade for blocked-impulse trails
+
+    if (avnrtType === 'typical') {
+      // TYPICAL: PAC blocked in fast (still refractory), conducts via slow
+      const fastBlocked = (pathwayState.fast.state === 'refractory');
+      const slowAvailable = (pathwayState.slow.state === 'resting');
+
+      if (fastBlocked) {
+        log('Fast pathway: BLOCKED (refrakter)', 'danger');
+        animateOnPath({
+          pathEl: fastPath, pathLen: fastLen,
+          reverse: false, durationMs: scaledDuration(300),
+          erpMs: blockTrailMs,
+          color: 'var(--fast)', tailColor: 'var(--refractory)',
+          glowClass: 'glow-refractory',
+          // EP rationale: with same wave speed, block occurs at pathway entry —
+          // PAC immediately encounters refractory tissue at proximal end of fast path.
+          blockAtFraction: 0.05, blockMarker: 'fast',
+          onBlocked: () => {
+            log('✓ Unidirectional block di fast pathway (antegrade)', 'danger');
+          }
+        });
+      } else {
+        log('⚠ Fast sudah pulih — coupling terlalu lama', 'normal');
+      }
+
+      if (slowAvailable) {
+        log('Slow pathway: antegrade conduction (lambat)...', 'active');
+        setStatus('Slow Antegrade', 'PAC turun via slow pathway → distal junction.', 'danger');
+        setPathwayState('slow', 'conducting');
+        animateOnPath({
+          pathEl: slowPath, pathLen: slowLen,
+          reverse: false, durationMs: slowDur,
+          erpMs: slowERP,
+          color: 'var(--slow)', glowClass: 'glow-slow',
+          onComplete: () => {
+            log('Slow tiba di distal → cabang ke His + retrograde via fast', 'success');
+            setPathwayState('slow', 'refractory', slowERP);
+
+            // Forward to His
+            animateLinear({
+              x1: DISTAL_X, y1: DISTAL_Y, x2: DISTAL_X, y2: HIS_TOP_Y,
+              durationMs: scaledDuration(CONFIG.distalToHisMs),
+              color: 'var(--his)', radius: 6
+            });
+
+            // Begin retrograde via fast → start reentry
+            setTimeoutTracked(() => {
+              startReentryLoop();
+            }, scaledDuration(120));
+          }
+        });
+      } else {
+        log('⚠ Slow belum siap — reentri tidak terbentuk', 'danger');
+        mode = 'idle';
+      }
+    } else {
+      // ATYPICAL: PAC blocked in slow (pre-conditioned in triggerPAC),
+      // conducts via fast → retrograde via slow
+      const slowBlocked = (pathwayState.slow.state === 'refractory');
+      const fastAvailable = (pathwayState.fast.state === 'resting');
+
+      if (slowBlocked) {
+        log('Slow pathway: BLOCKED (refrakter)', 'danger');
+        animateOnPath({
+          pathEl: slowPath, pathLen: slowLen,
+          reverse: false, durationMs: scaledDuration(300),
+          erpMs: blockTrailMs,
+          color: 'var(--slow)', tailColor: 'var(--refractory)',
+          glowClass: 'glow-refractory',
+          // EP rationale: block at pathway entry — slow tissue refractory at proximal.
+          blockAtFraction: 0.05, blockMarker: 'slow',
+          onBlocked: () => {
+            log('✓ Unidirectional block di slow pathway (antegrade)', 'danger');
+          }
+        });
+      } else {
+        log('⚠ Slow tidak refrakter — atypical setup gagal', 'normal');
+      }
+
+      if (fastAvailable) {
+        log('Fast pathway: antegrade conduction (cepat)...', 'active');
+        setStatus('Fast Antegrade', 'PAC turun via fast pathway → distal junction.', 'danger');
+        setPathwayState('fast', 'conducting');
+        animateOnPath({
+          pathEl: fastPath, pathLen: fastLen,
+          reverse: false, durationMs: fastDur,
+          erpMs: fastERP,
+          color: 'var(--fast)', glowClass: 'glow-fast',
+          onComplete: () => {
+            log('Fast tiba di distal → cabang ke His + retrograde via slow', 'success');
+            setPathwayState('fast', 'refractory', fastERP);
+
+            animateLinear({
+              x1: DISTAL_X, y1: DISTAL_Y, x2: DISTAL_X, y2: HIS_TOP_Y,
+              durationMs: scaledDuration(CONFIG.distalToHisMs),
+              color: 'var(--his)', radius: 6
+            });
+
+            setTimeoutTracked(() => {
+              startReentryLoop();
+            }, scaledDuration(120));
+          }
+        });
+      } else {
+        log('⚠ Fast belum siap — reentri tidak terbentuk', 'danger');
+        mode = 'idle';
+      }
+    }
+  }
+
+  function startReentryLoop() {
+    if (mode !== 'pac') return;
+
+    // Check that the retrograde pathway has recovered
+    const retroPathway = (avnrtType === 'typical') ? 'fast' : 'slow';
+    if (pathwayState[retroPathway].state === 'refractory') {
+      log(`Reentri gagal — ${retroPathway} pathway masih refrakter saat retrograde`, 'normal');
+      setStatus('Reentry Failed', `${retroPathway} pathway belum pulih.`, 'normal');
+      mode = 'idle';
+      return;
+    }
+
+    log(`🔄 Retrograde conduction via ${retroPathway} pathway dimulai`, 'active');
+    mode = 'avnrt';
+    reentryActive = true;
+    btnSATest.disabled = false;
+    runReentryCycle();
+  }
+
+  function runReentryCycle() {
+    if (mode !== 'avnrt' || !reentryActive) return;
+
+    cycleCount++;
+    cycleCounter.textContent = `Cycles: ${cycleCount}`;
+
+    if (cycleCount === 1) {
+      ecgState.rhythm = (avnrtType === 'typical') ? 'avnrt_typical' : 'avnrt_atypical';
+      ecgBeatPhase = 0;
+      rhythmLabel.innerHTML = `<span class="dot" style="background:var(--danger)"></span>AVNRT (${avnrtType.toUpperCase()})`;
+      const avnrtHR = Math.round(60000 / CONFIG.avnrtCycleMs);
+      hrLabel.textContent = `HR: ~${avnrtHR} bpm`;
+
+      if (avnrtType === 'typical') {
+        prInfo.textContent = 'Short RP (< 70 ms)';
+        pWaveInfo.innerHTML = 'P-wave: <span style="color:#fca5a5">tertanam di QRS → pseudo-S inferior, pseudo-r\' V1</span>';
+        setStatus('Typical AVNRT', `Slow-Fast circuit aktif. Narrow complex tachycardia ~${avnrtHR} bpm. Short RP.`, 'danger');
+      } else {
+        prInfo.textContent = 'Long RP (RP > PR)';
+        pWaveInfo.innerHTML = 'P-wave: <span style="color:#fca5a5">inverted setelah QRS pada ST/T → long RP</span>';
+        setStatus('Atypical AVNRT', `Fast-Slow circuit aktif. Narrow complex tachycardia ~${avnrtHR} bpm. Long RP.`, 'danger');
+      }
+      log(`✓ AVNRT (${avnrtType}) terbentuk — sirkuit self-sustaining`, 'danger');
+    }
+
+    const fastDur = scaledDuration(CONFIG.fastConductionMs);
+    const slowDur = scaledDuration(CONFIG.slowConductionMs);
+    const fastERP = scaledDuration(CONFIG.fastERP_avnrt_ms);
+    const slowERP = scaledDuration(CONFIG.slowERP_avnrt_ms);
+
+    if (avnrtType === 'typical') {
+      // Retrograde fast (D → P), then antegrade slow (P → D)
+      setPathwayState('fast', 'conducting');
+      animateOnPath({
+        pathEl: fastPath, pathLen: fastLen,
+        reverse: true, durationMs: fastDur,
+        erpMs: fastERP,
+        color: 'var(--fast)', glowClass: 'glow-fast',
+        onComplete: () => {
+          setPathwayState('fast', 'refractory', fastERP);
+
+          // Retrograde reaches atrium → activates atrium (retrograde P)
+          animateLinear({
+            x1: PROX_X, y1: PROX_Y, x2: PROX_X, y2: ATRIUM_TOP_Y - 10,
+            durationMs: scaledDuration(120),
+            color: 'var(--atrium)', radius: 6
+          });
+
+          // Then antegrade slow
+          setTimeoutTracked(() => {
+            if (mode !== 'avnrt' || !reentryActive) return;
+            setPathwayState('slow', 'conducting');
+            animateOnPath({
+              pathEl: slowPath, pathLen: slowLen,
+              reverse: false, durationMs: slowDur,
+              erpMs: slowERP,
+              color: 'var(--slow)', glowClass: 'glow-slow',
+              onComplete: () => {
+                setPathwayState('slow', 'refractory', slowERP);
+                animateLinear({
+                  x1: DISTAL_X, y1: DISTAL_Y, x2: DISTAL_X, y2: HIS_TOP_Y,
+                  durationMs: scaledDuration(CONFIG.distalToHisMs),
+                  color: 'var(--his)', radius: 6
+                });
+                setTimeoutTracked(runReentryCycle, scaledDuration(80));
+              }
+            });
+          }, scaledDuration(80));
+        }
+      });
+    } else {
+      // Atypical: retrograde SLOW, antegrade FAST
+      setPathwayState('slow', 'conducting');
+      animateOnPath({
+        pathEl: slowPath, pathLen: slowLen,
+        reverse: true, durationMs: slowDur,
+        erpMs: slowERP,
+        color: 'var(--slow)', glowClass: 'glow-slow',
+        onComplete: () => {
+          setPathwayState('slow', 'refractory', slowERP);
+
+          animateLinear({
+            x1: PROX_X, y1: PROX_Y, x2: PROX_X, y2: ATRIUM_TOP_Y - 10,
+            durationMs: scaledDuration(120),
+            color: 'var(--atrium)', radius: 6
+          });
+
+          setTimeoutTracked(() => {
+            if (mode !== 'avnrt' || !reentryActive) return;
+            setPathwayState('fast', 'conducting');
+            animateOnPath({
+              pathEl: fastPath, pathLen: fastLen,
+              reverse: false, durationMs: fastDur,
+              erpMs: fastERP,
+              color: 'var(--fast)', glowClass: 'glow-fast',
+              onComplete: () => {
+                setPathwayState('fast', 'refractory', fastERP);
+                animateLinear({
+                  x1: DISTAL_X, y1: DISTAL_Y, x2: DISTAL_X, y2: HIS_TOP_Y,
+                  durationMs: scaledDuration(CONFIG.distalToHisMs),
+                  color: 'var(--his)', radius: 6
+                });
+                setTimeoutTracked(runReentryCycle, scaledDuration(80));
+              }
+            });
+          }, scaledDuration(80));
+        }
+      });
+    }
+  }
+
+  /**
+   * Test SA impulse during AVNRT — should be BLOCKED at proximal junction
+   * because both pathways are continuously refractory from the circulating wavefront.
+   * Demonstrates concealed conduction / why sinus can't capture during SVT.
+   */
+  function testSAImpulse() {
+    if (mode !== 'avnrt') {
+      log('⚠ Test SA impulse hanya tersedia saat AVNRT aktif', 'normal');
+      return;
+    }
+    log('◐ Testing: SA impulse during AVNRT...', 'info');
+    setStatus('Concealed Conduction Test', 'Mengirim impuls SA selama AVNRT — akan terblokir di proksimal.', 'info');
+
+    // SA descent
+    animateLinear({
+      x1: PROX_X, y1: SA_Y, x2: PROX_X, y2: PROX_Y - 25,
+      durationMs: scaledDuration(CONFIG.saToProxMs),
+      color: 'var(--sa)', glowClass: 'glow-sa', radius: 8,
+      onComplete: () => {
+        // Check pathway states — at least one is refractory due to ongoing reentry
+        const fastRef = (pathwayState.fast.state !== 'resting');
+        const slowRef = (pathwayState.slow.state !== 'resting');
+
+        log(`Fast: ${pathwayState.fast.state.toUpperCase()} · Slow: ${pathwayState.slow.state.toUpperCase()}`, 'normal');
+
+        if (fastRef && slowRef) {
+          log('✗ Kedua pathway tidak resting → impuls SA TERBLOKIR di proksimal', 'danger');
+          proxBlock.style.opacity = '1';
+          setTimeoutTracked(() => { proxBlock.style.opacity = '0'; }, 1800);
+          // Brief fade-in marker, then resume status
+          setTimeoutTracked(() => {
+            if (mode === 'avnrt') {
+              setStatus('AVNRT Ongoing', `Sirkuit reentri ${avnrtType} terus berputar. SA tidak bisa capture.`, 'danger');
+            }
+          }, 1500);
+        } else {
+          // Edge case: try again — fire a slightly later test
+          log('Pathway sebagian resting — coba lagi saat keduanya refrakter', 'info');
+          setTimeoutTracked(testSAImpulse, scaledDuration(200));
+        }
+      }
+    });
+  }
+
+  function stopAll(showLog = true) {
+    clearAllTimeouts();
+    clearAllParticles();
+    mode = 'idle';
+    reentryActive = false;
+    pathwayState.fast.state = 'resting';
+    pathwayState.slow.state = 'resting';
+    fastBlock.style.opacity = '0';
+    slowBlock.style.opacity = '0';
+    proxBlock.style.opacity = '0';
+    collisionMarker.style.opacity = '0';
+    btnSATest.disabled = true;
+    updatePathwayUI();
+    if (showLog) {
+      log('■ Simulasi dihentikan — vagal/adenosin memutus sirkuit', 'success');
+      setStatus('Stopped', 'Sirkuit terputus, semua pathway resting.', 'success');
+      ecgState.rhythm = 'flatline';
+      rhythmLabel.innerHTML = '<span class="dot" style="background:var(--muted)"></span>FLATLINE';
+      hrLabel.textContent = 'HR: -- bpm';
+      prInfo.textContent = 'PR: --';
+      pWaveInfo.textContent = 'P-wave: --';
+      cycleCount = 0;
+      cycleCounter.textContent = 'Cycles: 0';
+    }
+  }
+
+  // ========== EVENT HANDLERS ==========
+  btnSinus.addEventListener('click', startSinusRhythm);
+  btnPAC.addEventListener('click', triggerPAC);
+  btnSATest.addEventListener('click', testSAImpulse);
+  btnReset.addEventListener('click', () => stopAll(true));
+  btnClearLog.addEventListener('click', () => {
+    logContainer.innerHTML = '<div class="log-entry">Log dibersihkan.</div>';
+  });
+  speedSlider.addEventListener('input', (e) => {
+    speedFactor = parseFloat(e.target.value);
+    speedLabel.textContent = `${speedFactor.toFixed(1)}×`;
+  });
+  typeTypical.addEventListener('change', () => {
+    if (typeTypical.checked) {
+      avnrtType = 'typical';
+      updateTypeUI();
+      log('Tipe diubah → TYPICAL (Slow-Fast)', 'info');
+      if (mode !== 'idle') stopAll(true);
+    }
+  });
+  typeAtypical.addEventListener('change', () => {
+    if (typeAtypical.checked) {
+      avnrtType = 'atypical';
+      updateTypeUI();
+      log('Tipe diubah → ATYPICAL (Fast-Slow)', 'info');
+      if (mode !== 'idle') stopAll(true);
+    }
+  });
+
+  // ========== INIT ==========
+  function init() {
+    resetECG();
+    startECGAnimation();
+    updatePathwayUI();
+    updateTypeUI();
+    log('Sistem siap. Pilih tipe AVNRT dan mode simulasi.', 'normal');
+  }
+
+  init();
+
+})();
+</script>
+</body>
+</html>
