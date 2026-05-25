@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAAS Pathway — Interactive Clinical Cardiology Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0c1117; --surf:#111820; --surf2:#161e28; --surf3:#1c2634;
+  --bord:rgba(212,175,106,.12); --bord2:rgba(212,175,106,.35);
+  --gold:#d4af6a; --goldD:rgba(212,175,106,.65); --goldG:rgba(212,175,106,.1);
+  --text:#e8e0d0; --textD:#9a8f7e; --textF:rgba(232,224,208,.35);
+  --c-org:#4ade80; --c-enz:#5ba3f5; --c-sub:#d4af6a; --c-int:#94a3b8;
+  --c-key:#f0c060; --c-hor:#d4af6a; --c-rec:#b77cdc; --c-recM:#9d64c7;
+  --c-ben:#34d399; --c-sid:#fb923c;
+  --acei:#60a5fa; --arb:#c084fc; --arni:#34d399; --mra:#fbbf24; --dri:#f87171;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;display:flex;flex-direction:column}
+/* ── Header ── */
+header{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:12px 22px;background:var(--surf);border-bottom:1px solid var(--bord)}
+.h-title{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600;color:var(--gold);letter-spacing:.02em}
+.h-sub{font-size:.67rem;color:var(--textD);letter-spacing:.09em;text-transform:uppercase;margin-top:1px}
+.legend{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:.64rem;color:var(--textD)}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+/* ── Layout ── */
+.main{flex:1;display:flex;overflow:hidden;min-height:0}
+/* ── Diagram ── */
+.diagram{flex:0 0 62%;position:relative;overflow:hidden;display:flex;align-items:stretch}
+#svg{width:100%;height:100%;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;-moz-user-select:none}
+#svg text{user-select:none;-webkit-user-select:none;-moz-user-select:none;-webkit-tap-highlight-color:transparent}
+#svg.grabbing{cursor:grabbing}
+#viewport{transform-origin:0 0;transition:transform .05s linear}
+#viewport.no-trans{transition:none}
+/* Zoom controls */
+.zoom-ctrl{position:absolute;bottom:14px;right:14px;display:flex;flex-direction:column;gap:4px;z-index:50;background:rgba(17,24,32,.88);border:1px solid var(--bord);border-radius:6px;padding:4px;backdrop-filter:blur(8px)}
+.zoom-btn{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--textD);cursor:pointer;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:1.05rem;font-weight:500;transition:all .15s;line-height:1}
+.zoom-btn:hover{background:var(--surf3);color:var(--gold)}
+.zoom-btn:active{transform:scale(.92)}
+.zoom-btn svg{width:14px;height:14px}
+.zoom-divider{height:1px;background:var(--bord);margin:1px 4px}
+.zoom-level{position:absolute;bottom:14px;left:14px;background:rgba(17,24,32,.88);border:1px solid var(--bord);border-radius:5px;padding:5px 10px;font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--textD);z-index:50;backdrop-filter:blur(8px);letter-spacing:.04em;user-select:none}
+.zoom-hint{position:absolute;top:14px;right:14px;background:rgba(17,24,32,.78);border:1px solid var(--bord);border-radius:5px;padding:5px 10px;font-size:.64rem;color:var(--textF);z-index:50;backdrop-filter:blur(8px);pointer-events:none;transition:opacity .4s;letter-spacing:.02em}
+.zoom-hint.hidden{opacity:0}
+/* Drug-triggered annotation fade-in */
+.drug-ann{animation:fadeInAnn .35s ease-out}
+@keyframes fadeInAnn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
+/* ── Panel ── */
+.panel{flex:1;border-left:1px solid var(--bord);background:var(--surf);overflow-y:auto;display:flex;flex-direction:column}
+.panel::-webkit-scrollbar{width:3px}
+.panel::-webkit-scrollbar-thumb{background:var(--bord2);border-radius:2px}
+.panel::-webkit-scrollbar-track{background:transparent}
+.p-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:28px;text-align:center;color:var(--textF)}
+.p-empty-icon{width:44px;height:44px;margin-bottom:14px;opacity:.35}
+.p-empty h3{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:400;color:var(--textD);margin-bottom:6px}
+.p-empty p{font-size:.74rem;line-height:1.65}
+.p-content{padding:18px 20px;animation:fadeIn .22s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.p-badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px}
+.p-name{font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:600;color:var(--gold);line-height:1.2}
+.p-subtitle{font-size:.77rem;color:var(--textD);margin-top:2px}
+.p-organ{display:flex;align-items:center;gap:6px;margin-top:9px;font-size:.7rem;color:var(--textD);padding:5px 10px;background:var(--surf2);border-radius:5px;border:1px solid var(--bord)}
+.sec{margin-top:15px}
+.sec-title{font-size:.64rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--goldD);margin-bottom:7px;padding-bottom:4px;border-bottom:1px solid var(--bord)}
+.physio-list{list-style:none;display:flex;flex-direction:column;gap:5px}
+.physio-list li{font-size:.75rem;line-height:1.62;color:var(--text);padding-left:12px;position:relative}
+.physio-list li::before{content:'▸';position:absolute;left:0;color:var(--goldD);font-size:.62rem;top:2px}
+.drug-card{background:var(--surf2);border:1px solid var(--bord);border-radius:6px;padding:9px 11px;margin-bottom:5px}
+.drug-name{font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:2px}
+.drug-cls{font-size:.66rem;color:var(--goldD);font-family:'JetBrains Mono',monospace}
+.drug-mech{font-size:.7rem;color:var(--textD);margin-top:4px;line-height:1.5}
+.trial-card{background:var(--surf2);border:1px solid var(--bord);border-left:2.5px solid var(--gold);border-radius:4px;padding:7px 10px;margin-bottom:5px}
+.trial-name{font-size:.72rem;font-weight:600;color:var(--gold);margin-bottom:3px;font-family:'JetBrains Mono',monospace}
+.trial-res{font-size:.7rem;color:var(--textD);line-height:1.52}
+.hf-box{background:rgba(212,175,106,.05);border:1px solid rgba(212,175,106,.18);border-radius:6px;padding:10px 12px}
+.hf-text{font-size:.73rem;line-height:1.65;color:var(--text)}
+/* ── Drug Bar ── */
+.drug-bar{flex-shrink:0;border-top:1px solid var(--bord);background:var(--surf);padding:9px 18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.db-label{font-size:.63rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--textD);white-space:nowrap;margin-right:4px}
+.dtog{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:5px;border:1px solid rgba(255,255,255,.1);background:transparent;cursor:pointer;font-family:'Outfit',sans-serif;font-size:.73rem;font-weight:500;color:var(--textD);transition:all .2s}
+.dtog:hover{border-color:rgba(255,255,255,.22);color:var(--text)}
+.dtog[data-d="acei"]{--dc:var(--acei)}
+.dtog[data-d="arb"]{--dc:var(--arb)}
+.dtog[data-d="arni"]{--dc:var(--arni)}
+.dtog[data-d="mra"]{--dc:var(--mra)}
+.dtog[data-d="dri"]{--dc:var(--dri)}
+.dtog.on{border-color:var(--dc);background:color-mix(in srgb,var(--dc) 10%,transparent);color:var(--dc);box-shadow:0 0 10px color-mix(in srgb,var(--dc) 18%,transparent)}
+.ddot{width:7px;height:7px;border-radius:50%;background:var(--dc);opacity:.5;transition:opacity .2s;flex-shrink:0}
+.dtog.on .ddot{opacity:1;box-shadow:0 0 5px var(--dc)}
+.db-info{font-size:.67rem;color:var(--textD);margin-left:auto;font-style:italic}
+/* ── Conflict Warning ── */
+.cwarn{position:fixed;bottom:64px;left:50%;transform:translateX(-50%);background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.38);border-radius:6px;padding:7px 14px;font-size:.71rem;color:#fca5a5;z-index:200;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .2s}
+.cwarn.show{opacity:1}
+/* ── SVG node/conn classes ── */
+.node-g{cursor:pointer}
+.node-rect{transition:stroke .2s,filter .2s}
+.arrow{transition:opacity .3s,stroke .3s,stroke-width .3s}
+.arrow.dim{opacity:.1 !important}
+.arrow.boost{stroke-width:3 !important;opacity:1 !important}
+.node-g.dim{opacity:.22;pointer-events:none;transition:opacity .3s}
+.node-g.boost .node-rect{filter:drop-shadow(0 0 10px var(--c-ben)) !important;stroke:var(--c-ben) !important;stroke-width:2 !important}
+scrollbar-width:thin;scrollbar-color:rgba(212,175,106,.25) transparent;
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="h-title">RAAS Pathway</div>
+    <div class="h-sub">Renin–Angiotensin–Aldosterone System · Interactive Cardiology Reference</div>
+  </div>
+  <div class="legend" id="legend"></div>
+</header>
+<div class="main">
+  <div class="diagram">
+    <svg id="svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 620" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
+          <path d="M28 0 L0 0 0 28" fill="none" stroke="rgba(212,175,106,.035)" stroke-width=".6"/>
+        </pattern>
+        <radialGradient id="key-grad" cx="50%" cy="50%" r="60%">
+          <stop offset="0%" stop-color="rgba(240,192,96,.18)"/>
+          <stop offset="100%" stop-color="rgba(212,175,106,.04)"/>
+        </radialGradient>
+        <filter id="glow-gold"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <marker id="m-gold" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L7,3 z" fill="rgba(212,175,106,.85)"/>
+        </marker>
+        <marker id="m-blue" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L7,3 z" fill="rgba(91,163,245,.85)"/>
+        </marker>
+        <marker id="m-grn" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L7,3 z" fill="rgba(74,222,128,.55)"/>
+        </marker>
+        <marker id="m-org" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L7,3 z" fill="rgba(251,146,60,.75)"/>
+        </marker>
+        <marker id="m-pur" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L7,3 z" fill="rgba(157,100,199,.6)"/>
+        </marker>
+        <marker id="m-tel" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L7,3 z" fill="rgba(52,211,153,.85)"/>
+        </marker>
+      </defs>
+      <rect width="1180" height="620" fill="url(#grid)"/>
+      <text x="590" y="610" text-anchor="middle" font-family="Cormorant Garamond,serif" font-size="10" fill="rgba(212,175,106,.13)" letter-spacing="3">RAAS PATHWAY · INTERACTIVE CLINICAL TOOL</text>
+      <g id="viewport">
+        <g id="conn-layer"></g>
+        <g id="node-layer"></g>
+        <g id="inh-layer"></g>
+      </g>
+    </svg>
+    <div class="zoom-hint" id="zoom-hint">Scroll to zoom · Drag to pan</div>
+    <div class="zoom-level" id="zoom-level">100%</div>
+    <div class="zoom-ctrl">
+      <button class="zoom-btn" onclick="zoomBtn(1.25)" title="Zoom in (+)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button class="zoom-btn" onclick="zoomBtn(0.8)" title="Zoom out (−)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg>
+      </button>
+      <div class="zoom-divider"></div>
+      <button class="zoom-btn" onclick="resetView()" title="Reset view (0)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+      </button>
+    </div>
+  </div>
+  <aside class="panel">
+    <div class="p-empty" id="p-empty">
+      <svg class="p-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+        <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+      </svg>
+      <h3>Select a Node</h3>
+      <p>Click any element in the RAAS pathway diagram to view detailed pathophysiology, drug targets, clinical trial evidence, and heart failure context.</p>
+    </div>
+    <div id="p-content" style="display:none"></div>
+  </aside>
+</div>
+<div class="drug-bar">
+  <span class="db-label">💊 Simulator</span>
+  <button class="dtog" data-d="acei" onclick="toggleDrug('acei')"><span class="ddot"></span>ACE Inhibitor</button>
+  <button class="dtog" data-d="arb" onclick="toggleDrug('arb')"><span class="ddot"></span>ARB</button>
+  <button class="dtog" data-d="arni" onclick="toggleDrug('arni')"><span class="ddot"></span>ARNI</button>
+  <button class="dtog" data-d="mra" onclick="toggleDrug('mra')"><span class="ddot"></span>MRA</button>
+  <button class="dtog" data-d="dri" onclick="toggleDrug('dri')"><span class="ddot"></span>DRI</button>
+  <button onclick="resetAll()" style="margin-left:4px;padding:5px 10px;border-radius:5px;border:1px solid rgba(255,255,255,.1);background:transparent;cursor:pointer;font-family:Outfit,sans-serif;font-size:.71rem;color:var(--textD);transition:all .2s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--textD)'">Reset</button>
+  <span class="db-info" id="db-info">Toggle drugs to visualize downstream pathway effects</span>
+</div>
+<div class="cwarn" id="cwarn"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────
+//  COLOR MAPS
+// ─────────────────────────────────────────────────────────────────
+const TC = {
+  organ:'#4ade80', enzyme:'#5ba3f5', substrate:'#d4af6a', intermediate:'#94a3b8',
+  key_hormone:'#f0c060', hormone:'#d4af6a', receptor:'#b77cdc', receptor_minor:'#9d64c7',
+  beneficial:'#34d399', side_effect:'#fb923c'
+};
+const BC = {
+  organ:{bg:'rgba(74,222,128,.1)',fg:'#4ade80'}, enzyme:{bg:'rgba(91,163,245,.1)',fg:'#5ba3f5'},
+  substrate:{bg:'rgba(212,175,106,.1)',fg:'#d4af6a'}, intermediate:{bg:'rgba(148,163,184,.1)',fg:'#94a3b8'},
+  key_hormone:{bg:'rgba(240,192,96,.15)',fg:'#f0c060'}, hormone:{bg:'rgba(212,175,106,.1)',fg:'#d4af6a'},
+  receptor:{bg:'rgba(183,124,220,.1)',fg:'#b77cdc'}, receptor_minor:{bg:'rgba(157,100,199,.08)',fg:'#9d64c7'},
+  beneficial:{bg:'rgba(52,211,153,.1)',fg:'#34d399'}, side_effect:{bg:'rgba(251,146,60,.1)',fg:'#fb923c'}
+};
+
+// ─────────────────────────────────────────────────────────────────
+//  NODE DATA  (cx,cy = center; w,h = size)
+// ─────────────────────────────────────────────────────────────────
+const NODES = {
+liver:{cx:90,cy:75,w:135,h:42,label:'Liver',sub:'Hepatocytes',type:'organ',
+ cl:{name:'Liver',sub:'Angiotensinogen Production Site',badge:'Organ',organ:'Hepatocytes — Hepatic Parenchyma',
+  physio:['Constitutively secretes angiotensinogen (α₂-globulin) into the circulation — primary RAAS substrate',
+   'Upregulated by glucocorticoids (↑2–3×), estrogen (↑RAAS in pregnancy/OCP), thyroid hormone, and AngII itself (positive feedback)',
+   'AGT M235T polymorphism: T-allele → ↑angiotensinogen → ↑predisposition to essential hypertension',
+   'Hepatic disease (cirrhosis): ↓angiotensinogen synthesis, but complex RAAS activation via other pathways',
+   'Experimental: Zilebesiran (siRNA targeting hepatic AGT mRNA) — sustained BP reduction with quarterly dosing (KARDIA-1, 2023)'],
+  drugs:[{name:'Zilebesiran (Investigational)',cls:'siRNA — Hepatic AGT mRNA Knockdown',mech:'SC quarterly injection; sustained ↓angiotensinogen → durable BP reduction; no bradykinin accumulation (Phase 3 underway)'}],
+  trials:[{name:'KARDIA-1 (2023)',res:'Zilebesiran in uncontrolled HTN: ↓SBP 10–15 mmHg sustained at 24 weeks — Phase 2; Phase 3 KARDIA-2 ongoing'}],
+  hf:'Not a current standard HF drug target. RNA-interference therapy (zilebesiran) represents novel upstream RAAS suppression without bradykinin accumulation side effects — active Phase 3 investigation.'}},
+
+kidney:{cx:90,cy:200,w:135,h:42,label:'Kidney',sub:'JG Apparatus',type:'organ',
+ cl:{name:'Kidney — JG Apparatus',sub:'Renin-Secreting Cells',badge:'Organ',organ:'Juxtaglomerular (JG) Cells, Afferent Arteriole Wall',
+  physio:['JG cells are modified vascular smooth muscle cells in the afferent arteriole — sense wall tension (baroreceptor function)',
+   'Macula densa cells sense tubular NaCl concentration at the thick ascending limb/distal nephron',
+   'Renin secretion stimulated by: ↓renal perfusion pressure, ↓NaCl at macula densa, β₁-adrenergic stimulation, ↓K⁺, ↑cAMP',
+   'Inhibited by: AngII (negative feedback), ↑BP, ↑K⁺, ANP, ↑NaCl delivery',
+   'Plasma Renin Activity (PRA): measures rate of angiotensinogen cleavage — biomarker of RAAS activation intensity',
+   'Low-renin hypertension: primary aldosteronism (Conn\'s), Liddle syndrome — important differential in resistant HTN'],
+  drugs:[],trials:[],
+  hf:'↓CO in HF → ↓renal perfusion pressure → compensatory ↑renin → ↑AngII/aldosterone → Na⁺/H₂O retention (compensatory initially, then maladaptive). Elevated PRA in HF predicts worse outcomes. RAAS blockade targets this feedback loop centrally.'}},
+
+lungs:{cx:90,cy:320,w:135,h:42,label:'Lungs',sub:'Pulm. Endothelium',type:'organ',
+ cl:{name:'Lungs — Pulmonary Endothelium',sub:'Primary ACE Expression Site',badge:'Organ',organ:'Pulmonary Vascular Endothelium (primary); Systemic Vascular Endothelium',
+  physio:['Lungs have highest ACE density — ~25% of circulating Ang I converted to Ang II per pulmonary pass',
+   'ACE also expressed in: systemic vascular endothelium, renal brush border, intestinal mucosa, brain',
+   'ACE2 (distinct enzyme, not ACE): abundantly expressed in type II pneumocytes and vascular endothelium; converts Ang II → Ang 1-7 (vasodilatory via MasR)',
+   'ACE2 is the SARS-CoV-2 spike protein receptor — ↓ACE2 in CVD → ↑AngII, ↑lung injury in COVID-19',
+   'ACEi/ARB may upregulate ACE2 — not contraindicated in COVID-19 (no evidence of harm; beneficial ACE2 counter-regulatory effects)',
+   'Pulmonary HTN: ↑RAAS activation in pulmonary vasculature → smooth muscle cell proliferation, vascular remodeling'],
+  drugs:[],trials:[],
+  hf:'Pulmonary congestion in HF → ↑RV afterload → biventricular failure loop. ACE2 → Ang 1-7 → MasR: vasodilation, anti-fibrotic, potentially upregulated by ACEi/ARB (beneficial pleiotropic effect). Pulmonary ACE drives systemic RAAS neurohormonal activation.'}},
+
+adrenal:{cx:90,cy:548,w:135,h:42,label:'Adrenal',sub:'Zona Glomerulosa',type:'organ',
+ cl:{name:'Adrenal Cortex',sub:'Aldosterone Synthesis Site',badge:'Organ',organ:'Zona Glomerulosa, Adrenal Cortex (outermost layer)',
+  physio:['Zona glomerulosa: exclusive site of mineralocorticoid synthesis; does NOT produce cortisol or androgens',
+   'Aldosterone synthesis pathway: cholesterol → pregnenolone → progesterone → DOC → corticosterone → aldosterone (CYP11B2 rate-limiting)',
+   'Primary stimuli: Ang II (main driver in RAAS context), ↑serum K⁺ (direct ZG cell membrane depolarization), ACTH (permissive)',
+   'Primary aldosteronism (Conn\'s): autonomous ZG secretion → suppressed renin + HTN + ↓K⁺; #1 cause of secondary HTN (prevalence ~10% of HTN)',
+   '⚠ ALDOSTERONE ESCAPE: During chronic ACEi/ARB therapy, initial ↓aldosterone recovers in ~60% of HF patients within months (Ang II-independent drive via ↑K⁺, ↑ACTH, SNS activation)',
+   'Cardiac MR: ↑collagen deposition, ↑TGF-β, ↑inflammatory cytokines, ↑proarrhythmic substrate — INDEPENDENT of aldosterone\'s renal effects'],
+  drugs:[],trials:[],
+  hf:'Aldosterone escape is THE key rationale for adding MRA (spironolactone/eplerenone) on top of ACEi/ARB in HFrEF — residual aldosterone acts on cardiac mineralocorticoid receptors causing fibrosis even when RAAS is pharmacologically blocked. This explains MRA\'s additive mortality benefit.'}},
+
+angiotensinogen:{cx:430,cy:75,w:200,h:48,label:'Angiotensinogen',sub:'α₂-Globulin Precursor',type:'substrate',
+ cl:{name:'Angiotensinogen',sub:'α₂-Globulin — RAAS Prohormone Substrate',badge:'Substrate',organ:'Liver (Hepatocytes)',
+  physio:['Large α₂-globulin (453 AA, ~55 kDa) — constitutively secreted into plasma',
+   'Plasma concentration ~1 µM — Ang I formation rate depends jointly on renin activity AND angiotensinogen availability',
+   'Upregulated by: glucocorticoids, estrogen (explains ↑RAAS in pregnancy; OCP-induced HTN in susceptible women), thyroid hormone, AngII (positive feedback)',
+   'AGT M235T polymorphism: T allele → ↑circulating angiotensinogen levels → ↑HTN risk; higher T-allele frequency in Japanese, African-origin populations',
+   'Angiotensin 1-12 (Alt. pathway): C-terminal fragment cleaved by chymase → Ang II directly; bypasses ACE entirely'],
+  drugs:[{name:'Zilebesiran',cls:'siRNA — Hepatic AGT Knockdown',mech:'Subcutaneous quarterly injection; >50% sustained ↓angiotensinogen; KARDIA-1 Phase 2 complete, KARDIA-2 Phase 3 ongoing'}],
+  trials:[{name:'KARDIA-1 (2023)',res:'Zilebesiran in uncontrolled HTN: sustained ↓SBP 10–15 mmHg at 24w with quarterly SC dosing — Phase 2 results'}],
+  hf:'Not a current standard HF target. Upstream RNA interference (zilebesiran) eliminates angiotensinogen production → complete pathway upstream suppression without ACEi bradykinin side effects or ARB AT2R effects. Under active Phase 3 investigation.'}},
+
+renin:{cx:295,cy:200,w:140,h:46,label:'Renin',sub:'Rate-Limiting Enzyme',type:'enzyme',
+ cl:{name:'Renin',sub:'Aspartyl Protease — Rate-Limiting Step of RAAS',badge:'Enzyme',organ:'Juxtaglomerular (JG) Cells, Afferent Arteriole',
+  physio:['Aspartyl protease — cleaves angiotensinogen → Angiotensin I (removes N-terminal decapeptide His-Leu dipeptide)',
+   'RATE-LIMITING step: plasma renin activity (PRA) determines overall RAAS flux',
+   'Stimulated by: ↓renal perfusion pressure (baroreceptor), ↓tubular NaCl (macula densa), β₁-adrenergic activation, ↓K⁺, ↑cAMP, low Ang II',
+   'Inhibited by: ↑Ang II (negative feedback), ↑BP, ↑K⁺, ANP, ↑NaCl delivery to macula densa',
+   '⚠ ALTITUDE Trial LESSON: combining DRI + ACEi or DRI + ARB → ↑hyperkalemia, ↑renal failure, ↑hypotension without CV benefit → CONTRAINDICATED',
+   'Plasma Renin Activity (PRA): elevated in HF, diuretic use, renovascular HTN; low in primary aldosteronism'],
+  drugs:[{name:'Aliskiren',cls:'Direct Renin Inhibitor (DRI) — only approved',mech:'Binds renin active site (nonpropyl pocket) → blocks angiotensinogen cleavage; orally bioavailable; long tissue half-life; NOT recommended in HF or combined with ACEi/ARB'}],
+  trials:[{name:'ALTITUDE (2012)',res:'Aliskiren + ACEi or ARB in T2DM with CKD/CVD: TERMINATED — ↑renal failure, hyperkalemia, hypotension, stroke, no CV benefit'},{name:'ASTRONAUT (2013)',res:'Aliskiren post-HF hospitalization in HFrEF: no benefit over placebo; trend toward harm in CKD/DM subgroups'}],
+  hf:'⛔ DRI + ACEi/ARB: CONTRAINDICATED (dual RAAS blockade — ALTITUDE). Aliskiren monotherapy NOT established for HF. Elevated PRA is a validated adverse prognostic biomarker in HFrEF — correlates with neurohormonal activation severity.'}},
+
+ang1:{cx:570,cy:200,w:185,h:48,label:'Angiotensin I',sub:'Inactive Decapeptide',type:'intermediate',
+ cl:{name:'Angiotensin I',sub:'Biologically Inactive Precursor',badge:'Intermediate',organ:'Circulating Plasma',
+  physio:['Asp-Arg-Val-Tyr-Ile-His-Pro-Phe-His-Leu — decapeptide (10 AA); biologically INACTIVE',
+   'Plasma half-life <60 seconds — rapidly converted to Ang II',
+   'Primary conversion: ACE (lung/endothelium) removes C-terminal His-Leu → Ang II',
+   '⭐ ACE-INDEPENDENT pathway: Chymase (cardiac/vascular mast cells) converts Ang I → Ang II — ~25% of cardiac Ang II production; NOT blocked by ACEi → residual cardiac AngII persists despite ACEi therapy',
+   'Other minor pathways: cathepsin G, tonin, kallikrein',
+   'Clinical implication: ACE-independent chymase pathway explains why ACEi do not fully suppress cardiac Ang II — rationale for AT1R blockers (ARBs) that block ALL Ang II regardless of source'],
+  drugs:[],trials:[],
+  hf:'The existence of ACE-independent Ang II production (chymase in cardiac tissue) is mechanistically central to understanding why ARBs may provide more complete AT1R blockade than ACEi in the heart — key argument for ARBs and ARNI in HFrEF.'}},
+
+ace:{cx:295,cy:320,w:140,h:46,label:'ACE',sub:'Angiotensin-Converting Enzyme',type:'enzyme',
+ cl:{name:'ACE — Angiotensin-Converting Enzyme',sub:'Carboxypeptidase / Kininase II',badge:'Enzyme',organ:'Pulmonary Endothelium (primary); Systemic Vascular Endothelium',
+  physio:['Zinc metalloprotease (Carboxypeptidase) — removes C-terminal His-Leu from Ang I → Ang II',
+   'DUAL FUNCTION: also Kininase II — cleaves bradykinin → inactive fragments (↓bradykinin)',
+   'ACEi effect on bradykinin: ↑bradykinin → B₂ receptor → ↑NO/prostacyclin (vasodilation — BENEFICIAL; contributes to ACEi cardioprotection)',
+   '⚠ ACEi SIDE EFFECTS from ↑bradykinin: Dry cough (10–20%; ↑in women/East Asians — C-fiber sensitization); Angioedema (0.1–0.5%; life-threatening if laryngeal; ↑risk in Black patients 4–5×)',
+   'ACE ≠ ACE2: ACE2 converts Ang II → Ang 1-7 (vasodilatory via MasR) — separate counter-regulatory enzyme',
+   'Chymase (cardiac): converts Ang I → Ang II independently of ACE — NOT blocked by ACEi (see Ang I node)'],
+  drugs:[{name:'Captopril',cls:'1st-gen ACEi — Sulfhydryl',mech:'First ACEi approved (1981); short-acting (3× daily); sulfhydryl-specific side effects (rash, dysgeusia, proteinuria)'},{name:'Enalapril',cls:'Prodrug → Enalaprilat',mech:'CONSENSUS + SOLVD landmark trials; 2× daily; IV form (enalaprilat) available for hypertensive emergency'},{name:'Lisinopril',cls:'Active drug — not prodrug',mech:'Once-daily; renal excretion unchanged; ATLAS: higher doses (32.5–35mg) superior to low doses in HFrEF'},{name:'Ramipril',cls:'Prodrug — high tissue ACEi',mech:'HOPE trial (↓CV events in high-risk patients); high lipophilicity → good tissue penetration'},{name:'Perindopril',cls:'Prodrug — high affinity',mech:'EUROPA trial; long duration of action; PROGRESS (stroke prevention in HTN+prior stroke)'}],
+  trials:[{name:'CONSENSUS (1987)',res:'Enalapril in severe HFrEF (NYHA IV, EF<15%): 40% ↓6-month mortality. FIRST trial proving ACEi survival benefit in HF. STOPPED EARLY.'},{name:'SOLVD-Treatment (1991)',res:'Enalapril in HFrEF (EF<35%): 16% ↓all-cause mortality, ↓HHF — established ACEi as cornerstone of HFrEF therapy'},{name:'HOPE (2000)',res:'Ramipril in high-risk CVD patients (no HF): 22% ↓relative risk of MI/stroke/CV death — beyond BP-lowering effect'},{name:'ATLAS (1999)',res:'High-dose lisinopril (32.5–35mg) vs low-dose (2.5–5mg) in HFrEF: trend toward ↓mortality, ↓HHF — target dosing in HFrEF recommended'}],
+  hf:'Class I, LOE A in HFrEF. Start low, titrate to target doses over weeks. ⚠ Switch to ARNI (sacubitril/valsartan) if tolerated — PARADIGM-HF: ARNI superior to enalapril. Do NOT combine ACEi + ARB (ONTARGET: ↑AKI, no mortality benefit). ⚠ Washout ACEi ≥36h before starting ARNI to prevent angioedema. ACEi-induced angioedema or cough → switch to ARB or ARNI.'}},
+
+bradykinin:{cx:295,cy:434,w:140,h:44,label:'Bradykinin',sub:'↑ with ACEi / ARNI',type:'side_effect',
+ cl:{name:'Bradykinin Pathway',sub:'ACEi/ARNI Side Effects & Pleiotropic Benefits',badge:'Signaling',organ:'Endothelium, Pulmonary C-fibers, Skin/Mucosal Vasculature',
+  physio:['ACE (Kininase II) normally degrades bradykinin → inactive fragments rapidly',
+   'ACEi → ↑bradykinin → B₂ receptor (Gq-GPCR) → ↑NO, ↑prostacyclin, ↑eNOS: endothelial vasodilation (contributes to cardioprotective effects of ACEi BEYOND AngII reduction)',
+   '⚠ DRY COUGH: ↑bradykinin in respiratory tract → sensitizes pulmonary C-fibers (NFκB, PGE₂) → non-productive cough; 10–20% incidence (↑in women, East Asians); RESOLVES on stopping ACEi',
+   '⚠ ANGIOEDEMA: ↑bradykinin → ↑vascular permeability (histamine-independent) → rapid submucosal edema of lips/tongue/pharynx/larynx; 0.1–0.5%; LIFE-THREATENING; more common in Black patients (4–5× vs White)',
+   'ARBs: do NOT inhibit bradykinin degradation → NO cough, very rare angioedema (not bradykinin-mediated)',
+   '⚠ Sacubitril (neprilysin inhibitor): neprilysin also degrades bradykinin → ↑bradykinin with ARNI; NEVER combine ARNI + ACEi (↑↑angioedema risk — both block bradykinin degradation)'],
+  drugs:[{name:'Icatibant',cls:'B₂ Receptor Antagonist',mech:'SC injection for acute ACEi-induced angioedema; blocks bradykinin-mediated vascular permeability; superior to antihistamines'},{name:'C1-esterase inhibitor (Berinert)',cls:'Complement pathway',mech:'For refractory ACEi angioedema; less evidence than icatibant in non-hereditary cases'}],
+  trials:[],
+  hf:'ACEi cough: switch to ARB (candesartan/valsartan) or ARNI (sacubitril/valsartan) — both effective HFrEF alternatives. ACEi-induced angioedema: ABSOLUTE CONTRAINDICATION to re-challenge with ACEi AND to ARNI. ARB-only regimen for HFrEF in these patients. Black patients: heightened vigilance for angioedema — consider ARB as first-line over ACEi.'}},
+
+ang2:{cx:625,cy:380,w:220,h:60,label:'Angiotensin II',sub:'Primary RAAS Effector',type:'key_hormone',
+ cl:{name:'Angiotensin II',sub:'Principal Effector of RAAS Activation',badge:'Key Effector',organ:'Systemic — via AT₁R & AT₂R',
+  physio:['Asp-Arg-Val-Tyr-Ile-His-Pro-Phe — octapeptide (8 AA); most potent endogenous vasoconstrictor',
+   'Via AT₁R (Gq-GPCR, dominant): ↑vasoconstriction (↑SVR, ↑BP), ↑aldosterone secretion, ↑ADH/vasopressin release, ↑SNS tone (↑NE release), cardiac hypertrophy (MAPK, NF-κB, PI3K), fibroblast activation → ↑collagen/fibrosis, renal mesangial contraction (↑filtration fraction)',
+   'Via AT₂R (Gi-GPCR, counter-regulatory): vasodilation (↑NO, ↑bradykinin, ↑cGMP), anti-proliferation (↑DUSP → ↓ERK/MAPK), apoptosis, natriuresis — partially opposes AT₁R',
+   'In HFrEF: chronic AngII → eccentric LV hypertrophy, ↑myocyte apoptosis, interstitial fibrosis, ↑oxidative stress (NADPH oxidase) → progressive LV dilation',
+   'In HFpEF: AngII → concentric remodeling, ↑cross-linked collagen (LOX, CTGF) → ↑myocardial stiffness → diastolic dysfunction → ↑LVEDP',
+   'AT₁R autoantibodies (AT₁-AA): found in preeclampsia, idiopathic DCM — activate receptor without ligand'],
+  drugs:[{name:'ACE Inhibitors',cls:'↓ Ang II production',mech:'Block ACE-mediated Ang I → Ang II conversion; residual Ang II still produced via cardiac chymase'},{name:'ARBs (Losartan, Valsartan, etc.)',cls:'AT₁R Competitive Antagonism',mech:'Block ALL Ang II from binding AT₁R regardless of synthesis route (ACE or chymase)'},{name:'Sacubitril/Valsartan (ARNI)',cls:'AT₁R Blockade + Neprilysin Inhibition',mech:'Valsartan blocks AT₁R + Sacubitril ↑ANP/BNP → counter-regulatory rebalancing of AngII adverse effects'}],
+  trials:[{name:'PARADIGM-HF (2014)',res:'Sacubitril/valsartan vs enalapril in HFrEF (EF≤40%): HR 0.80 (20% ↓CV death/HHF); 16% ↓all-cause mortality; NNT=21; STOPPED EARLY at 27 months'},{name:'PARAGON-HF (2019)',res:'Sacubitril/valsartan vs valsartan in HFpEF (EF≥45%): primary endpoint NOT met (p=0.059); benefit in women (p=0.02) and EF 45–57% subgroup'},{name:'SOLVD-Prevention (1992)',res:'Enalapril in asymptomatic LV dysfunction (EF<35%): ↓progression to symptomatic HF and ↓HHF — RAAS blockade beneficial even before symptoms'}],
+  hf:'Central driver of adverse remodeling in BOTH HFrEF and HFpEF. ARNI (sacubitril/valsartan) is Class I, LOE B-R in HFrEF per 2022 AHA/ACC/HFSA guidelines — PREFERRED over ACEi. ACEi/ARBs: Class I LOE A in HFrEF when ARNI not available/tolerated. All three classes reduce mortality in HFrEF combined with beta-blockers ± MRA (the "4 pillars" of HFrEF therapy: ARNI/ACEi/ARB + BB + MRA + SGLT2i).'}},
+
+at1r:{cx:520,cy:540,w:160,h:50,label:'AT₁ Receptor',sub:'Gq-GPCR · Major Mediator',type:'receptor',
+ cl:{name:'AT₁ Receptor (AT₁R)',sub:'Angiotensin Type 1 Receptor — Gq-GPCR',badge:'Receptor',organ:'Vasculature, Heart, Kidney, Adrenal Cortex, Brain, Pituitary',
+  physio:['Gq/11-coupled GPCR: PLC → IP₃/DAG → ↑[Ca²⁺]ᵢ, PKC → vasoconstriction; also Gi (↓cAMP), G₁₂/₁₃ (Rho-kinase → MLC phosphorylation → sustained tone)',
+   'Non-canonical: β-arrestin signaling → cardiac hypertrophy and fibrosis INDEPENDENTLY of G-protein pathway ("biased agonism")',
+   '⭐ Key advantage of ARBs over ACEi: AT₁R blockade prevents ALL Ang II binding — including chymase-generated Ang II in cardiac tissue (not blocked by ACEi). More complete cardiac/renal RAAS blockade.',
+   'AT₁R blockade with ARBs → ↑circulating Ang II (relief of negative feedback) → ↑AT₂R stimulation → vasodilation, anti-remodeling (may contribute to ARB benefit)',
+   'AT₁R upregulation occurs in HF → enhanced AngII sensitivity → worsening vasoconstriction, remodeling, aldosterone drive',
+   'AT₁R autoantibodies (AT₁-AA) in ~10–15% of idiopathic DCM — constitutive receptor activation without ligand'],
+  drugs:[{name:'Losartan',cls:'1st ARB approved (1995)',mech:'Uricosuric effect (↓uric acid) — preferred in HF+gout; prodrug, active metabolite EXP3174; BID or QD dosing'},{name:'Valsartan',cls:'ARB — component of ARNI',mech:'Direct-acting; linear pharmacokinetics; Entresto® = valsartan 97mg + sacubitril 103mg (as sacubitril-valsartan complex, molar equivalent)'},{name:'Candesartan',cls:'ARB — highest AT₁R binding affinity',mech:'Prodrug (candesartan cilexetil → candesartan); "insurmountable" AT₁R antagonism; most studied ARB in HFpEF (CHARM-Preserved)'},{name:'Telmisartan',cls:'ARB — longest half-life (24h)',mech:'PPAR-γ partial agonism (↓insulin resistance); studied in ONTARGET/TRANSCEND; once-daily; no active metabolite'},{name:'Olmesartan',cls:'ARB — highest receptor affinity',mech:'Rapid, nearly complete bioavailability; no hepatic metabolism; OlmeSartan and pRospective study (OLAS) ongoing in HFpEF'}],
+  trials:[{name:'CHARM-Alternative (2003)',res:'Candesartan in ACEi-intolerant HFrEF: 23% ↓CV death/HHF — established ARB as equivalent HFrEF alternative to ACEi'},{name:'CHARM-Preserved (2003)',res:'Candesartan in HFpEF (EF>40%): p=0.051 for HHF — borderline positive, no mortality benefit; HFpEF RAAS therapy remains challenging'},{name:'Val-HeFT (2001)',res:'Valsartan added to standard HFrEF therapy: 13% ↓HHF; no mortality benefit when added to BB+ACEi combination (ARB not additive to ACEi+BB)'},{name:'LIFE (2002)',res:'Losartan vs atenolol in HTN+LVH: 25% ↓stroke, ↓new DM, superior composite CV endpoint; uricosuric benefit in HF+gout patients'},{name:'ONTARGET (2008)',res:'Telmisartan non-inferior to ramipril (ACEi) for CV outcomes; ACEi+ARB combination: ↑AKI, hypotension, NO added mortality benefit — COMBINATION DISCOURAGED'}],
+  hf:'ARBs: Class I, LOE A in HFrEF when ACEi-intolerant (cough, angioedema). No bradykinin cough — key clinical advantage. Do NOT combine ARB + ACEi (ONTARGET). In ARNI: valsartan blocks AT₁R while sacubitril provides additive natriuretic peptide benefit → superior outcomes vs ARB alone. Monitor: ↑K⁺ (hyperkalemia), ↑creatinine (AKI), ↓BP (same precautions as ACEi).'}},
+
+at2r:{cx:760,cy:540,w:160,h:50,label:'AT₂ Receptor',sub:'Counter-Regulatory',type:'receptor_minor',
+ cl:{name:'AT₂ Receptor (AT₂R)',sub:'Counter-Regulatory Angiotensin Receptor',badge:'Receptor',organ:'Vascular Endothelium, Heart, Adrenal Medulla, CNS, Kidney',
+  physio:['Gi-coupled GPCR — OPPOSES AT₁R effects; the counter-regulatory arm of Ang II signaling',
+   'Mediates: vasodilation (↑NO, ↑cGMP, ↑bradykinin), anti-proliferation (↑DUSP1/3 → ↓ERK/p38 MAPK), apoptosis, anti-fibrosis (↓TGF-β), natriuresis',
+   'Highly expressed in fetal/neonatal life; markedly downregulated postnatally; RE-EXPRESSED in adult disease states (HF, post-MI, HTN, renal disease, inflammation)',
+   'ARB therapy → ↑circulating Ang II (relief of AT₁R negative feedback) → ↑AT₂R stimulation; this may contribute to vasodilatory/anti-remodeling benefits of ARBs',
+   'ACE2 → Ang 1-7 → MasR: separate but overlapping counter-regulatory pathway (vasodilation, anti-fibrotic, anti-thrombotic)',
+   'Compound 21 (C21): selective non-peptide AT₂R agonist — Phase 1/2 clinical trials underway (HF, neurological, renal)'],
+  drugs:[{name:'No approved drugs (AT₂R-specific)',cls:'Experimental',mech:'Compound 21 (C21) — selective AT₂R agonist; vasodilation, organ protection in preclinical/early clinical studies; no approved therapy yet'}],
+  trials:[{name:'No completed major trials',res:'AT₂R agonism is experimental; theoretical cardio-, reno-, and neuroprotective effects; clinical translation ongoing'}],
+  hf:'Not a current pharmacological target in clinical cardiology. Mechanistically important: AT₁R blockade with ARBs allows ↑Ang II to preferentially activate AT₂R → vasodilatory/anti-remodeling counter-regulatory effects. AT₂R upregulation in failing myocardium may be partially cardioprotective. Future AT₂R agonists could be additive to current RAAS blockade.'}},
+
+aldosterone:{cx:295,cy:548,w:150,h:48,label:'Aldosterone',sub:'Mineralocorticoid',type:'hormone',
+ cl:{name:'Aldosterone',sub:'Mineralocorticoid Effector Hormone',badge:'Hormone',organ:'Zona Glomerulosa, Adrenal Cortex → Kidney, Heart, Vasculature',
+  physio:['Steroid mineralocorticoid (C21): Synthesized by CYP11B2 (aldosterone synthase) — rate-limiting; not expressed in fasciculata/reticularis',
+   'Binds mineralocorticoid receptor (MR, nuclear steroid receptor) → SGK1 expression ↑ → ↑ENaC trafficking to apical collecting duct membrane → Na⁺ reabsorption, K⁺ and H⁺ excretion',
+   'RENAL: Na⁺/H₂O retention → ↑circulating volume → ↑preload → ↑BP; K⁺ wasting → hypokalemia',
+   'CARDIAC MR (EXTRARENAL): ↑collagen synthesis (↑TGF-β₁, ↑CTGF) → myocardial interstitial/perivascular fibrosis; ↑NADPH oxidase → ↑ROS; ↑inflammation → endothelial dysfunction; ↑proarrhythmic substrate (↑VT/VF risk, ↑SCD)',
+   '⚠ ALDOSTERONE ESCAPE: ~60% of HF patients on chronic ACEi/ARB: initial ↓aldosterone recovers within 3–6 months via Ang II-independent stimulation (↑K⁺, ↑ACTH, ↑SNS) → rationale for MRA',
+   'Primary hyperaldosteronism (Conn\'s): autonomous secretion → suppressed renin; ↑CV events INDEPENDENT of BP elevation (fibrosis, arrhythmia, LVH)'],
+  drugs:[{name:'Spironolactone',cls:'MRA — Non-Selective (steroidal)',mech:'Competitive MR antagonist; also binds PR (gynecomastia 10% men, menstrual irregularities) and AR (spironolactone impotence); oral; RALES drug'},{name:'Eplerenone',cls:'MRA — Selective (steroidal)',mech:'MR-selective (100× selectivity over PR/AR → fewer sexual side effects); shorter half-life (BID in some); ↑cost; EPHESUS/EMPHASIS-HF drug'},{name:'Finerenone',cls:'Novel Non-Steroidal MRA',mech:'Higher MR affinity + selectivity; ↓cardiorenal fibrosis via different MR coactivator recruitment; FIDELIO-DKD + FIGARO-DKD (CKD+T2DM); FINEARTS-HF (HFpEF with mildly reduced/preserved EF — positive 2024)'}],
+  trials:[{name:'RALES (1999)',res:'Spironolactone 25mg/d in severe HFrEF (EF≤35%, NYHA III–IV): 30% ↓all-cause mortality, ↓SCD, ↓HHF — STOPPED EARLY. Transformed HFrEF therapy.'},{name:'EPHESUS (2003)',res:'Eplerenone post-MI with LV dysfunction+HF: 15% ↓all-cause mortality, 21% ↓SCD; NNT=33 at 30 days — established MRA benefit in acute HF setting'},{name:'EMPHASIS-HF (2011)',res:'Eplerenone in MILD HFrEF (NYHA II, EF≤30%): 37% ↓CV death/HHF, 50% ↓HHF (NNT=19); extended MRA benefit to asymptomatic/mildly symptomatic HFrEF'},{name:'TOPCAT (2014)',res:'Spironolactone in HFpEF: primary endpoint not met overall; Americas subgroup strongly positive — unresolved controversy (geographic randomization inconsistency)'},{name:'FINEARTS-HF (2024)',res:'Finerenone in HFmrEF/HFpEF (EF≥40%): ↓CV death/HF worsening vs placebo — positive trial extending MRA benefit to HFpEF'}],
+  hf:'MRAs: Class I, LOE A in HFrEF (EF≤35%) already on ARNI/ACEi/ARB + beta-blocker. KEY SAFETY: Check K⁺ ≤5.0 mEq/L and eGFR ≥30 before starting; recheck K⁺ in 1 week, 1 month, then 3-monthly. CONTRAINDICATION: K⁺>5.0, eGFR<30. Spironolactone gynecomastia → switch to eplerenone. FINEARTS-HF (2024): Finerenone extends MRA benefit to HFmrEF/HFpEF — first MRA with positive trial in preserved EF. HFpEF therapy evolving.'}},
+
+neprilysin:{cx:1000,cy:320,w:140,h:46,label:'Neprilysin',sub:'NEP · Endopeptidase',type:'enzyme',
+ cl:{name:'Neprilysin (NEP)',sub:'Neutral Endopeptidase 24.11 — Zn²⁺ Metallopeptidase',badge:'Enzyme',organ:'Kidney Proximal Tubule Brush Border, Vascular Endothelium, Heart, Lung',
+  physio:['Zinc metalloendopeptidase (M13 family) — cleaves on N-terminal side of hydrophobic amino acid residues',
+   'Substrates DEGRADED: ANP, BNP, CNP, Ang 1-7, bradykinin, substance P, enkephalins, glucagon, adrenomedullin, endothelin-1 — broadly counter-regulatory and vasodilatory peptides',
+   'Neprilysin inhibition → ↑ANP, ↑BNP, ↑CNP → ↑cGMP (via NPR-A/B) → vasodilation, natriuresis, diuresis, ↓SNS, ↓aldosterone, ↓fibrosis, ↓hypertrophy',
+   '⚠ ALSO inhibits bradykinin degradation → ↑bradykinin → vasodilation (beneficial) BUT ↑↑angioedema risk if combined with ACEi (both block bradykinin clearance)',
+   '⚠ BNP rises with neprilysin inhibition (BNP is a neprilysin substrate) → BNP FALSELY ELEVATED on ARNI therapy → use NT-proBNP (not cleaved by neprilysin) for HF monitoring',
+   'Combined neprilysin inhibition + AT₁R blockade (ARNI) counters AngII-driven neurohormonal activation while SIMULTANEOUSLY augmenting natriuretic peptide counter-regulatory pathways'],
+  drugs:[{name:'Sacubitril (prodrug → LBQ657)',cls:'Neprilysin Inhibitor — component of Entresto®',mech:'Sacubitril is hepatically activated to LBQ657 (active metabolite); combined with valsartan 97/103mg as sacubitril-valsartan (ARNI); PARADIGM-HF dose: 97/103mg BID (target); start 24/26mg BID'}],
+  trials:[{name:'PARADIGM-HF (2014)',res:'Sacubitril/valsartan vs enalapril in HFrEF (EF≤40%): HR 0.80 for CV death/HHF (20% ↓); HR 0.84 for all-cause death (16% ↓); NNT=21; STOPPED EARLY at 27 months for overwhelming benefit'},{name:'PARAGON-HF (2019)',res:'HFpEF (EF≥45%): p=0.059 (NS) for primary endpoint; pre-specified subgroups with benefit: women (p=0.02), EF 45–57% (interaction p=0.02) — suggests benefit at lower end of "preserved" range'},{name:'PIONEER-HF (2018)',res:'In-hospital initiation of sacubitril/valsartan in acute decompensated HFrEF: safe, superior NT-proBNP reduction vs enalapril — pre-discharge initiation is feasible and recommended'},{name:'TRANSITION (2019)',res:'Pre-discharge vs early post-discharge ARNI initiation in HFrEF: similar safety profile — either timing acceptable'}],
+  hf:'ARNI: Class I, LOE B-R for HFrEF (EF≤40%) in 2022 AHA/ACC/HFSA — PREFERRED over ACEi. Switch Protocol: (1) Stop ACEi, (2) Washout ≥36 hours [prevents angioedema from dual bradykinin accumulation], (3) Start ARNI. From ARB: no washout needed. Titrate: 24/26 → 49/51 → 97/103mg BID over weeks. ⚠ NEVER combine with ACEi. Monitor NT-proBNP (not BNP) for HF status. Monitor: BP, K⁺, creatinine.'}},
+
+natpep:{cx:1000,cy:450,w:140,h:50,label:'ANP / BNP ↑',sub:'Natriuretic Peptides',type:'beneficial',
+ cl:{name:'Natriuretic Peptides (ANP/BNP)',sub:'Counter-Regulatory Hormones — ↑ with ARNI',badge:'Beneficial',organ:'Atria (ANP), Ventricles (BNP) — Released by Wall Stress',
+  physio:['ANP (28 AA): released by atrial myocytes in response to ↑atrial wall stretch (↑filling pressures)',
+   'BNP (32 AA): released by ventricular myocytes in response to ↑wall stress/↑LVEDP — cleaved from proBNP → BNP (active, short t½) + NT-proBNP (inactive fragment, long t½)',
+   'Both act via NPR-A → ↑guanylyl cyclase → ↑cGMP → smooth muscle relaxation (vasodilation), ↑renal Na⁺ excretion (natriuresis), ↑diuresis, ↓aldosterone, ↓renin, ↓SNS, ↓fibrosis, ↓hypertrophy — counter-regulatory to AngII',
+   'CNP (22 AA): endothelial-derived → local anti-proliferative, anti-fibrotic effects via NPR-B',
+   'In HF: markedly ↑BNP/NT-proBNP — diagnostic/prognostic biomarkers; wall stress from ↑LVEDP is the stimulus',
+   '⚠ ON ARNI: BNP is neprilysin substrate → FALSELY ELEVATED (neprilysin inhibition prevents BNP degradation); NT-proBNP is NOT degraded by neprilysin → use NT-proBNP for monitoring HF in ARNI-treated patients'],
+  drugs:[{name:'Nesiritide (recombinant BNP)',cls:'IV BNP — Acute HF',mech:'↓PCWP, ↑CI, ↑natriuresis; ASCEND-HF: modest dyspnea improvement but no mortality benefit; possible ↑AKI signal — NOT routinely recommended'},{name:'Sacubitril (ARNI component)',cls:'Neprilysin Inhibitor → ↑endogenous ANP/BNP',mech:'Preferred approach: augment endogenous natriuretic peptides rather than exogenous BNP administration'}],
+  trials:[{name:'ASCEND-HF (2011)',res:'Nesiritide in acute decompensated HF: modest ↓dyspnea score; NO 30-day mortality benefit; trend toward ↑creatinine — nesiritide NOT routinely recommended in acute HF'}],
+  hf:'⚠ BIOMARKER ALERT: When patient is on sacubitril/valsartan (ARNI): BNP is UNRELIABLE (falsely elevated from neprilysin inhibition). ALWAYS use NT-proBNP for HF monitoring, discharge planning, and titration decisions in ARNI-treated patients. BNP/NT-proBNP-guided therapy: targeting ≥30% reduction from baseline NT-proBNP correlates with improved outcomes (GUIDE-IT, PRIMA). Elevated NT-proBNP at discharge: key readmission/mortality predictor.'}},
+};
+
+// ─────────────────────────────────────────────────────────────────
+//  CONNECTIONS
+//  Two semantic types:
+//   • flux       — substrate → product (main reaction arrow, gold/thick)
+//   • catalyst   — enzyme → midpoint of a flux arrow (perpendicular line, no arrowhead)
+//   • binding    — ligand → receptor (gold thick, like flux)
+//   • secretion  — organ → hormone (green thin, indicates source)
+// ─────────────────────────────────────────────────────────────────
+const CONNS = [
+  // ── Source organs (secretion: organ produces/expresses substance) ──
+  {id:'c_liv_agt',  kind:'secretion', from:'liver',    to:'angiotensinogen', lbl:'secretes',  col:'rgba(74,222,128,.5)',  mk:'m-grn',  sw:'1.5', dash:''},
+  {id:'c_kid_ren',  kind:'secretion', from:'kidney',   to:'renin',           lbl:'secretes',  col:'rgba(74,222,128,.5)',  mk:'m-grn',  sw:'1.5', dash:''},
+  {id:'c_lun_ace',  kind:'secretion', from:'lungs',    to:'ace',             lbl:'expresses', col:'rgba(74,222,128,.5)',  mk:'m-grn',  sw:'1.5', dash:''},
+  {id:'c_adr_ald',  kind:'secretion', from:'adrenal',  to:'aldosterone',     lbl:'secretes',  col:'rgba(74,222,128,.5)',  mk:'m-grn',  sw:'1.5', dash:''},
+
+  // ── Main RAAS cascade (substrate → product flux arrows) ──
+  {id:'c_agt_a1',   kind:'flux', from:'angiotensinogen', to:'ang1',  lbl:'',  col:'rgba(212,175,106,.85)', mk:'m-gold', sw:'2.5', dash:'', dim:true, drug:'dri',  catalyst:'renin',      catalystLbl:'Renin'},
+  {id:'c_a1_a2',    kind:'flux', from:'ang1',            to:'ang2',  lbl:'',  col:'rgba(212,175,106,.85)', mk:'m-gold', sw:'2.5', dash:'', dim:true, drug:'acei', catalyst:'ace',        catalystLbl:'ACE'},
+
+  // ── Bradykinin degradation (substrate → inactive; ACE catalyzes) ──
+  // Bradykinin sits center-left; arrow exits LEFT-DOWN diagonal to avoid Lungs/Adrenal nodes
+  {id:'c_bk_deg',   kind:'flux_inact', from:'bradykinin', to:null, degDir:'left-down', lbl:'', col:'rgba(251,146,60,.55)', mk:'m-org', sw:'1.5', dash:'5,3', boost:'acei', catalyst:'ace', catalystLbl:'ACE / NEP'},
+
+  // ── Ang II binds receptors (binding, not conversion) ──
+  {id:'c_a2_at1',   kind:'binding', from:'ang2', to:'at1r', lbl:'binds (major)', col:'rgba(212,175,106,.85)', mk:'m-gold', sw:'2.5', dash:'', dim:true, drug:'arb_arni'},
+  {id:'c_a2_at2',   kind:'binding', from:'ang2', to:'at2r', lbl:'binds (minor)', col:'rgba(157,100,199,.5)',  mk:'m-pur',  sw:'1.4', dash:'4,3'},
+
+  // ── AT1R → adrenal stimulation → aldosterone (signaling) ──
+  {id:'c_at1_ald',  kind:'binding', from:'at1r', to:'aldosterone', lbl:'stimulates', col:'rgba(212,175,106,.7)', mk:'m-gold', sw:'2', dash:'', dim:true, drug:'mra_arb_arni'},
+
+  // ── Natriuretic peptide degradation (substrate → inactive; NEP catalyzes) ──
+  // ANP/BNP sits at right edge; arrow exits DOWN to avoid right viewBox overflow
+  {id:'c_nat_deg',  kind:'flux_inact', from:'natpep', to:null, degDir:'down', degDist:60, lbl:'', col:'rgba(52,211,153,.5)', mk:'m-tel', sw:'1.5', dash:'4,3', dim:true, drug:'arni', catalyst:'neprilysin', catalystLbl:'NEP'},
+];
+
+// ─────────────────────────────────────────────────────────────────
+//  DRUGS
+// ─────────────────────────────────────────────────────────────────
+const DRUGS = {
+  acei:{name:'ACE Inhibitor',color:'#60a5fa',
+    blocks:['ace'], dim_conns:['c_a1_a2'], boost_conns:['c_bk_deg_inh'],
+    dim_nodes:['ang2','at1r','at2r','aldosterone','natpep'],
+    boost_nodes:['bradykinin'],
+    conflicts:['arni'],info:'ACEi: ↓Ang II; ↑bradykinin (cough risk); ↓SVR, ↓aldosterone'},
+  arb:{name:'ARB',color:'#c084fc',
+    blocks:['at1r'], dim_conns:['c_a2_at1','c_at1_ald'], boost_conns:[],
+    dim_nodes:['aldosterone'],
+    conflicts:['acei'],info:'ARB: blocks AT₁R; no bradykinin effect; no cough'},
+  arni:{name:'ARNI',color:'#34d399',
+    blocks:['at1r','neprilysin'], dim_conns:['c_a2_at1','c_at1_ald','c_nat_deg'], boost_conns:[],
+    dim_nodes:['aldosterone'], boost_nodes:['natpep','bradykinin'],
+    conflicts:['acei','arb'],info:'ARNI: AT₁R block + ↑natriuretic peptides; superior in HFrEF'},
+  mra:{name:'MRA',color:'#fbbf24',
+    blocks:['aldosterone'], dim_conns:[], boost_conns:[],
+    dim_nodes:[], conflicts:[],info:'MRA: blocks MR receptor; prevents aldosterone-mediated fibrosis/Na retention'},
+  dri:{name:'DRI',color:'#f87171',
+    blocks:['renin'], dim_conns:['c_agt_a1','c_a1_a2'], boost_conns:[],
+    dim_nodes:['ang1','ang2','at1r','at2r','aldosterone'],
+    conflicts:['acei','arb'],info:'DRI: ↓renin; AVOID with ACEi/ARB (ALTITUDE trial — harm)'},
+};
+
+// ─────────────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────────────
+let selectedNode = null;
+const activeDrugs = new Set();
+
+// ─────────────────────────────────────────────────────────────────
+//  SVG HELPERS
+// ─────────────────────────────────────────────────────────────────
+const NS = 'http://www.w3.org/2000/svg';
+function sv(tag, attrs){
+  const e = document.createElementNS(NS,tag);
+  for(const[k,v] of Object.entries(attrs||{})) e.setAttribute(k,v);
+  return e;
+}
+
+function edgePt(node, angle){
+  const {cx,cy,w,h} = node;
+  const hw=w/2, hh=h/2;
+  const ca = Math.atan2(hh, hw);
+  let a = angle;
+  while(a>Math.PI) a-=2*Math.PI;
+  while(a<-Math.PI) a+=2*Math.PI;
+  let x,y;
+  if(Math.abs(a)<=ca){ // right
+    x=cx+hw; y=cy+Math.tan(a)*hw;
+  } else if(Math.abs(a)>=Math.PI-ca){ // left
+    x=cx-hw; y=cy-Math.tan(a)*hw;
+  } else if(a>0){ // bottom
+    y=cy+hh; x=cx+(Math.abs(Math.tan(a))>0.0001 ? hh/Math.tan(a) : 0);
+  } else { // top
+    y=cy-hh; x=cx+(Math.abs(Math.tan(a))>0.0001 ? -hh/Math.tan(a) : 0);
+  }
+  x=Math.max(cx-hw,Math.min(cx+hw,x));
+  y=Math.max(cy-hh,Math.min(cy+hh,y));
+  return {x,y};
+}
+
+function connPts(fn, tn){
+  const dx=tn.cx-fn.cx, dy=tn.cy-fn.cy;
+  const a=Math.atan2(dy,dx);
+  let ra=a+Math.PI;
+  while(ra>Math.PI) ra-=2*Math.PI;
+  const f=edgePt(fn,a), t=edgePt(tn,ra);
+  return {fx:f.x,fy:f.y,tx:t.x,ty:t.y};
+}
+
+function buildPath(fx,fy,tx,ty){
+  const dx=tx-fx, dy=ty-fy;
+  const adx=Math.abs(dx), ady=Math.abs(dy);
+  if(ady<=8){ // ~horizontal
+    const d=adx*.38;
+    return `M${fx},${fy} C${fx+d},${fy} ${tx-d},${ty} ${tx},${ty}`;
+  } else if(adx<=8){ // ~vertical
+    return `M${fx},${fy} L${tx},${ty}`;
+  } else if(adx > ady*1.4){ // predominantly horizontal — horizontal tangents
+    const d=adx*.4, sx=dx>0?1:-1;
+    return `M${fx},${fy} C${fx+sx*d},${fy} ${tx-sx*d},${ty} ${tx},${ty}`;
+  } else { // predominantly vertical or roughly equal — vertical tangents
+    const d=ady*.4, sy=dy>0?1:-1;
+    return `M${fx},${fy} C${fx},${fy+sy*d} ${tx},${ty-sy*d} ${tx},${ty}`;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  RENDER CONNECTIONS
+// ─────────────────────────────────────────────────────────────────
+// Sample a cubic Bézier path at t to find midpoint and tangent
+function samplePath(pathEl, t){
+  const len = pathEl.getTotalLength();
+  const p = pathEl.getPointAtLength(len * t);
+  const p2 = pathEl.getPointAtLength(Math.min(len, len * t + 1));
+  const angle = Math.atan2(p2.y - p.y, p2.x - p.x);
+  return {x:p.x, y:p.y, angle};
+}
+
+// Compute the closest point on a node's edge facing a target point
+function edgePtToward(node, tx, ty){
+  const dx = tx - node.cx, dy = ty - node.cy;
+  const angle = Math.atan2(dy, dx);
+  return edgePt(node, angle);
+}
+
+function renderConns(){
+  const layer=document.getElementById('conn-layer');
+  layer.innerHTML='';
+
+  CONNS.forEach(c=>{
+    const fn = NODES[c.from];
+    if(!fn) return;
+    const g = sv('g',{'data-cid':c.id});
+
+    // ── Determine endpoints ──────────────────────────────────────
+    let fx, fy, tx, ty, pts;
+
+    if(c.kind === 'flux_inact'){
+      // Degradation arrow goes outward in the configured direction.
+      // degDir options: 'left', 'right', 'left-down', 'right-down', 'down'
+      let dx=1, dy=0, edgeAngle=0;
+      switch(c.degDir){
+        case 'left':       dx=-1; dy= 0; edgeAngle=Math.PI;       break;
+        case 'right':      dx= 1; dy= 0; edgeAngle=0;             break;
+        case 'left-down':  dx=-1; dy= 1; edgeAngle=Math.PI*0.75;  break;
+        case 'right-down': dx= 1; dy= 1; edgeAngle=Math.PI*0.25;  break;
+        case 'down':       dx= 0; dy= 1; edgeAngle=Math.PI/2;     break;
+        default:           dx= 1; dy= 0; edgeAngle=0;
+      }
+      const dist = c.degDist || 55;
+      const norm = Math.hypot(dx,dy) || 1;
+      const sinkX = fn.cx + (dx/norm) * (fn.w/2 + dist);
+      const sinkY = fn.cy + (dy/norm) * (fn.h/2 + dist);
+      const startPt = edgePt(fn, edgeAngle);
+      fx = startPt.x; fy = startPt.y;
+      tx = sinkX; ty = sinkY;
+    } else {
+      const tn = NODES[c.to];
+      if(!tn) return;
+      pts = connPts(fn, tn);
+      fx = pts.fx; fy = pts.fy; tx = pts.tx; ty = pts.ty;
+    }
+
+    const d = buildPath(fx, fy, tx, ty);
+
+    // ── Main path ────────────────────────────────────────────────
+    const path = sv('path',{
+      d, stroke:c.col, 'stroke-width':c.sw, fill:'none',
+      'marker-end':`url(#${c.mk})`,
+      'stroke-dasharray':c.dash||'none',
+      'stroke-linecap':'round',
+      class:'arrow', 'data-cid':c.id,
+      opacity: c.dash ? '0.7' : '0.9'
+    });
+    g.appendChild(path);
+
+    // ── Edge label (positioned at midpoint, offset perpendicular) ─
+    if(c.lbl){
+      const mx = (fx+tx)/2, my = (fy+ty)/2;
+      const dx2 = tx-fx, dy2 = ty-fy;
+      const len = Math.hypot(dx2,dy2) || 1;
+      // Offset perpendicular, side depending on geometry
+      const offMag = c.kind==='flux_inact' ? 14 : 12;
+      let ox = -dy2/len*offMag, oy = dx2/len*offMag;
+      // For predominantly-vertical connections, push label to the right by default
+      if(Math.abs(dy2) > Math.abs(dx2)*1.5){
+        ox = 22; oy = 0;
+      }
+      const lblBg = sv('rect',{
+        class:'edge-lbl-bg','pointer-events':'none','rx':'2',
+        fill:'rgba(12,17,23,.85)', opacity:'0.7'
+      });
+      const lbl = sv('text',{
+        x: mx+ox, y: my+oy,
+        'text-anchor':'middle','dominant-baseline':'middle',
+        'font-size':'9','font-family':'Outfit,sans-serif',
+        fill: c.col, opacity:'0.85',
+        'font-weight':'400',
+        'pointer-events':'none'
+      });
+      lbl.textContent = c.lbl;
+      g.appendChild(lblBg);
+      g.appendChild(lbl);
+      // Size the background after text is in DOM
+      requestAnimationFrame(()=>{
+        try{
+          const bb = lbl.getBBox();
+          lblBg.setAttribute('x', bb.x - 3);
+          lblBg.setAttribute('y', bb.y - 1);
+          lblBg.setAttribute('width', bb.width + 6);
+          lblBg.setAttribute('height', bb.height + 2);
+        }catch(_){}
+      });
+    }
+
+    // ── "→ inactive fragments" label for degradation arrows ──────
+    if(c.kind === 'flux_inact'){
+      // Determine label offset based on degDir
+      let lblDx=4, lblDy=0, anchor='start';
+      switch(c.degDir){
+        case 'left':       lblDx=-4; lblDy= 0; anchor='end';    break;
+        case 'right':      lblDx= 4; lblDy= 0; anchor='start';  break;
+        case 'left-down':  lblDx=-4; lblDy= 8; anchor='end';    break;
+        case 'right-down': lblDx= 4; lblDy= 8; anchor='start';  break;
+        case 'down':       lblDx= 0; lblDy=12; anchor='middle'; break;
+      }
+      const txt = c.catalystLbl ? `${c.catalystLbl} → ✕ inactive` : '✕ inactive';
+      const endLbl = sv('text',{
+        x: tx + lblDx, y: ty + lblDy,
+        'text-anchor': anchor,
+        'dominant-baseline':'middle',
+        'font-size':'8.5',
+        'font-family':'Outfit,sans-serif',
+        fill: c.col, opacity:'0.7',
+        'font-style':'italic','pointer-events':'none'
+      });
+      endLbl.textContent = txt;
+      g.appendChild(endLbl);
+    }
+
+    layer.appendChild(g);
+
+    // ── CATALYST MARKER (enzyme → reaction arrow) ─────────────────
+    // For productive flux (e.g., Ang I → Ang II): T-bar at midpoint, full label.
+    // For degradation flux_inact (e.g., Bradykinin → ✕): T-bar farther along path,
+    //   curved connector routes around the substrate node, no separate label
+    //   (enzyme name already shown inline in endpoint label).
+    if(c.catalyst){
+      const enz = NODES[c.catalyst];
+      if(enz){
+        // Sample position along the path
+        const tSample = c.kind === 'flux_inact' ? 0.6 : 0.5;
+        const mid = samplePath(path, tSample);
+        const enzEdge = edgePtToward(enz, mid.x, mid.y);
+        const perpAngle = mid.angle + Math.PI/2;
+        // Pick which perpendicular side faces the enzyme
+        const sideDx = enz.cx - mid.x, sideDy = enz.cy - mid.y;
+        const cos1 = Math.cos(perpAngle)*sideDx + Math.sin(perpAngle)*sideDy;
+        const sign = cos1 > 0 ? 1 : -1;
+        const stubLen = 8;
+        const stubX = mid.x + Math.cos(perpAngle)*stubLen*sign;
+        const stubY = mid.y + Math.sin(perpAngle)*stubLen*sign;
+
+        const catG = sv('g',{class:'catalyst-link','data-cid':c.id+'_cat'});
+
+        // For degradation arrows, route the catalyst line as a curve to
+        // avoid crossing the substrate node. Compute a control point that
+        // pushes the curve away from the substrate.
+        let catPathD;
+        if(c.kind === 'flux_inact'){
+          const sub = NODES[c.from];
+          // Compute a control point that bypasses substrate node.
+          // Midpoint between enzyme edge and stub
+          const cpMidX = (enzEdge.x + stubX) / 2;
+          const cpMidY = (enzEdge.y + stubY) / 2;
+          // Vector from substrate center to control midpoint
+          let awayX = cpMidX - sub.cx;
+          let awayY = cpMidY - sub.cy;
+          let awayLen = Math.hypot(awayX, awayY);
+          // Handle degenerate case: control midpoint is too close to substrate center
+          // (e.g., vertical line passing through substrate). Use horizontal offset
+          // in the direction opposite to the reaction arrow.
+          if(awayLen < 10){
+            // Reaction arrow direction
+            const rxDx = tx - fx, rxDy = ty - fy;
+            const rxLen = Math.hypot(rxDx, rxDy) || 1;
+            // Use perpendicular to reaction direction, pointing away from enzyme side
+            awayX = -rxDy / rxLen;
+            awayY = rxDx / rxLen;
+            // Ensure it points away from enzyme
+            if(awayX*(enz.cx - sub.cx) + awayY*(enz.cy - sub.cy) > 0){
+              awayX = -awayX; awayY = -awayY;
+            }
+            awayLen = 1;
+          }
+          const pushDist = Math.max(sub.w, sub.h) * 0.7;
+          const ctrlX = cpMidX + (awayX/awayLen) * pushDist;
+          const ctrlY = cpMidY + (awayY/awayLen) * pushDist;
+          catPathD = `M${enzEdge.x},${enzEdge.y} Q${ctrlX},${ctrlY} ${stubX},${stubY}`;
+        } else {
+          catPathD = `M${enzEdge.x},${enzEdge.y} L${stubX},${stubY}`;
+        }
+
+        const catLine = sv('path',{
+          d: catPathD,
+          stroke:'rgba(91,163,245,.55)',
+          'stroke-width':'1.2',
+          'stroke-dasharray':'3,3',
+          'stroke-linecap':'round',
+          fill:'none',
+          'pointer-events':'none',
+          class:'cat-line'
+        });
+        catG.appendChild(catLine);
+
+        // Small "T-bar" perpendicular to the reaction curve at sample point
+        const tbarAngle = perpAngle + Math.PI/2; // tangent to curve
+        const tbarLen = 5;
+        const tbarX1 = mid.x + Math.cos(tbarAngle)*tbarLen;
+        const tbarY1 = mid.y + Math.sin(tbarAngle)*tbarLen;
+        const tbarX2 = mid.x - Math.cos(tbarAngle)*tbarLen;
+        const tbarY2 = mid.y - Math.sin(tbarAngle)*tbarLen;
+        const tbar = sv('line',{
+          x1:tbarX1, y1:tbarY1, x2:tbarX2, y2:tbarY2,
+          stroke:'rgba(91,163,245,.85)',
+          'stroke-width':'1.8',
+          'stroke-linecap':'round',
+          'pointer-events':'none'
+        });
+        catG.appendChild(tbar);
+
+        // Catalyst label — only for productive reactions (degradation arrows
+        // already show "ACE / NEP → ✕ inactive" inline at the endpoint)
+        if(c.kind !== 'flux_inact'){
+          const catLblOffX = Math.cos(perpAngle)*sign * 5;
+          const catLblOffY = Math.sin(perpAngle)*sign * 5;
+          const catLbl = sv('text',{
+            x: stubX + catLblOffX,
+            y: stubY + catLblOffY,
+            'text-anchor': sign*Math.cos(perpAngle) > 0.3 ? 'start' : (sign*Math.cos(perpAngle) < -0.3 ? 'end' : 'middle'),
+            'dominant-baseline':'middle',
+            'font-size':'9',
+            'font-family':'Outfit,sans-serif',
+            'font-weight':'500',
+            fill:'rgba(91,163,245,.95)',
+            'pointer-events':'none',
+            class:'cat-lbl'
+          });
+          catLbl.textContent = c.catalystLbl;
+          catG.appendChild(catLbl);
+        }
+
+        layer.appendChild(catG);
+      }
+    }
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  RENDER NODES
+// ─────────────────────────────────────────────────────────────────
+function renderNodes(){
+  const layer=document.getElementById('node-layer');
+  layer.innerHTML='';
+  Object.values(NODES).forEach(node=>{
+    const col=TC[node.type]||'#d4af6a';
+    const bx=node.cx-node.w/2, by=node.cy-node.h/2;
+    const g=sv('g',{'data-nid':node.id,class:'node-g'});
+
+    // Bg glow rect
+    const glow=sv('rect',{x:bx-4,y:by-4,width:node.w+8,height:node.h+8,rx:'12',
+      fill:col,opacity:'0.045',class:'node-glow'});
+    g.appendChild(glow);
+
+    // Key node special bg
+    if(node.type==='key_hormone'){
+      const kbg=sv('rect',{x:bx,y:by,width:node.w,height:node.h,rx:'9',fill:'url(#key-grad)'});
+      g.appendChild(kbg);
+    }
+
+    // Main rect
+    const isKey=node.type==='key_hormone';
+    const rect=sv('rect',{x:bx,y:by,width:node.w,height:node.h,rx:'8',
+      fill:'rgba(15,22,32,.94)', stroke:col,
+      'stroke-width':isKey?'2':'1.3',
+      class:'node-rect','data-nid':node.id});
+    g.appendChild(rect);
+
+    // Top accent bar
+    const bar=sv('rect',{x:bx+8,y:by,width:node.w-16,height:'2.5',rx:'1.5',fill:col,opacity:'0.65'});
+    g.appendChild(bar);
+
+    // Label text
+    const ly = node.sub ? node.cy-(isKey?7:5) : node.cy+4;
+    const lbl=sv('text',{x:node.cx,y:ly,'text-anchor':'middle','dominant-baseline':'middle',
+      'font-size':isKey?'13.5':(node.type==='organ'?'11':'12.5'),
+      'font-family':'Outfit,sans-serif','font-weight':'500',
+      fill:col,'pointer-events':'none',class:'node-lbl'});
+    lbl.textContent=node.label;
+    g.appendChild(lbl);
+
+    // Sub text
+    if(node.sub){
+      const sub=sv('text',{x:node.cx,y:node.cy+(isKey?9:8),'text-anchor':'middle','dominant-baseline':'middle',
+        'font-size':'9','font-family':'Outfit,sans-serif','font-weight':'300',
+        fill:col,opacity:'0.55','pointer-events':'none'});
+      sub.textContent=node.sub;
+      g.appendChild(sub);
+    }
+
+    // Events
+    g.addEventListener('click',()=>selectNode(node.id));
+    g.addEventListener('mouseenter',()=>{
+      if(node.id!==selectedNode){
+        rect.style.filter=`drop-shadow(0 0 8px ${col})`;
+        rect.style.strokeWidth='2';
+      }
+    });
+    g.addEventListener('mouseleave',()=>{
+      if(node.id!==selectedNode){
+        rect.style.filter='';
+        rect.style.strokeWidth=isKey?'2':'1.3';
+      }
+    });
+    layer.appendChild(g);
+  });
+
+  // Static effect annotations
+  renderEffectAnnotations();
+}
+
+// Inherent physiological annotations — always shown
+const INHERENT_ANNS = [
+  {from:'at1r',  dx:0,   dy:55,  txt:'↑SVR · ↑BP · ADH · SNS',    col:'rgba(248,113,113,.75)'},
+  {from:'at1r',  dx:0,   dy:72,  txt:'Cardiac Hypertrophy · Fibrosis', col:'rgba(248,113,113,.6)'},
+  {from:'at2r',  dx:0,   dy:55,  txt:'↑NO · Vasodilation',col:'rgba(52,211,153,.75)'},
+  {from:'at2r',  dx:0,   dy:72,  txt:'Antiproliferation',col:'rgba(52,211,153,.6)'},
+  {from:'aldosterone',dx:0,dy:46,txt:'↑Na⁺/H₂O · Cardiac Fibrosis',col:'rgba(248,113,113,.7)'},
+  {from:'natpep',dx:-95, dy:0,   txt:'↑Natriuresis',col:'rgba(52,211,153,.8)'},
+  {from:'natpep',dx:-95, dy:14,  txt:'↓Fibrosis',col:'rgba(52,211,153,.65)'},
+];
+
+// Drug-triggered side-effect annotations — only shown when matching drug active
+// Each entry: requires=[drugIds] (OR), or requiresAll=[drugIds] (AND for combo effects)
+const DRUG_ANNS = [
+  // ACEi / ARNI → ↑bradykinin → cough, angioedema (placed right of Bradykinin)
+  {from:'bradykinin',dx:95, dy:0,  txt:'⚠ Cough',col:'rgba(251,146,60,.9)',           requires:['acei','arni']},
+  {from:'bradykinin',dx:95, dy:14, txt:'⚠ Angioedema',col:'rgba(251,146,60,.75)',     requires:['acei','arni']},
+  // ARB doesn't cause cough but very rare angioedema
+  {from:'bradykinin',dx:95, dy:0,  txt:'No cough',col:'rgba(192,132,252,.8)',          requires:['arb']},
+  // AT1R class effects (ACEi/ARB/ARNI all): hyperkalemia, AKI, hypotension
+  // Place to RIGHT of AT1R (avoiding bottom which has inherent annotations + viewBox edge)
+  {from:'at1r',  dx:90, dy:-15, txt:'⚠ ↑K⁺ · ↑Cr',col:'rgba(251,191,36,.9)', requires:['acei','arb','arni']},
+  {from:'at1r',  dx:90, dy:0,  txt:'⚠ Hypotension',col:'rgba(251,191,36,.75)', requires:['acei','arb','arni']},
+  // MRA-specific effects on Aldosterone target — place to LEFT of aldosterone (right side has arrow to AT1R)
+  {from:'aldosterone',dx:-90, dy:-12,txt:'⚠ ↑K⁺',col:'rgba(251,191,36,.9)', requires:['mra']},
+  {from:'aldosterone',dx:-90, dy:2, txt:'Gynecomastia*',col:'rgba(251,191,36,.75)', requires:['mra']},
+  // ARNI: BNP becomes unreliable as monitoring biomarker
+  {from:'natpep',dx:-95, dy:30,  txt:'⚠ Use NT-proBNP',col:'rgba(251,191,36,.9)',     requires:['arni']},
+  {from:'natpep',dx:-95, dy:44,  txt:'(BNP unreliable)',col:'rgba(251,191,36,.7)',    requires:['arni']},
+  // DRI: ALTITUDE warning when combined with ACEi/ARB — place to RIGHT of Renin
+  {from:'renin', dx:90, dy:-10,  txt:'⚠ ALTITUDE',col:'rgba(248,113,113,.9)', requiresAll:['dri','acei']},
+  {from:'renin', dx:90, dy:4,    txt:'AKI · ↑K⁺',col:'rgba(248,113,113,.75)', requiresAll:['dri','acei']},
+  {from:'renin', dx:90, dy:-10,  txt:'⚠ ALTITUDE',col:'rgba(248,113,113,.9)', requiresAll:['dri','arb']},
+  {from:'renin', dx:90, dy:4,    txt:'AKI · ↑K⁺',col:'rgba(248,113,113,.75)', requiresAll:['dri','arb']},
+  // ACEi/ARB/ARNI + MRA combo: severe hyperkalemia risk — placed FAR LEFT of aldosterone
+  {from:'aldosterone',dx:-90,dy:18,txt:'⚠ Severe ↑K⁺',col:'rgba(248,113,113,.95)',  requiresAll:['acei','mra']},
+  {from:'aldosterone',dx:-90,dy:18,txt:'⚠ Severe ↑K⁺',col:'rgba(248,113,113,.95)',  requiresAll:['arb','mra']},
+  {from:'aldosterone',dx:-90,dy:18,txt:'⚠ Severe ↑K⁺',col:'rgba(248,113,113,.95)',  requiresAll:['arni','mra']},
+];
+
+function renderEffectAnnotations(){
+  const layer = document.getElementById('node-layer');
+  // Clear any existing drug-triggered annotations
+  layer.querySelectorAll('.drug-ann').forEach(el => el.remove());
+  layer.querySelectorAll('.inherent-ann').forEach(el => el.remove());
+
+  // Helper to draw one annotation (returns the SVG elements created)
+  function drawAnn(a, cssClass){
+    const n = NODES[a.from]; if(!n) return null;
+    const ex = n.cx + a.dx, ey = n.cy + a.dy;
+    const bx = a.dx > 0 ? n.cx + n.w/2 : (a.dx < 0 ? n.cx - n.w/2 : n.cx);
+    const by = a.dy !== 0 && a.dx === 0 ? n.cy + n.h/2 : n.cy;
+    const g = sv('g',{class:cssClass});
+    if(a.dx !== 0 || a.dy !== 0){
+      const arr = sv('path',{
+        d:`M${bx},${by} Q${bx+a.dx*0.4},${by+a.dy*0.4} ${ex-5*Math.sign(a.dx||1)},${ey}`,
+        stroke:a.col,'stroke-width':'1',fill:'none',opacity:'0.55',
+        'pointer-events':'none'
+      });
+      g.appendChild(arr);
+    }
+    const t = sv('text',{
+      x:ex, y:ey,
+      'text-anchor': a.dx>0?'start':a.dx<0?'end':'middle',
+      'dominant-baseline':'middle',
+      'font-size':'8.5','font-family':'Outfit,sans-serif',
+      fill:a.col,'pointer-events':'none'
+    });
+    t.textContent = a.txt;
+    g.appendChild(t);
+    layer.appendChild(g);
+    return g;
+  }
+
+  // Always render inherent annotations
+  INHERENT_ANNS.forEach(a => drawAnn(a, 'inherent-ann'));
+
+  // Conditionally render drug-triggered annotations
+  // Track which (from, dy) slots are taken by single-drug warnings to avoid stacking
+  // multiple identical "Severe ↑K⁺ risk" labels from different combos
+  const renderedKeys = new Set();
+  DRUG_ANNS.forEach(a => {
+    let active = false;
+    if(a.requiresAll){
+      // Combo requirement: all listed drugs must be active
+      active = a.requiresAll.every(d => activeDrugs.has(d));
+    } else if(a.requires){
+      // OR requirement: any one listed drug active
+      active = a.requires.some(d => activeDrugs.has(d));
+    }
+    if(!active) return;
+    // Dedup: same target+text shouldn't appear twice (combo entries)
+    const key = `${a.from}|${a.txt}|${a.dy}`;
+    if(renderedKeys.has(key)) return;
+    renderedKeys.add(key);
+    drawAnn(a, 'drug-ann');
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  NODE SELECTION
+// ─────────────────────────────────────────────────────────────────
+function selectNode(nid){
+  // Deselect prev
+  if(selectedNode){
+    const prev=document.querySelector(`[data-nid="${selectedNode}"] .node-rect`);
+    if(prev){ prev.style.filter=''; prev.style.strokeWidth=NODES[selectedNode]?.type==='key_hormone'?'2':'1.3'; }
+    const pg=document.querySelector(`[data-nid="${selectedNode}"]`);
+    if(pg) pg.classList.remove('selected');
+  }
+  if(selectedNode===nid){ selectedNode=null; showEmpty(); return; }
+  selectedNode=nid;
+  const el=document.querySelector(`[data-nid="${nid}"]`);
+  if(el){
+    el.classList.add('selected');
+    const rect=el.querySelector('.node-rect');
+    const col=TC[NODES[nid]?.type]||'#d4af6a';
+    if(rect){ rect.style.filter=`drop-shadow(0 0 12px ${col})`; rect.style.strokeWidth='2.5'; }
+  }
+  showPanel(nid);
+}
+
+function showEmpty(){
+  document.getElementById('p-empty').style.display='flex';
+  document.getElementById('p-content').style.display='none';
+}
+
+function showPanel(nid){
+  const node=NODES[nid]; if(!node) return;
+  const c=node.cl;
+  const col=TC[node.type]||'#d4af6a';
+  const bc=BC[node.type]||BC.hormone;
+  document.getElementById('p-empty').style.display='none';
+  const pc=document.getElementById('p-content');
+  pc.style.display='block';
+  const drugHTML=c.drugs?.length ? `<div class="sec">
+    <div class="sec-title">Drug Targets</div>
+    ${c.drugs.map(d=>`<div class="drug-card">
+      <div class="drug-name">${d.name}</div>
+      <div class="drug-cls">${d.cls}</div>
+      ${d.mech?`<div class="drug-mech">${d.mech}</div>`:''}
+    </div>`).join('')}</div>` : '';
+  const trialHTML=c.trials?.length ? `<div class="sec">
+    <div class="sec-title">Clinical Trial Evidence</div>
+    ${c.trials.map(t=>`<div class="trial-card">
+      <div class="trial-name">${t.name}</div>
+      <div class="trial-res">${t.res}</div>
+    </div>`).join('')}</div>` : '';
+  pc.innerHTML=`
+    <div class="p-content">
+      <div><div class="p-badge" style="background:${bc.bg};color:${bc.fg}">${c.badge}</div>
+        <div class="p-name">${c.name}</div>
+        <div class="p-subtitle">${c.sub}</div>
+        <div class="p-organ">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          ${c.organ}
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-title">Pathophysiology</div>
+        <ul class="physio-list">${c.physio.map(p=>`<li>${p}</li>`).join('')}</ul>
+      </div>
+      ${drugHTML}${trialHTML}
+      <div class="sec">
+        <div class="sec-title">Heart Failure Context</div>
+        <div class="hf-box"><div class="hf-text">${c.hf}</div></div>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  DRUG SIMULATION
+// ─────────────────────────────────────────────────────────────────
+function toggleDrug(did){
+  const drug=DRUGS[did]; if(!drug) return;
+  // Conflict check
+  if(!activeDrugs.has(did)){
+    const conf=drug.conflicts?.find(c=>activeDrugs.has(c));
+    if(conf){
+      const cname=DRUGS[conf]?.name||conf;
+      showWarn(`⚠ ${drug.name} + ${cname}: CONTRAINDICATED — ↑ Adverse Events Risk (e.g., ALTITUDE, angioedema)`);
+      return;
+    }
+  }
+  if(activeDrugs.has(did)) activeDrugs.delete(did);
+  else activeDrugs.add(did);
+  updateDrugVis();
+  updateDrugBtns();
+  updateDbInfo();
+}
+
+function resetAll(){
+  activeDrugs.clear();
+  selectedNode=null;
+  updateDrugVis();
+  updateDrugBtns();
+  updateDbInfo();
+  showEmpty();
+  document.querySelectorAll('.node-rect').forEach(r=>{
+    r.style.filter=''; r.style.strokeWidth='';
+  });
+}
+
+function showWarn(msg){
+  const w=document.getElementById('cwarn');
+  w.textContent=msg; w.classList.add('show');
+  setTimeout(()=>w.classList.remove('show'),4500);
+}
+
+function updateDrugBtns(){
+  document.querySelectorAll('.dtog').forEach(b=>{
+    b.classList.toggle('on',activeDrugs.has(b.getAttribute('data-d')));
+  });
+}
+
+function updateDbInfo(){
+  const el=document.getElementById('db-info');
+  if(activeDrugs.size===0){ el.textContent='Toggle drugs to visualize downstream pathway effects'; return; }
+  const names=Array.from(activeDrugs).map(d=>DRUGS[d]?.name).join(' + ');
+  const info=Array.from(activeDrugs).map(d=>DRUGS[d]?.info).join(' | ');
+  el.textContent=`${names}: ${info}`;
+}
+
+function updateDrugVis(){
+  // Reset all
+  document.querySelectorAll('.arrow').forEach(p=>{
+    p.classList.remove('dim','boost');
+    p.style.opacity=''; p.style.strokeWidth=''; p.style.strokeDasharray='';
+  });
+  document.querySelectorAll('.node-g').forEach(n=>{
+    n.classList.remove('dim','boost');
+    if(n.getAttribute('data-nid')!==selectedNode){
+      const r=n.querySelector('.node-rect');
+      if(r){ r.style.filter=''; r.style.strokeWidth=
+        NODES[n.getAttribute('data-nid')]?.type==='key_hormone'?'2':'1.3'; }
+    }
+  });
+  // Remove inhibit markers
+  document.getElementById('inh-layer').innerHTML='';
+
+  // Always re-render effect annotations (inherent always, drug-triggered conditional)
+  renderEffectAnnotations();
+
+  if(activeDrugs.size===0) return;
+
+  const dimConns=new Set(), boostConns=new Set(), dimNodes=new Set(), boostNodes=new Set(), blockedNodes=[];
+
+  activeDrugs.forEach(did=>{
+    const d=DRUGS[did];
+    d.blocks?.forEach(n=>blockedNodes.push({nid:n,did,col:d.color}));
+    d.dim_conns?.forEach(c=>dimConns.add(c));
+    d.boost_conns?.forEach(c=>boostConns.add(c));
+    d.dim_nodes?.forEach(n=>dimNodes.add(n));
+    d.boost_nodes?.forEach(n=>boostNodes.add(n));
+  });
+
+  // Apply connection effects
+  document.querySelectorAll('.arrow').forEach(p=>{
+    const cid=p.getAttribute('data-cid');
+    if(dimConns.has(cid)){ p.style.opacity='0.08'; p.style.strokeDasharray='4,3'; }
+    if(boostConns.has(cid)){ p.style.opacity='1'; p.style.strokeWidth='3'; }
+  });
+
+  // Reverse-boost: arni blocks neprilysin→natpep but natpep goes UP
+  if(activeDrugs.has('arni')){
+    const nep=document.querySelector('[data-cid="c_nep_nat"]');
+    if(nep){ nep.style.opacity='0.08'; nep.style.strokeDasharray='4,3'; }
+  }
+
+  // Node dimming
+  dimNodes.forEach(nid=>{
+    const el=document.querySelector(`[data-nid="${nid}"]`);
+    if(el && nid!==selectedNode) el.classList.add('dim');
+  });
+
+  // Node boosting
+  boostNodes.forEach(nid=>{
+    const el=document.querySelector(`[data-nid="${nid}"]`);
+    if(el) el.classList.add('boost');
+  });
+
+  // Draw inhibit markers
+  const inh=document.getElementById('inh-layer');
+  blockedNodes.forEach(({nid,did,col})=>{
+    const node=NODES[nid]; if(!node) return;
+    const g=sv('g');
+    // Animated ring
+    const r1=sv('circle',{cx:node.cx,cy:node.cy,r:'18',
+      fill:`${col}15`,stroke:col,'stroke-width':'1.5',opacity:'0.9'});
+    g.appendChild(r1);
+    // X mark
+    [[-8,-8,8,8],[8,-8,-8,8]].forEach(([x1,y1,x2,y2])=>{
+      const l=sv('line',{x1:node.cx+x1,y1:node.cy+y1,x2:node.cx+x2,y2:node.cy+y2,
+        stroke:col,'stroke-width':'2.8','stroke-linecap':'round'});
+      g.appendChild(l);
+    });
+    // Drug label
+    const lbl=sv('text',{x:node.cx,y:node.cy-24,'text-anchor':'middle',
+      'font-size':'8.5','font-family':'JetBrains Mono,monospace',fill:col,'font-weight':'500'});
+    lbl.textContent=DRUGS[did]?.name||did;
+    g.appendChild(lbl);
+    inh.appendChild(g);
+  });
+
+  // Special: MRA blocks aldosterone RECEPTOR — show note
+  if(activeDrugs.has('mra')){
+    const node=NODES['aldosterone'];
+    if(node){
+      const g=sv('g');
+      const t=sv('text',{x:node.cx+node.w/2+6,y:node.cy,'text-anchor':'start','dominant-baseline':'middle',
+        'font-size':'8','font-family':'JetBrains Mono,monospace',fill:'#fbbf24','font-weight':'500'});
+      t.textContent='MR receptor blocked';
+      g.appendChild(t);
+      inh.appendChild(g);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  LEGEND
+// ─────────────────────────────────────────────────────────────────
+function renderLegend(){
+  const bar=document.getElementById('legend');
+  const items=[
+    {lbl:'Organ/Source',col:'#4ade80'},{lbl:'Enzyme',col:'#5ba3f5'},
+    {lbl:'Hormone',col:'#d4af6a'},{lbl:'Receptor',col:'#b77cdc'},
+    {lbl:'Beneficial',col:'#34d399'},{lbl:'Side effect',col:'#fb923c'}
+  ];
+  bar.innerHTML=items.map(i=>`<div class="leg-item"><div class="leg-dot" style="background:${i.col}"></div>${i.lbl}</div>`).join('');
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  PAN & ZOOM
+// ─────────────────────────────────────────────────────────────────
+const VIEW = {
+  scale: 1, tx: 0, ty: 0,
+  min: 0.5, max: 5,
+  W: 1180, H: 620
+};
+
+function applyTransform(){
+  const vp = document.getElementById('viewport');
+  vp.setAttribute('transform', `translate(${VIEW.tx} ${VIEW.ty}) scale(${VIEW.scale})`);
+  const lvl = document.getElementById('zoom-level');
+  if(lvl) lvl.textContent = Math.round(VIEW.scale * 100) + '%';
+}
+
+// Convert a client (pixel) point to SVG-viewBox coordinates
+function clientToSvg(clientX, clientY){
+  const svg = document.getElementById('svg');
+  const r = svg.getBoundingClientRect();
+  // Calculate the rendered viewBox scale (preserveAspectRatio="xMidYMid meet")
+  const sx = r.width / VIEW.W, sy = r.height / VIEW.H;
+  const scale = Math.min(sx, sy);
+  // Account for letterboxing (centered with empty bands if aspect ratios differ)
+  const offX = (r.width - VIEW.W * scale) / 2;
+  const offY = (r.height - VIEW.H * scale) / 2;
+  return {
+    x: (clientX - r.left - offX) / scale,
+    y: (clientY - r.top - offY) / scale
+  };
+}
+
+function zoomAt(newScale, svgX, svgY){
+  newScale = Math.max(VIEW.min, Math.min(VIEW.max, newScale));
+  // Keep the SVG point under the cursor fixed during zoom
+  // Formula: txNew = svgX - (svgX - tx) * (newScale / scale)
+  const ratio = newScale / VIEW.scale;
+  VIEW.tx = svgX - (svgX - VIEW.tx) * ratio;
+  VIEW.ty = svgY - (svgY - VIEW.ty) * ratio;
+  VIEW.scale = newScale;
+  applyTransform();
+}
+
+function zoomBtn(factor){
+  // Zoom toward the center of the visible viewport
+  zoomAt(VIEW.scale * factor, VIEW.W / 2, VIEW.H / 2);
+  hideHint();
+}
+
+function resetView(){
+  VIEW.scale = 1; VIEW.tx = 0; VIEW.ty = 0;
+  applyTransform();
+  hideHint();
+}
+
+function hideHint(){
+  const h = document.getElementById('zoom-hint');
+  if(h && !h.classList.contains('hidden')) h.classList.add('hidden');
+}
+
+function initPanZoom(){
+  const svg = document.getElementById('svg');
+
+  // Single-pointer pan state
+  let panActive = false;          // are we currently panning?
+  let panStart = null;            // {x, y} pointer position at pan start
+  let viewStart = null;           // {tx, ty} VIEW state at pan start
+  let panPointerId = null;        // pointerId currently used for panning
+
+  // Multi-pointer pinch state
+  let activePointers = new Map(); // pointerId → {x, y, isOnNode}
+  let pinchStart = null;          // {dist, midSvg, scale}
+
+  const PAN_THRESHOLD = 4;        // px movement before we consider it a pan
+
+  // ── Wheel zoom ──────────────────────────────────────────────
+  svg.addEventListener('wheel', e => {
+    e.preventDefault();
+    const pt = clientToSvg(e.clientX, e.clientY);
+    const factor = Math.pow(1.0015, -e.deltaY);
+    zoomAt(VIEW.scale * factor, pt.x, pt.y);
+    hideHint();
+  }, { passive: false });
+
+  // ── Pointer down ────────────────────────────────────────────
+  svg.addEventListener('pointerdown', e => {
+    // Track every pointer, but flag those that started on a node
+    const onNode = !!e.target.closest('.node-g');
+    activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY, isOnNode: onNode});
+
+    // Two pointers active → enter pinch mode (regardless of where they started)
+    if(activePointers.size === 2){
+      panActive = false;
+      panPointerId = null;
+      svg.classList.remove('grabbing');
+      const pts = [...activePointers.values()];
+      const dx = pts[1].x - pts[0].x, dy = pts[1].y - pts[0].y;
+      const dist = Math.hypot(dx, dy);
+      const midClient = {x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2};
+      const midSvg = clientToSvg(midClient.x, midClient.y);
+      pinchStart = {dist, midSvg, scale: VIEW.scale};
+      return;
+    }
+
+    // If pointer started on a node, do NOT initialize panning yet.
+    // The node will get its click normally. If the user actually drags
+    // far enough on pointermove, we'll start panning then.
+    if(onNode){
+      panStart = {x: e.clientX, y: e.clientY};
+      viewStart = {tx: VIEW.tx, ty: VIEW.ty};
+      panPointerId = e.pointerId;
+      panActive = false;  // not panning YET
+      return;
+    }
+
+    // Pointer on empty SVG area → arm for pan
+    panStart = {x: e.clientX, y: e.clientY};
+    viewStart = {tx: VIEW.tx, ty: VIEW.ty};
+    panPointerId = e.pointerId;
+    panActive = false;  // becomes true once threshold is crossed
+    // Clear any selection that might be present from previous interactions
+    if(window.getSelection){ try { window.getSelection().removeAllRanges(); } catch(_){} }
+  });
+
+  // ── Pointer move ────────────────────────────────────────────
+  svg.addEventListener('pointermove', e => {
+    if(!activePointers.has(e.pointerId)) return;
+    const prev = activePointers.get(e.pointerId);
+    activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY, isOnNode: prev.isOnNode});
+
+    // Pinch mode
+    if(activePointers.size === 2 && pinchStart){
+      const pts = [...activePointers.values()];
+      const dx = pts[1].x - pts[0].x, dy = pts[1].y - pts[0].y;
+      const dist = Math.hypot(dx, dy);
+      if(dist > 0 && pinchStart.dist > 0){
+        const newScale = pinchStart.scale * (dist / pinchStart.dist);
+        zoomAt(newScale, pinchStart.midSvg.x, pinchStart.midSvg.y);
+      }
+      return;
+    }
+
+    // Single-pointer drag
+    if(activePointers.size === 1 && panPointerId === e.pointerId && panStart){
+      const totalDx = e.clientX - panStart.x;
+      const totalDy = e.clientY - panStart.y;
+      const dist = Math.hypot(totalDx, totalDy);
+
+      // Threshold to disambiguate click vs drag — only start panning past it
+      if(!panActive && dist > PAN_THRESHOLD){
+        panActive = true;
+        svg.setPointerCapture(e.pointerId);
+        svg.classList.add('grabbing');
+      }
+
+      if(panActive){
+        const r = svg.getBoundingClientRect();
+        const sx = r.width / VIEW.W, sy = r.height / VIEW.H;
+        const renderScale = Math.min(sx, sy);
+        const dx = totalDx / renderScale;
+        const dy = totalDy / renderScale;
+        VIEW.tx = viewStart.tx + dx;
+        VIEW.ty = viewStart.ty + dy;
+        applyTransform();
+        hideHint();
+        // Once we're actively panning, prevent native default (text select, etc.)
+        e.preventDefault();
+      }
+    }
+  });
+
+  // ── Pointer end ─────────────────────────────────────────────
+  const endPointer = e => {
+    if(!activePointers.has(e.pointerId)) return;
+
+    const wasPanning = panActive && panPointerId === e.pointerId;
+    activePointers.delete(e.pointerId);
+
+    try { svg.releasePointerCapture(e.pointerId); } catch(_){}
+
+    // Exit pinch when we drop below 2 pointers
+    if(activePointers.size < 2) pinchStart = null;
+
+    // If one finger lifted from pinch, the remaining finger becomes the pan finger
+    if(activePointers.size === 1 && !pinchStart){
+      const [remId, remPt] = [...activePointers.entries()][0];
+      panStart = {x: remPt.x, y: remPt.y};
+      viewStart = {tx: VIEW.tx, ty: VIEW.ty};
+      panPointerId = remId;
+      panActive = false;
+    }
+
+    // All pointers up → fully reset pan state
+    if(activePointers.size === 0){
+      panActive = false;
+      panStart = null;
+      viewStart = null;
+      panPointerId = null;
+      svg.classList.remove('grabbing');
+
+      // If we actually panned, prevent the synthetic click that would
+      // otherwise fire on the underlying element. Use a one-shot blocker
+      // in CAPTURE phase that removes itself immediately after the next
+      // click event (or after a short timeout if no click fires).
+      if(wasPanning){
+        const blocker = ev => {
+          ev.stopPropagation();
+          ev.preventDefault();
+        };
+        const cleanup = () => {
+          svg.removeEventListener('click', blocker, true);
+        };
+        svg.addEventListener('click', blocker, { capture: true, once: true });
+        // Failsafe: remove the listener even if no click fires
+        setTimeout(cleanup, 80);
+      }
+    }
+  };
+
+  svg.addEventListener('pointerup', endPointer);
+  svg.addEventListener('pointercancel', endPointer);
+  // NOTE: we deliberately do NOT listen to pointerleave — it fires
+  // when the cursor moves between child elements and would prematurely
+  // end an active pan.
+
+  // ── Keyboard shortcuts ──────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if(e.key === '+' || e.key === '=') { zoomBtn(1.25); e.preventDefault(); }
+    else if(e.key === '-' || e.key === '_') { zoomBtn(0.8); e.preventDefault(); }
+    else if(e.key === '0') { resetView(); e.preventDefault(); }
+  });
+
+  // ── Double-click to zoom in ─────────────────────────────────
+  svg.addEventListener('dblclick', e => {
+    if(e.target.closest('.node-g')) return;
+    const pt = clientToSvg(e.clientX, e.clientY);
+    zoomAt(VIEW.scale * 1.6, pt.x, pt.y);
+    hideHint();
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  // Inject id into each node object so node.id works inside renderNodes
+  Object.keys(NODES).forEach(k=>{ NODES[k].id=k; });
+  renderConns();
+  renderNodes();
+  renderLegend();
+  initPanZoom();
+});
+</script>
+</body>
+</html>
