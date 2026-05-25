@@ -1,0 +1,2588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Antiarrhythmic Atlas — Vaughan Williams Electrophysiology</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600&family=Spectral:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    --bg-0: #050810;
+    --bg-1: #0a1120;
+    --bg-2: #0f1a2e;
+    --line: rgba(148, 163, 184, 0.08);
+    --line-strong: rgba(148, 163, 184, 0.22);
+    --txt: #e2e8f0;
+    --txt-dim: #cbd5e1;
+    --txt-faint: #94a3b8;
+    --cyan: #22d3ee;
+    --teal: #2dd4bf;
+    --amber: #f59e0b;
+    --rose: #f43f5e;
+    --violet: #a78bfa;
+    --emerald: #10b981;
+    --lime: #84cc16;
+    --pink: #ec4899;
+    --orange: #f97316;
+  }
+
+  * { -webkit-font-smoothing: antialiased; }
+  body {
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    background: var(--bg-0);
+    color: var(--txt);
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(34, 211, 238, 0.04), transparent 35%),
+      radial-gradient(circle at 88% 92%, rgba(244, 63, 94, 0.03), transparent 40%);
+  }
+
+  .font-display { font-family: 'Spectral', serif; letter-spacing: -0.01em; }
+  .font-mono { font-family: 'IBM Plex Mono', monospace; }
+
+  /* SVG styling */
+  .ap-path {
+    transition: d 550ms cubic-bezier(0.4, 0, 0.2, 1), stroke 250ms ease;
+    will-change: d;
+  }
+  .grid-line { stroke: var(--line); stroke-width: 0.5; }
+  .grid-major { stroke: rgba(148, 163, 184, 0.12); stroke-width: 0.5; }
+  .axis-line { stroke: var(--line-strong); stroke-width: 1; }
+  .axis-tick { fill: var(--txt-dim); font-family: 'IBM Plex Mono', monospace; font-size: 9px; }
+  .axis-title { fill: var(--txt-dim); font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .phase-tag { fill: #fff; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; }
+  .phase-circle { fill: rgba(15, 26, 46, 0.95); stroke: rgba(34, 211, 238, 0.5); stroke-width: 1; }
+  .ion-tag { fill: rgba(148, 163, 184, 0.7); font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-style: italic; }
+  .threshold-line { stroke: rgba(244, 63, 94, 0.35); stroke-dasharray: 4 3; stroke-width: 0.8; }
+  .zero-line { stroke: rgba(148, 163, 184, 0.18); stroke-dasharray: 2 4; stroke-width: 0.6; }
+
+  /* Drug button */
+  .drug-btn {
+    width: 100%;
+    text-align: left;
+    padding: 9px 12px;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(15, 26, 46, 0.4);
+    border-radius: 8px;
+    transition: all 180ms ease;
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: 10px 1fr;
+    column-gap: 10px;
+    align-items: center;
+    color: var(--txt-dim);
+    font-size: 13px;
+    min-width: 0;
+  }
+  .drug-btn:hover {
+    background: rgba(15, 26, 46, 0.8);
+    border-color: rgba(148, 163, 184, 0.25);
+    color: var(--txt);
+  }
+  .drug-btn.active {
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.10), rgba(45, 212, 191, 0.04));
+    border-color: rgba(34, 211, 238, 0.45);
+    color: #fff;
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.1) inset, 0 4px 20px -8px rgba(34, 211, 238, 0.3);
+  }
+  .drug-btn .dot {
+    width: 9px; height: 9px; border-radius: 99px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+  }
+  .drug-btn .label {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .drug-btn .name {
+    font-weight: 500;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .drug-btn .code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--txt-faint);
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .drug-btn.active .code { color: rgba(255,255,255,0.55); }
+
+  /* Section heading */
+  .section-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--txt-faint);
+    margin-bottom: 10px;
+  }
+
+  /* Toggle */
+  .toggle {
+    position: relative; width: 44px; height: 22px;
+    background: rgba(51, 65, 85, 0.7);
+    border-radius: 9999px; cursor: pointer;
+    transition: background 220ms ease;
+    border: 1px solid rgba(148, 163, 184, 0.15);
+  }
+  .toggle.on { background: rgba(34, 211, 238, 0.4); border-color: rgba(34, 211, 238, 0.5); }
+  .toggle-thumb {
+    position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    background: #e2e8f0; border-radius: 9999px;
+    transition: transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .toggle.on .toggle-thumb { transform: translateX(22px); background: #fff; }
+
+  /* Effect indicator pills */
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(15, 26, 46, 0.5);
+    color: var(--txt-dim);
+  }
+  .pill.up { color: var(--rose); border-color: rgba(244, 63, 94, 0.3); background: rgba(244, 63, 94, 0.08); }
+  .pill.up-strong { color: var(--rose); border-color: rgba(244, 63, 94, 0.5); background: rgba(244, 63, 94, 0.15); }
+  .pill.dn { color: var(--cyan); border-color: rgba(34, 211, 238, 0.3); background: rgba(34, 211, 238, 0.08); }
+  .pill.dn-strong { color: var(--cyan); border-color: rgba(34, 211, 238, 0.5); background: rgba(34, 211, 238, 0.15); }
+  .pill.neutral { color: var(--txt-faint); }
+
+  /* Card */
+  .card {
+    background: linear-gradient(180deg, rgba(15, 26, 46, 0.6), rgba(10, 17, 32, 0.7));
+    border: 1px solid rgba(148, 163, 184, 0.10);
+    border-radius: 12px;
+  }
+  .card-acc {
+    position: relative;
+  }
+  .card-acc::before {
+    content: ""; position: absolute; top: 0; left: 16px; right: 16px;
+    height: 1px; background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.4), transparent);
+  }
+
+  /* Plot legend swatch */
+  .legend-swatch {
+    width: 18px; height: 2px; border-radius: 1px; display: inline-block;
+  }
+  .legend-swatch.dashed {
+    background-image: linear-gradient(90deg, currentColor 50%, transparent 50%);
+    background-size: 4px 2px;
+    height: 2px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 7px; height: 7px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.6); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(71, 85, 105, 0.8); }
+
+  /* Sidebar drug list — single column always so the labels never overlap */
+  .drug-list { display: flex; flex-direction: column; gap: 6px; }
+  @media (min-width: 1024px) {
+    .drug-list { gap: 6px; }
+  }
+
+  /* Subtle pulse on active drug indicator */
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+  .pulse { animation: pulse-glow 2.4s ease-in-out infinite; }
+
+  /* Curve glow filter */
+  .glow {
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+
+  /* ==================================================================
+     ION DYNAMICS VIEW — Tabs, segmented controls, membrane, particles
+     ================================================================== */
+
+  /* Top-level view tabs */
+  .tab-nav {
+    display: flex;
+    gap: 2px;
+    padding: 0 16px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+    background: rgba(5, 8, 16, 0.6);
+    backdrop-filter: blur(8px);
+  }
+  @media (min-width: 768px) { .tab-nav { padding: 0 32px; } }
+  .view-tab {
+    padding: 8px 14px 7px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--txt-faint);
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 180ms ease;
+    display: flex; align-items: center; gap: 6px;
+    background: transparent;
+    border-radius: 0;
+    margin-bottom: -1px;
+  }
+  .view-tab:hover { color: var(--txt-dim); }
+  .view-tab.active {
+    color: var(--cyan);
+    border-bottom-color: var(--cyan);
+  }
+  .view-tab svg { width: 13px; height: 13px; }
+
+  /* Segmented control */
+  .segmented {
+    display: inline-flex;
+    background: rgba(15, 26, 46, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 8px;
+    padding: 2px;
+    gap: 2px;
+  }
+  .segmented button {
+    padding: 6px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--txt-faint);
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 180ms ease;
+    border: none;
+    white-space: nowrap;
+  }
+  .segmented button:hover { color: var(--txt-dim); }
+  .segmented button.active {
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--cyan);
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.25);
+  }
+
+  /* Icon button (play/pause/reset) */
+  .icon-btn {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    background: rgba(15, 26, 46, 0.5);
+    color: var(--txt-dim);
+    cursor: pointer;
+    transition: all 180ms ease;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .icon-btn:hover {
+    background: rgba(34, 211, 238, 0.1);
+    border-color: rgba(34, 211, 238, 0.3);
+    color: var(--cyan);
+  }
+  .icon-btn svg { width: 14px; height: 14px; }
+
+  /* Membrane visualization */
+  .mem-extra-bg { fill: rgba(34, 211, 238, 0.04); }
+  .mem-intra-bg { fill: rgba(168, 85, 247, 0.04); }
+  .mem-bilayer-top { stroke: rgba(148, 163, 184, 0.5); stroke-width: 1.2; fill: none; }
+  .mem-bilayer-bot { stroke: rgba(148, 163, 184, 0.5); stroke-width: 1.2; fill: none; }
+  .mem-bilayer-fill { fill: rgba(30, 41, 59, 0.6); }
+  .mem-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; fill: var(--txt-dim); }
+  .mem-label-strong { font-family: 'IBM Plex Mono', monospace; font-size: 11px; fill: var(--txt); letter-spacing: 0.05em; }
+  .mem-conc { font-family: 'IBM Plex Mono', monospace; font-size: 10px; fill: var(--txt-faint); }
+
+  /* Channel gates */
+  .channel-body {
+    transition: fill 220ms ease, stroke 220ms ease, opacity 220ms ease, filter 220ms ease;
+  }
+  .channel-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 9.5px;
+    font-weight: 600;
+    transition: fill 220ms ease, opacity 220ms ease;
+  }
+  .gate-bar {
+    transition: transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+  }
+
+  /* Phase banner */
+  .phase-num-box {
+    width: 56px; height: 56px;
+    border-radius: 12px;
+    border: 1px solid rgba(34, 211, 238, 0.3);
+    background: rgba(34, 211, 238, 0.08);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Spectral', serif;
+    font-size: 28px; font-weight: 500;
+    color: var(--cyan);
+    flex-shrink: 0;
+    transition: all 350ms ease;
+  }
+
+  /* Current trace lane */
+  .trace-lane {
+    border-bottom: 1px solid rgba(148, 163, 184, 0.05);
+  }
+  .trace-lane:last-child { border-bottom: none; }
+  .trace-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.03em;
+  }
+  .trace-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--txt-faint);
+  }
+
+  /* Ion sidebar legend */
+  .ion-legend-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 10px;
+    border-radius: 7px;
+    background: rgba(15, 26, 46, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+  }
+  .ion-dot {
+    width: 14px; height: 14px; border-radius: 99px;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px currentColor;
+  }
+  .channel-ref-row {
+    padding: 8px 10px;
+    border-radius: 7px;
+    border: 1px solid rgba(148, 163, 184, 0.06);
+    background: rgba(15, 26, 46, 0.3);
+  }
+
+  /* AP playhead */
+  .playhead-line { stroke: rgba(34, 211, 238, 0.7); stroke-width: 1.2; stroke-dasharray: 3 2; }
+  .playhead-dot { fill: var(--cyan); stroke: #fff; stroke-width: 1.5; filter: drop-shadow(0 0 6px var(--cyan)); }
+  .phase-band { transition: opacity 250ms ease; }
+  .phase-band-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; letter-spacing: 0.08em;
+    fill: var(--txt-faint);
+    transition: fill 220ms ease;
+  }
+  .phase-band-label.active { fill: var(--cyan); }
+
+  /* Channel highlight when active */
+  .channel-active .channel-body {
+    filter: drop-shadow(0 0 10px currentColor);
+  }
+  .gate-open .gate-bar.top { transform: translateY(-6px) rotate(-12deg); }
+  .gate-open .gate-bar.bot { transform: translateY(6px) rotate(12deg); }
+
+  /* ─── Ion view layout grid ─── */
+  .ion-toprow {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  @media (min-width: 1280px) {
+    .ion-toprow { grid-template-columns: 1.55fr 1fr; }
+  }
+
+  /* Constrain SVG heights so the entire ion view fits in a single window on common laptops.
+     Each section caps at a fraction of viewport-height so total stays ≤ ~85vh. */
+  @media (min-height: 720px) {
+    #ionApSvg { max-height: 24vh; }
+    #ionMemSvg { max-height: 26vh; }
+    #ionCurSvg { max-height: 22vh; }
+  }
+  @media (min-height: 900px) {
+    #ionApSvg { max-height: 28vh; }
+    #ionMemSvg { max-height: 30vh; }
+    #ionCurSvg { max-height: 24vh; }
+  }
+
+  /* AP hover tooltip */
+  .ap-tooltip {
+    position: absolute;
+    pointer-events: none;
+    z-index: 50;
+    background: rgba(8, 13, 26, 0.97);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(34, 211, 238, 0.35);
+    border-radius: 10px;
+    padding: 10px 12px;
+    min-width: 220px;
+    max-width: 320px;
+    box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(34, 211, 238, 0.1) inset;
+    transform: translate(-50%, calc(-100% - 14px));
+    transition: opacity 120ms ease;
+  }
+  .ap-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 10px; height: 10px;
+    background: rgba(8, 13, 26, 0.97);
+    border-right: 1px solid rgba(34, 211, 238, 0.35);
+    border-bottom: 1px solid rgba(34, 211, 238, 0.35);
+  }
+  .ap-tooltip.tt-below::after {
+    bottom: auto;
+    top: -6px;
+    border-right: none;
+    border-bottom: none;
+    border-top: 1px solid rgba(34, 211, 238, 0.35);
+    border-left: 1px solid rgba(34, 211, 238, 0.35);
+  }
+  .ap-tooltip-head {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  }
+  .ap-tooltip-phase-pill {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Spectral', serif;
+    font-size: 14px; font-weight: 500;
+    flex-shrink: 0;
+  }
+  .ap-tooltip-title {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.5px; font-weight: 500;
+    line-height: 1.2;
+    min-width: 0;
+    flex: 1;
+  }
+  .ap-tooltip-readout {
+    display: flex; gap: 14px;
+    margin-bottom: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+  }
+  .ap-tooltip-readout-item .lbl {
+    color: var(--txt-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 8.5px;
+  }
+  .ap-tooltip-readout-item .val {
+    color: var(--cyan);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .ap-tooltip-body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: var(--txt-dim);
+  }
+  .ap-tooltip-channels {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .ap-tooltip-chan {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(148, 163, 184, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+  }
+  .ap-tooltip-drug {
+    margin: 6px 0;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .ap-tooltip-drug .dr-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .ap-tooltip-drug .dr-eff {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11.5px;
+    color: var(--txt);
+  }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ============================ HEADER ============================ -->
+<header class="border-b border-slate-800/60 bg-slate-950/60 backdrop-blur-md sticky top-0 z-30">
+  <div class="px-4 md:px-8 py-2 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-2.5 min-w-0">
+      <!-- Logo: stylized AP -->
+      <div class="hidden sm:flex w-7 h-7 rounded-md border border-cyan-400/30 bg-cyan-400/5 items-center justify-center flex-shrink-0">
+        <svg viewBox="0 0 24 24" class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M2 16 L7 16 L8 6 L10 18 L12 12 L13 12 L14 6 L16 16 L22 16" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="min-w-0 flex-1 flex items-baseline gap-3">
+        <h1 class="font-display text-[15px] md:text-base font-medium leading-none truncate">Antiarrhythmic Atlas</h1>
+        <p class="hidden md:block font-mono text-[10px] tracking-wider text-slate-500 uppercase leading-none truncate">Vaughan Williams · Electrophysiology</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-4 flex-shrink-0">
+    </div>
+  </div>
+</header>
+
+<!-- ============================ TAB NAVIGATION ============================ -->
+<nav class="tab-nav sticky top-[40px] z-20">
+  <button class="view-tab active" data-view="drugs">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7c0-1.1-.9-2-2-2h-1V4a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v1H7c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V7z"/><path d="M9 12h6M12 9v6"/></svg>
+    Drug Effects
+  </button>
+  <button class="view-tab" data-view="ions">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="12" r="2"/><circle cx="18" cy="12" r="2"/><path d="M8 12h8M4 7v10M20 7v10"/></svg>
+    Ion Channel Dynamics
+  </button>
+</nav>
+
+<!-- ============================ MAIN LAYOUT ============================ -->
+<div class="lg:grid lg:grid-cols-[290px_1fr]">
+
+  <!-- =========== SIDEBAR =========== -->
+  <aside class="border-r border-slate-800/60 p-4 lg:p-5 lg:max-h-[calc(100vh-74px)] lg:sticky lg:top-[74px] lg:overflow-y-auto bg-slate-950/30">
+
+    <!-- ─── Sidebar for DRUGS view ─── -->
+    <div id="sidebar-drugs">
+      <div class="section-eyebrow">Vaughan Williams Class</div>
+      <div id="drugList" class="drug-list"></div>
+
+      <!-- Legend -->
+      <div class="mt-7">
+        <div class="section-eyebrow">Plot Legend</div>
+        <div class="space-y-2 text-[12px] font-mono text-slate-400">
+          <div class="flex items-center gap-2.5"><span class="legend-swatch dashed" style="color: #64748b"></span><span>Baseline AP (reference)</span></div>
+          <div class="flex items-center gap-2.5"><span class="legend-swatch" style="background: var(--cyan); box-shadow: 0 0 6px var(--cyan);"></span><span>Drug-modified AP</span></div>
+          <div class="flex items-center gap-2.5"><span class="legend-swatch" style="background: rgba(244, 63, 94, 0.4); height: 1px; background-image: linear-gradient(90deg, rgba(244,63,94,.5) 50%, transparent 50%); background-size: 4px 1px;"></span><span>Threshold (–40 mV)</span></div>
+        </div>
+      </div>
+
+      <!-- Note -->
+      <div class="mt-7 p-3 rounded-lg border border-slate-800/70 bg-slate-900/30">
+        <p class="font-mono text-[10.5px] text-slate-500 uppercase tracking-wider mb-1.5">Display Notes</p>
+        <p class="text-[12px] text-slate-400 leading-relaxed">
+          Phase 0 width is exaggerated &times;5 for visual clarity. Time axes differ between cells: ventricular shows a single AP (500 ms), pacemaker shows continuous firing (1500 ms).
+        </p>
+      </div>
+    </div>
+
+    <!-- ─── Sidebar for IONS view ─── -->
+    <div id="sidebar-ions" class="hidden">
+      <div class="section-eyebrow">Cell Type</div>
+      <div class="segmented" style="display:flex; width:100%;">
+        <button data-cell="ventricular" class="active" style="flex:1;">Ventricular</button>
+        <button data-cell="pacemaker" style="flex:1;">SA / AV node</button>
+      </div>
+
+      <!-- Ion Legend -->
+      <div class="mt-7">
+        <div class="section-eyebrow">Ions</div>
+        <div class="space-y-2">
+          <div class="ion-legend-item"><span class="ion-dot" style="background:#fbbf24; color:#fbbf24"></span><div class="flex-1"><div class="font-mono text-[12px] text-slate-200">Na⁺</div><div class="font-mono text-[10px] text-slate-500">in 10 · out 145 mM</div></div></div>
+          <div class="ion-legend-item"><span class="ion-dot" style="background:#a78bfa; color:#a78bfa"></span><div class="flex-1"><div class="font-mono text-[12px] text-slate-200">K⁺</div><div class="font-mono text-[10px] text-slate-500">in 140 · out 4 mM</div></div></div>
+          <div class="ion-legend-item"><span class="ion-dot" style="background:#f472b6; color:#f472b6"></span><div class="flex-1"><div class="font-mono text-[12px] text-slate-200">Ca²⁺</div><div class="font-mono text-[10px] text-slate-500">in 10⁻⁴ · out 2 mM</div></div></div>
+        </div>
+      </div>
+
+      <!-- Driving force legend -->
+      <div class="mt-7">
+        <div class="section-eyebrow">Flow Direction</div>
+        <div class="space-y-2 text-[12px] font-mono text-slate-400">
+          <div class="flex items-center gap-2.5">
+            <svg width="22" height="14" viewBox="0 0 22 14"><path d="M2 7 H18 M14 3 L18 7 L14 11" stroke="#fbbf24" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Inward (depolarizing)</span>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <svg width="22" height="14" viewBox="0 0 22 14"><path d="M20 7 H4 M8 3 L4 7 L8 11" stroke="#22d3ee" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Outward (repolarizing)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Note -->
+      <div class="mt-7 p-3 rounded-lg border border-slate-800/70 bg-slate-900/30">
+        <p class="font-mono text-[10.5px] text-slate-500 uppercase tracking-wider mb-1.5">Animation Notes</p>
+        <p class="text-[12px] text-slate-400 leading-relaxed">
+          Particle density reflects current magnitude. Animation is slowed ~30× real time; phase 0 is visually elongated for clarity.
+        </p>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- =========== MAIN PANEL =========== -->
+  <main class="p-4 md:p-6 lg:p-7">
+
+    <!-- ─────────── DRUGS VIEW ─────────── -->
+    <div id="view-drugs" class="space-y-5">
+
+    <!-- Current drug header -->
+    <div id="drugHeader" class="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-1"></div>
+
+    <!-- AP Plots -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-5">
+
+      <!-- Ventricular -->
+      <div class="card card-acc p-4 md:p-5 relative">
+        <div class="flex items-start justify-between mb-1">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-display text-base font-medium">Ventricular Myocyte</h3>
+              <span class="font-mono text-[10px] text-slate-500 px-1.5 py-0.5 border border-slate-700/60 rounded">fast response</span>
+            </div>
+            <p class="text-[11.5px] text-slate-500 mt-0.5">Phases 0 · 1 · 2 · 3 · 4 — I<sub>Na</sub> driven upstroke + plateau · hover for details</p>
+          </div>
+          <div class="hidden md:flex items-center gap-1.5 font-mono text-[10px] text-slate-500">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+            <span>RMP −90 mV</span>
+          </div>
+        </div>
+        <svg id="ventSvg" viewBox="0 0 520 330" class="w-full h-auto mt-2" preserveAspectRatio="xMidYMid meet"></svg>
+        <div id="ventTooltip" class="ap-tooltip" style="display:none;"></div>
+      </div>
+
+      <!-- Pacemaker -->
+      <div class="card card-acc p-4 md:p-5 relative">
+        <div class="flex items-start justify-between mb-1">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-display text-base font-medium">SA / AV Nodal Cell</h3>
+              <span class="font-mono text-[10px] text-slate-500 px-1.5 py-0.5 border border-slate-700/60 rounded">slow response</span>
+            </div>
+            <p class="text-[11.5px] text-slate-500 mt-0.5">Phases 4 · 0 · 3 — I<sub>f</sub> &amp; I<sub>Ca-L</sub> driven · hover for details</p>
+          </div>
+          <div class="hidden md:flex items-center gap-1.5 font-mono text-[10px] text-slate-500">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+            <span>MDP −60 mV</span>
+          </div>
+        </div>
+        <svg id="paceSvg" viewBox="0 0 520 330" class="w-full h-auto mt-2" preserveAspectRatio="xMidYMid meet"></svg>
+        <div id="paceTooltip" class="ap-tooltip" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Mechanism / Indications / ECG -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+      <div class="card p-4">
+        <p class="font-mono text-[10px] uppercase tracking-widest text-cyan-400/90 mb-2">Molecular Mechanism</p>
+        <p id="infoMechanism" class="text-[13.5px] leading-relaxed font-medium"></p>
+      </div>
+      <div class="card p-4">
+        <p class="font-mono text-[10px] uppercase tracking-widest text-violet-400/90 mb-2">Prototype Agents</p>
+        <p id="infoExamples" class="text-[13.5px] leading-relaxed font-medium"></p>
+      </div>
+      <div class="card p-4">
+        <p class="font-mono text-[10px] uppercase tracking-widest text-emerald-400/90 mb-2">Clinical Indications</p>
+        <p id="infoIndications" class="text-[13.5px] leading-relaxed font-medium"></p>
+      </div>
+      <div class="card p-4">
+        <p class="font-mono text-[10px] uppercase tracking-widest text-rose-400/90 mb-2">ECG Signature · Adverse</p>
+        <p id="infoECG" class="text-[13.5px] leading-relaxed font-medium"></p>
+      </div>
+    </div>
+
+    <!-- Effects Grid -->
+    <div class="card p-4 md:p-5">
+      <div class="flex items-center justify-between mb-4">
+        <p class="font-mono text-[10px] uppercase tracking-widest text-amber-400/90">Electrophysiologic Parameter Changes</p>
+        <p class="font-mono text-[10px] text-slate-500">↑ increase &nbsp; ↓ decrease &nbsp; — no change</p>
+      </div>
+      <div id="effectsGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3"></div>
+    </div>
+
+    <!-- Clinical pearls (changes per drug) -->
+    <div id="pearlCard" class="card p-4 md:p-5">
+      <p class="font-mono text-[10px] uppercase tracking-widest text-cyan-400/90 mb-3">Clinical Pearl</p>
+      <p id="pearlText" class="text-[13.5px] leading-relaxed text-slate-300"></p>
+    </div>
+
+    <!-- Footer attribution (drugs view only) -->
+    <div class="pt-2 pb-4 text-center">
+      <p class="font-mono text-[10px] text-slate-600 uppercase tracking-widest">
+        Educational simulation · Not for clinical decision-making
+      </p>
+    </div>
+
+    </div><!-- /view-drugs -->
+
+    <!-- ─────────── IONS VIEW ─────────── -->
+    <div id="view-ions" class="hidden space-y-3">
+
+      <!-- Compact toolbar -->
+      <div class="flex items-center justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <p class="font-mono text-[9.5px] uppercase tracking-widest text-slate-500">Cardiac Electrophysiology</p>
+          <h2 id="ionCellTitle" class="font-display text-lg md:text-xl font-medium leading-tight text-cyan-400 truncate">Ventricular Myocyte</h2>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <button id="ionPlayBtn" class="icon-btn" title="Play / Pause">
+            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
+          </button>
+          <button id="ionResetBtn" class="icon-btn" title="Restart">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+          </button>
+          <div class="segmented ml-1">
+            <button data-speed="0.5">0.5×</button>
+            <button data-speed="1" class="active">1×</button>
+            <button data-speed="2">2×</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top row: AP curve + Phase banner with significance -->
+      <div class="ion-toprow">
+        <!-- AP curve with playhead + phase bands + hover tooltip -->
+        <div class="card card-acc p-3 md:p-4 relative">
+          <div class="flex items-center justify-between mb-1">
+            <p class="font-mono text-[9.5px] uppercase tracking-widest text-cyan-400/90">Action Potential</p>
+            <p class="font-mono text-[9.5px] text-slate-500"><span id="ionTimeReadout">0</span> ms · hover for details</p>
+          </div>
+          <svg id="ionApSvg" viewBox="0 0 700 230" class="w-full h-auto" preserveAspectRatio="xMidYMid meet"></svg>
+          <!-- Tooltip popup (positioned absolutely) -->
+          <div id="ionApTooltip" class="ap-tooltip" style="display:none;"></div>
+        </div>
+
+        <!-- Phase banner + significance combined -->
+        <div class="card p-3 md:p-4 flex flex-col">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="ionPhaseNumBox" class="phase-num-box">4</div>
+            <div class="flex-1 min-w-0">
+              <p class="font-mono text-[9.5px] uppercase tracking-widest text-slate-500">Active phase</p>
+              <h3 id="ionPhaseName" class="font-display text-base md:text-lg font-medium leading-tight">Phase 4 — Resting</h3>
+              <p id="ionPhaseSub" class="font-mono text-[10px] text-slate-400 mt-0.5">Stable diastolic potential</p>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <p class="font-mono text-[9.5px] uppercase tracking-widest text-slate-500">V<sub>m</sub></p>
+              <p id="ionVm" class="font-mono text-lg md:text-xl text-cyan-400 leading-none mt-1">−90 mV</p>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-slate-800/60 flex-1 overflow-hidden">
+            <p class="font-mono text-[9.5px] uppercase tracking-widest text-amber-400/90 mb-1.5">Physiologic significance</p>
+            <p id="ionSignificance" class="text-[12px] leading-relaxed text-slate-200"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Membrane schematic with channels and ions (full width, compact) -->
+      <div class="card card-acc p-3 md:p-4">
+        <p class="font-mono text-[9.5px] uppercase tracking-widest text-violet-400/90 mb-1">Cell Membrane · Ion Channels &amp; Flux</p>
+        <svg id="ionMemSvg" viewBox="0 0 1000 200" class="w-full h-auto" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+
+      <!-- Ion currents over time (full width, compact lanes) -->
+      <div class="card card-acc p-3 md:p-4">
+        <p class="font-mono text-[9.5px] uppercase tracking-widest text-emerald-400/90 mb-1">Ionic Currents · Time Course</p>
+        <svg id="ionCurSvg" viewBox="0 0 700 180" class="w-full h-auto" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+
+    </div><!-- /view-ions -->
+
+  </main>
+</div>
+
+<!-- ============================ SCRIPT ============================ -->
+<script>
+"use strict";
+
+/* -----------------------------------------------------------
+   DRUG DATABASE
+   Each drug provides ventricular & pacemaker parameter sets.
+   Multipliers are referenced against the "normal" baseline.
+----------------------------------------------------------- */
+const drugDB = {
+  normal: {
+    name: 'Baseline',
+    classCode: '—',
+    color: '#22d3ee',
+    mechanism: 'Native ionic conductances intact. Reference morphology for comparison.',
+    examples: 'Physiologic state — no pharmacologic intervention.',
+    indications: 'Reference condition.',
+    ecg: 'Normal sinus rhythm. PR 120–200 ms · QRS &lt;120 ms · QTc &lt;440 ms.',
+    pearl: 'The ventricular myocyte fires only when triggered (fast response). The SA/AV node fires spontaneously due to I<sub>f</sub> "funny" current creating slow diastolic depolarization (phase 4).',
+    effects: { p0: 0, apd: 0, p3: 0, p4: 0, erp: 0, hr: 0 },
+    vent: { p0: 1.0, p1: 1.0, p2dur: 1.0, p2level: 1.0, p3: 1.0, rest: -90, peak: 30 },
+    pace: { p0: 1.0, p3: 1.0, p4slope: 1.0, mdp: -60, peak: 10 }
+  },
+
+  Ia: {
+    name: 'Class Ia',
+    classCode: 'Na⁺ block (intermediate)',
+    color: '#fbbf24',
+    mechanism: 'Intermediate kinetics Na⁺ channel blockade <em>plus</em> I<sub>Kr</sub> blockade → moderately depressed phase 0 with prolonged repolarization.',
+    examples: 'Procainamide · Quinidine · Disopyramide',
+    indications: 'Atrial &amp; ventricular arrhythmias · Procainamide for stable WPW-AF (wide-complex) · Sustained VT.',
+    ecg: '↑QRS, ↑QT (TdP risk) · Procainamide → drug-induced lupus · Quinidine → cinchonism, thrombocytopenia.',
+    pearl: 'Procainamide is the antiarrhythmic of choice for hemodynamically stable wide-complex tachycardia of unknown origin and for pre-excited AF (WPW + AF) where AV-nodal blockers are <em>contraindicated</em>.',
+    effects: { p0: -2, apd: 2, p3: -2, p4: 0, erp: 2, hr: -1 },
+    vent: { p0: 0.50, p1: 1.0, p2dur: 1.05, p2level: 1.0, p3: 0.55, rest: -90, peak: 22 },
+    pace: { p0: 0.78, p3: 0.65, p4slope: 0.85, mdp: -60, peak: 7 }
+  },
+
+  Ib: {
+    name: 'Class Ib',
+    classCode: 'Na⁺ block (fast)',
+    color: '#a3e635',
+    mechanism: 'Fast on/off Na⁺ channel kinetics — preferential block of <em>ischemic / depolarized</em> tissue. Slight I<sub>K</sub> enhancement shortens APD.',
+    examples: 'Lidocaine · Mexiletine · Tocainide · (Phenytoin)',
+    indications: 'Post-MI ventricular arrhythmias · Digoxin-induced VT · VT during cardiac surgery.',
+    ecg: 'Minimal QRS change · slightly ↓QT · CNS toxicity: perioral paresthesia → tremor → seizures.',
+    pearl: 'The "ischemia hunter" — Class Ib drugs bind preferentially to depolarized myocytes (which dwell longer in the inactivated state), giving them selectivity for damaged tissue while sparing healthy myocardium. Useless in atrial tissue (short APD).',
+    effects: { p0: -1, apd: -2, p3: 2, p4: 0, erp: -1, hr: 0 },
+    vent: { p0: 0.85, p1: 1.0, p2dur: 0.75, p2level: 0.9, p3: 1.45, rest: -90, peak: 26 },
+    pace: { p0: 1.0, p3: 1.0, p4slope: 1.0, mdp: -60, peak: 10 }
+  },
+
+  Ic: {
+    name: 'Class Ic',
+    classCode: 'Na⁺ block (slow)',
+    color: '#fb7185',
+    mechanism: 'Slow-kinetics Na⁺ channel blockade — markedly ↓ V<sub>max</sub> with strong use-dependence; little effect on APD.',
+    examples: 'Flecainide · Propafenone · Moricizine',
+    indications: 'Paroxysmal AF / SVT in <em>structurally normal</em> hearts ("pill-in-pocket"). Pre-excited AF (rare).',
+    ecg: '↑↑QRS · QT unchanged · <strong>CAST trial</strong> — proarrhythmic mortality in post-MI / structural heart disease.',
+    pearl: 'Strong use-dependence: the more the cell fires, the more channels are blocked. This makes Class Ic potent at high heart rates but is also why ventricular tachycardia worsens in scarred hearts — co-administer an AV-nodal blocker to prevent 1:1 AV conduction during atrial flutter.',
+    effects: { p0: -3, apd: 0, p3: 0, p4: 0, erp: 1, hr: 0 },
+    vent: { p0: 0.30, p1: 1.0, p2dur: 1.05, p2level: 1.0, p3: 1.0, rest: -90, peak: 14 },
+    pace: { p0: 0.6, p3: 1.0, p4slope: 0.92, mdp: -60, peak: 4 }
+  },
+
+  II: {
+    name: 'Class II',
+    classCode: 'β-blockade',
+    color: '#a78bfa',
+    mechanism: 'β<sub>1</sub>-adrenergic blockade → ↓cAMP → ↓I<sub>f</sub> and ↓I<sub>Ca-L</sub> in nodal cells. Suppresses sympathetically-driven automaticity.',
+    examples: 'Metoprolol · Bisoprolol · Esmolol · Atenolol · Carvedilol (also α₁)',
+    indications: 'AF/AFL rate control · post-MI prophylaxis · HFrEF · LQTS · catecholaminergic polymorphic VT (CPVT).',
+    ecg: '↑PR · ↓HR · normal QRS/QT · bradycardia, fatigue, bronchospasm (non-selective), cold extremities.',
+    pearl: 'The <em>only</em> antiarrhythmic class with proven all-cause mortality benefit post-MI and in HFrEF. Esmolol (t½ ≈ 9 min) is ideal for unstable patients where you need the option to "turn it off" rapidly.',
+    effects: { p0: 0, apd: 0, p3: 0, p4: -2, erp: 1, hr: -2 },
+    vent: { p0: 1.0, p1: 1.0, p2dur: 1.0, p2level: 1.0, p3: 1.0, rest: -90, peak: 30 },
+    pace: { p0: 0.82, p3: 0.92, p4slope: 0.42, mdp: -60, peak: 8 }
+  },
+
+  III: {
+    name: 'Class III',
+    classCode: 'K⁺ block (I_Kr)',
+    color: '#22d3ee',
+    mechanism: 'I<sub>Kr</sub> (rapid delayed rectifier K⁺) blockade → prolonged phase 3 → extended ERP. Amiodarone additionally blocks I<sub>Na</sub>, β-receptors, and I<sub>Ca-L</sub>.',
+    examples: 'Amiodarone · Sotalol (also β-block) · Dofetilide · Ibutilide · Dronedarone',
+    indications: 'AF (rhythm control) · sustained VT/VF · ACLS shock-refractory arrest (amiodarone).',
+    ecg: '↑↑QT · TdP risk (especially sotalol, dofetilide, ibutilide). Amiodarone: pulm. fibrosis, thyroid dysfx, corneal deposits, blue-grey skin, hepatitis.',
+    pearl: 'Amiodarone hits all four Vaughan Williams classes — that\'s why it works on so many arrhythmias but causes so much toxicity. Reverse use-dependence: K⁺ blockers prolong APD <em>more at slow rates</em> — the opposite of what you want for arrhythmia suppression. Sotalol and dofetilide carry the highest TdP risk; amiodarone surprisingly carries the lowest despite massive QT prolongation.',
+    effects: { p0: 0, apd: 3, p3: -3, p4: 0, erp: 3, hr: -1 },
+    vent: { p0: 1.0, p1: 1.0, p2dur: 1.6, p2level: 1.1, p3: 0.45, rest: -90, peak: 30 },
+    pace: { p0: 1.0, p3: 0.5, p4slope: 0.85, mdp: -60, peak: 10 }
+  },
+
+  IV: {
+    name: 'Class IV',
+    classCode: 'Ca²⁺ block',
+    color: '#f472b6',
+    mechanism: 'L-type Ca²⁺ channel blockade — non-dihydropyridines (cardio-selective). Slows phase 0 of nodal cells &amp; phase 4 automaticity.',
+    examples: 'Verapamil · Diltiazem',
+    indications: 'SVT (AVNRT, AVRT orthodromic) · AF/AFL rate control · idiopathic fascicular VT (verapamil-sensitive).',
+    ecg: '↑PR · ↓HR · constipation (verapamil) · pedal edema · <strong>contraindicated:</strong> WPW+AF, wide-complex VT, HFrEF.',
+    pearl: 'Never give IV verapamil for wide-complex tachycardia — if it\'s VT, you can precipitate hemodynamic collapse. The exception: <em>verapamil-sensitive fascicular VT</em>, a specific idiopathic VT in young patients with RBBB+LAFB morphology.',
+    effects: { p0: -2, apd: -1, p3: 0, p4: -2, erp: 2, hr: -2 },
+    vent: { p0: 1.0, p1: 1.0, p2dur: 0.55, p2level: 0.7, p3: 1.15, rest: -90, peak: 28 },
+    pace: { p0: 0.42, p3: 0.95, p4slope: 0.5, mdp: -60, peak: -2 }
+  },
+
+  adenosine: {
+    name: 'Adenosine',
+    classCode: 'Misc · purinergic',
+    color: '#34d399',
+    mechanism: 'A<sub>1</sub> receptor → G<sub>i</sub> → ↑I<sub>K-ACh</sub> + ↓I<sub>Ca-L</sub> → hyperpolarization &amp; slowed AV conduction. t½ ≈ 10 s.',
+    examples: 'Adenosine (6 mg → 12 mg → 12 mg IV push, large-bore proximal line, flush)',
+    indications: 'Termination of paroxysmal SVT (AVNRT, orthodromic AVRT). Diagnostic unmasking of atrial flutter / unmasking pre-excitation.',
+    ecg: 'Transient AV block / asystole 5–10 s · flushing, chest pressure, "sense of impending doom", bronchospasm in asthma.',
+    pearl: 'Use the largest-bore IV you can find as proximal as possible — antecubital fossa preferred — followed by a brisk saline flush. Adenosine is metabolized within seconds by red blood cell adenosine deaminase. Avoid in known severe asthma; transplanted hearts are <em>supersensitive</em> (use one-tenth dose).',
+    effects: { p0: 0, apd: 0, p3: 0, p4: -3, erp: 2, hr: -3 },
+    vent: { p0: 1.0, p1: 1.0, p2dur: 1.0, p2level: 1.0, p3: 1.0, rest: -90, peak: 30 },
+    pace: { p0: 0.5, p3: 1.3, p4slope: 0.15, mdp: -78, peak: -5 }
+  },
+
+  digoxin: {
+    name: 'Digoxin',
+    classCode: 'Misc · Na/K-ATPase inh.',
+    color: '#fb923c',
+    mechanism: 'Na⁺/K⁺-ATPase inhibition → ↑[Na⁺]<sub>i</sub> → ↓Na/Ca exchanger driving force → ↑[Ca²⁺]<sub>i</sub> (positive inotropy). Centrally mediated ↑vagal tone slows SA &amp; AV nodes.',
+    examples: 'Digoxin · Digitoxin',
+    indications: 'AF rate control (esp. with HFrEF or sedentary patients) · symptomatic HFrEF (not mortality benefit).',
+    ecg: '"Digoxin effect": scooped (Salvador Dalí mustache) ST depression, ↓QT, U waves · narrow therapeutic window (0.5–0.9 ng/mL) · bidirectional VT in toxicity.',
+    pearl: 'Toxicity is the master mimic — can cause virtually <em>any</em> arrhythmia. Classic triad: bidirectional VT, atrial tachycardia with AV block, and hyperkalemia (poor prognostic sign). Antidote: digoxin-specific Fab fragments. Vagal effect is mostly nodal; direct effect on ventricle can cause delayed afterdepolarizations (DADs).',
+    effects: { p0: 0, apd: -1, p3: 1, p4: -2, erp: -1, hr: -2 },
+    vent: { p0: 1.0, p1: 1.0, p2dur: 0.7, p2level: 0.85, p3: 1.25, rest: -90, peak: 28 },
+    pace: { p0: 0.9, p3: 1.0, p4slope: 0.5, mdp: -65, peak: 8 }
+  }
+};
+
+const drugOrder = ['normal', 'Ia', 'Ib', 'Ic', 'II', 'III', 'IV', 'adenosine', 'digoxin'];
+
+let currentDrug = 'normal';
+let drugEffectOn = true;
+
+/* -----------------------------------------------------------
+   VENTRICULAR AP PATH GENERATION
+----------------------------------------------------------- */
+const VENT = {
+  W: 520, H: 330,
+  padL: 50, padR: 24, padT: 30, padB: 42,
+  tMax: 500,        // ms displayed
+  mvMax: 40, mvMin: -100,
+  get plotW() { return this.W - this.padL - this.padR; },
+  get plotH() { return this.H - this.padT - this.padB; },
+  xs(t) { return this.padL + (t / this.tMax) * this.plotW; },
+  ys(mv) { return this.padT + ((this.mvMax - mv) / (this.mvMax - this.mvMin)) * this.plotH; },
+};
+
+function genVentPath(p) {
+  // Base anchor times (ms), exaggerated phase 0 for visibility
+  const tStart = 35;
+  const phase0Dur = 12 / p.p0;       // base ~12ms visual (real ~2ms)
+  const phase1Dur = 14;
+  const phase2Dur = 180 * p.p2dur;
+  const phase3Dur = 70 / p.p3;
+
+  const tP0End = tStart + phase0Dur;
+  const tP1End = tP0End + phase1Dur;
+  const tP2End = tP1End + phase2Dur;
+  const tP3End = tP2End + phase3Dur;
+
+  const peak = p.peak;
+  const notch = peak * 0.32 + 4;
+  const platStart = (notch + 2) / 2 * p.p2level + 2;
+  const platEnd = platStart - 6;
+
+  const X = t => VENT.xs(t);
+  const Y = mv => VENT.ys(mv);
+
+  let d = `M ${X(0)} ${Y(p.rest)}`;
+  d += ` L ${X(tStart)} ${Y(p.rest)}`;
+  // Phase 0 — concave-up rapid rise
+  d += ` C ${X(tStart + phase0Dur * 0.25)} ${Y(p.rest)} ${X(tStart + phase0Dur * 0.55)} ${Y(p.rest + (peak - p.rest) * 0.55)} ${X(tP0End)} ${Y(peak)}`;
+  // Phase 1 — quick repolarization to notch
+  d += ` C ${X(tP0End + phase1Dur * 0.25)} ${Y(peak - 8)} ${X(tP0End + phase1Dur * 0.6)} ${Y(notch + 4)} ${X(tP1End)} ${Y(notch)}`;
+  // Phase 2 — plateau with slight dome curve
+  d += ` C ${X(tP1End + phase2Dur * 0.18)} ${Y(platStart + 2)} ${X(tP1End + phase2Dur * 0.55)} ${Y(platStart)} ${X(tP1End + phase2Dur * 0.78)} ${Y(platEnd + 1)}`;
+  d += ` L ${X(tP2End)} ${Y(platEnd - 2)}`;
+  // Phase 3 — sigmoidal repolarization
+  d += ` C ${X(tP2End + phase3Dur * 0.20)} ${Y(platEnd - 6)} ${X(tP2End + phase3Dur * 0.55)} ${Y(p.rest + 25)} ${X(tP2End + phase3Dur * 0.85)} ${Y(p.rest + 3)}`;
+  d += ` L ${X(tP3End)} ${Y(p.rest)}`;
+  d += ` L ${X(VENT.tMax)} ${Y(p.rest)}`;
+
+  return {
+    d,
+    anchors: { tStart, tP0End, tP1End, tP2End, tP3End, peak, notch, platStart, platEnd, rest: p.rest }
+  };
+}
+
+/* -----------------------------------------------------------
+   PACEMAKER AP PATH GENERATION
+----------------------------------------------------------- */
+const PACE = {
+  W: 520, H: 330,
+  padL: 50, padR: 24, padT: 30, padB: 42,
+  tMax: 1500,
+  mvMax: 30, mvMin: -90,
+  get plotW() { return this.W - this.padL - this.padR; },
+  get plotH() { return this.H - this.padT - this.padB; },
+  xs(t) { return this.padL + (t / this.tMax) * this.plotW; },
+  ys(mv) { return this.padT + ((this.mvMax - mv) / (this.mvMax - this.mvMin)) * this.plotH; },
+  threshold: -40,
+};
+
+function genPacePath(p) {
+  const phase4Dur = 580 / p.p4slope;
+  const phase0Dur = 70 / p.p0;
+  const phase3Dur = 180 / p.p3;
+  const X = t => PACE.xs(t);
+  const Y = mv => PACE.ys(mv);
+
+  let d = `M ${X(0)} ${Y(p.mdp)}`;
+  let t = 0;
+  let firstAnchors = null;
+  let safety = 0;
+
+  while (t < PACE.tMax && safety++ < 10) {
+    const tThresh = t + phase4Dur;
+    const tPeak = tThresh + phase0Dur;
+    const tEnd = tPeak + phase3Dur;
+
+    // PHASE 4 — slow diastolic depolarization (slight concave-up curve)
+    if (tThresh < PACE.tMax) {
+      d += ` C ${X(t + phase4Dur * 0.35)} ${Y(p.mdp + (PACE.threshold - p.mdp) * 0.2)} ${X(t + phase4Dur * 0.75)} ${Y(p.mdp + (PACE.threshold - p.mdp) * 0.65)} ${X(tThresh)} ${Y(PACE.threshold)}`;
+    } else {
+      const k = (PACE.tMax - t) / phase4Dur;
+      d += ` C ${X(t + (PACE.tMax - t) * 0.35)} ${Y(p.mdp + (PACE.threshold - p.mdp) * 0.2 * k)} ${X(t + (PACE.tMax - t) * 0.75)} ${Y(p.mdp + (PACE.threshold - p.mdp) * 0.65 * k)} ${X(PACE.tMax)} ${Y(p.mdp + (PACE.threshold - p.mdp) * k)}`;
+      break;
+    }
+
+    // PHASE 0 — slow Ca²⁺-mediated upstroke
+    if (tPeak < PACE.tMax) {
+      d += ` C ${X(tThresh + phase0Dur * 0.25)} ${Y(PACE.threshold + 8)} ${X(tThresh + phase0Dur * 0.6)} ${Y(p.peak - 4)} ${X(tPeak)} ${Y(p.peak)}`;
+    } else {
+      const k = (PACE.tMax - tThresh) / phase0Dur;
+      d += ` L ${X(PACE.tMax)} ${Y(PACE.threshold + (p.peak - PACE.threshold) * k)}`;
+      break;
+    }
+
+    if (!firstAnchors) firstAnchors = { tThresh, tPeak, tEnd, mdp: p.mdp, threshold: PACE.threshold, peak: p.peak };
+
+    // PHASE 3 — repolarization
+    if (tEnd < PACE.tMax) {
+      d += ` C ${X(tPeak + phase3Dur * 0.25)} ${Y(p.peak - 8)} ${X(tPeak + phase3Dur * 0.6)} ${Y(p.mdp + 22)} ${X(tEnd)} ${Y(p.mdp)}`;
+    } else {
+      const k = (PACE.tMax - tPeak) / phase3Dur;
+      d += ` L ${X(PACE.tMax)} ${Y(p.peak + (p.mdp - p.peak) * k)}`;
+      break;
+    }
+
+    t = tEnd;
+  }
+
+  return { d, anchors: firstAnchors || { tThresh: phase4Dur, tPeak: phase4Dur + phase0Dur, tEnd: phase4Dur + phase0Dur + phase3Dur, mdp: p.mdp, threshold: PACE.threshold, peak: p.peak } };
+}
+
+/* -----------------------------------------------------------
+   SVG SCAFFOLD GENERATORS
+----------------------------------------------------------- */
+function ventScaffold() {
+  const { padL, padR, padT, padB, plotW, plotH, tMax, mvMax, mvMin } = VENT;
+  let s = '';
+
+  // Grid - horizontal voltage lines
+  for (let mv = mvMin; mv <= mvMax; mv += 20) {
+    const y = VENT.ys(mv);
+    const isMajor = mv === 0;
+    s += `<line class="${isMajor ? 'zero-line' : 'grid-line'}" x1="${padL}" y1="${y}" x2="${padL + plotW}" y2="${y}"/>`;
+    s += `<text class="axis-tick" x="${padL - 7}" y="${y + 3}" text-anchor="end">${mv}</text>`;
+  }
+  // Grid - vertical time lines (every 100 ms)
+  for (let t = 0; t <= tMax; t += 100) {
+    const x = VENT.xs(t);
+    s += `<line class="grid-line" x1="${x}" y1="${padT}" x2="${x}" y2="${padT + plotH}"/>`;
+    s += `<text class="axis-tick" x="${x}" y="${padT + plotH + 14}" text-anchor="middle">${t}</text>`;
+  }
+
+  // Axes
+  s += `<line class="axis-line" x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}"/>`;
+  s += `<line class="axis-line" x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}"/>`;
+
+  // Titles
+  s += `<text class="axis-title" x="${padL + plotW / 2}" y="${padT + plotH + 30}" text-anchor="middle">Time · ms</text>`;
+  s += `<text class="axis-title" x="14" y="${padT + plotH / 2}" text-anchor="middle" transform="rotate(-90 14 ${padT + plotH / 2})">Vm · mV</text>`;
+
+  return s;
+}
+
+function paceScaffold() {
+  const { padL, padR, padT, padB, plotW, plotH, tMax, mvMax, mvMin, threshold } = PACE;
+  let s = '';
+
+  for (let mv = -90; mv <= 30; mv += 20) {
+    const y = PACE.ys(mv);
+    const isMajor = mv === 0;
+    s += `<line class="${isMajor ? 'zero-line' : 'grid-line'}" x1="${padL}" y1="${y}" x2="${padL + plotW}" y2="${y}"/>`;
+    s += `<text class="axis-tick" x="${padL - 7}" y="${y + 3}" text-anchor="end">${mv}</text>`;
+  }
+  for (let t = 0; t <= tMax; t += 250) {
+    const x = PACE.xs(t);
+    s += `<line class="grid-line" x1="${x}" y1="${padT}" x2="${x}" y2="${padT + plotH}"/>`;
+    s += `<text class="axis-tick" x="${x}" y="${padT + plotH + 14}" text-anchor="middle">${t}</text>`;
+  }
+
+  // Threshold line
+  const yT = PACE.ys(threshold);
+  s += `<line class="threshold-line" x1="${padL}" y1="${yT}" x2="${padL + plotW}" y2="${yT}"/>`;
+  s += `<text class="axis-tick" x="${padL + plotW - 4}" y="${yT - 4}" text-anchor="end" style="fill: rgba(244, 63, 94, 0.7)">threshold −40</text>`;
+
+  s += `<line class="axis-line" x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}"/>`;
+  s += `<line class="axis-line" x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}"/>`;
+  s += `<text class="axis-title" x="${padL + plotW / 2}" y="${padT + plotH + 30}" text-anchor="middle">Time · ms</text>`;
+  s += `<text class="axis-title" x="14" y="${padT + plotH / 2}" text-anchor="middle" transform="rotate(-90 14 ${padT + plotH / 2})">Vm · mV</text>`;
+
+  return s;
+}
+
+/* Phase labels for ventricular AP — anchored to normal baseline */
+function ventPhaseLabels(anchors) {
+  const X = t => VENT.xs(t);
+  const Y = mv => VENT.ys(mv);
+
+  function tag(x, y, txt, ion) {
+    let s = `<g>`;
+    s += `<circle class="phase-circle" cx="${x}" cy="${y}" r="10"/>`;
+    s += `<text class="phase-tag" x="${x}" y="${y + 3.5}" text-anchor="middle">${txt}</text>`;
+    if (ion) s += `<text class="ion-tag" x="${x}" y="${y - 16}" text-anchor="middle">${ion}</text>`;
+    s += `</g>`;
+    return s;
+  }
+
+  let s = '';
+  // Phase 0
+  s += tag(X(anchors.tStart + (anchors.tP0End - anchors.tStart) / 2 + 5), Y(anchors.peak - 3) - 14, '0', 'I_Na');
+  // Phase 1
+  s += tag(X(anchors.tP0End + 9), Y(anchors.notch) - 18, '1', 'I_to');
+  // Phase 2
+  s += tag(X(anchors.tP1End + (anchors.tP2End - anchors.tP1End) / 2), Y(anchors.platStart) - 18, '2', 'Ca²⁺/K⁺');
+  // Phase 3
+  s += tag(X(anchors.tP2End + (anchors.tP3End - anchors.tP2End) / 2), Y(-50), '3', 'I_Kr,Ks');
+  // Phase 4
+  s += tag(X(460), Y(anchors.rest) - 18, '4', 'I_K1');
+
+  return s;
+}
+
+function pacePhaseLabels(anchors) {
+  const X = t => PACE.xs(t);
+  const Y = mv => PACE.ys(mv);
+
+  function tag(x, y, txt, ion) {
+    let s = `<g>`;
+    s += `<circle class="phase-circle" cx="${x}" cy="${y}" r="10"/>`;
+    s += `<text class="phase-tag" x="${x}" y="${y + 3.5}" text-anchor="middle">${txt}</text>`;
+    if (ion) s += `<text class="ion-tag" x="${x}" y="${y - 16}" text-anchor="middle">${ion}</text>`;
+    s += `</g>`;
+    return s;
+  }
+
+  let s = '';
+  // Phase 4 label — over the slow diastolic depolarization
+  s += tag(X(anchors.tThresh * 0.5), Y(anchors.mdp + (anchors.threshold - anchors.mdp) * 0.35) - 18, '4', 'I_f');
+  // Phase 0
+  s += tag(X(anchors.tThresh + (anchors.tPeak - anchors.tThresh) / 2) + 4, Y(anchors.peak - 4) - 18, '0', 'I_Ca-L');
+  // Phase 3
+  s += tag(X(anchors.tPeak + (anchors.tEnd - anchors.tPeak) / 2), Y(-30), '3', 'I_K');
+
+  return s;
+}
+
+/* -----------------------------------------------------------
+   RENDER FUNCTIONS
+----------------------------------------------------------- */
+function renderVent() {
+  const svg = document.getElementById('ventSvg');
+  const normalPath = genVentPath(drugDB.normal.vent);
+  const drug = drugDB[currentDrug];
+  const drugPath = genVentPath(drug.vent);
+
+  const showDrug = drugEffectOn && currentDrug !== 'normal';
+  const color = showDrug ? drug.color : '#22d3ee';
+  const displayD = drugEffectOn ? drugPath.d : normalPath.d;
+
+  let s = ventScaffold();
+
+  // Normal reference (always rendered, faded when drug active)
+  s += `<path d="${normalPath.d}" fill="none" stroke="rgba(148,163,184,0.45)" stroke-width="1.4" stroke-dasharray="${showDrug ? '4 3' : '0'}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  // Drug-modified curve
+  s += `<path class="ap-path" d="${displayD}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 5px ${color}80)"/>`;
+  // Phase labels (use normal anchors to avoid jumping)
+  s += ventPhaseLabels(normalPath.anchors);
+
+  svg.innerHTML = s;
+}
+
+function renderPace() {
+  const svg = document.getElementById('paceSvg');
+  const normalPath = genPacePath(drugDB.normal.pace);
+  const drug = drugDB[currentDrug];
+  const drugPath = genPacePath(drug.pace);
+
+  const showDrug = drugEffectOn && currentDrug !== 'normal';
+  const color = showDrug ? drug.color : '#22d3ee';
+  const displayD = drugEffectOn ? drugPath.d : normalPath.d;
+
+  let s = paceScaffold();
+
+  s += `<path d="${normalPath.d}" fill="none" stroke="rgba(148,163,184,0.45)" stroke-width="1.4" stroke-dasharray="${showDrug ? '4 3' : '0'}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  s += `<path class="ap-path" d="${displayD}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 5px ${color}80)"/>`;
+  s += pacePhaseLabels(normalPath.anchors);
+
+  svg.innerHTML = s;
+}
+
+/* -----------------------------------------------------------
+   DRUG LIST SIDEBAR
+----------------------------------------------------------- */
+function renderDrugList() {
+  const list = document.getElementById('drugList');
+  list.innerHTML = drugOrder.map(key => {
+    const d = drugDB[key];
+    const active = key === currentDrug ? 'active' : '';
+    return `
+      <button class="drug-btn ${active}" data-drug="${key}" title="${d.name} — ${d.classCode}">
+        <span class="dot" style="background:${d.color};"></span>
+        <span class="label">
+          <span class="name">${d.name}</span>
+          <span class="code">${d.classCode}</span>
+        </span>
+      </button>
+    `;
+  }).join('');
+
+  list.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentDrug = btn.dataset.drug;
+      renderAll();
+    });
+  });
+}
+
+/* -----------------------------------------------------------
+   DRUG HEADER & INFO PANELS
+----------------------------------------------------------- */
+function renderDrugHeader() {
+  const d = drugDB[currentDrug];
+  const el = document.getElementById('drugHeader');
+  el.innerHTML = `
+    <div class="flex items-center gap-3 min-w-0">
+      <span class="w-2.5 h-2.5 rounded-full pulse flex-shrink-0" style="background:${d.color}; box-shadow: 0 0 10px ${d.color};"></span>
+      <div class="min-w-0">
+        <p class="font-mono text-[10px] uppercase tracking-widest text-slate-500">${currentDrug === 'normal' ? 'Reference' : 'Active simulation'}</p>
+        <h2 class="font-display text-2xl md:text-3xl font-medium leading-tight truncate" style="color:${d.color}">${d.name}</h2>
+      </div>
+    </div>
+    <div class="flex items-center gap-5 md:gap-6 flex-shrink-0">
+      <div class="text-left md:text-right">
+        <p class="font-mono text-[10px] uppercase tracking-widest text-slate-500">Category</p>
+        <p class="font-mono text-[12px] text-slate-300 mt-1">${d.classCode}</p>
+      </div>
+      <div class="flex items-center gap-2.5">
+        <span class="font-mono text-[10.5px] text-slate-400 uppercase tracking-wider">Drug Effect</span>
+        <div id="drugToggle" class="toggle ${drugEffectOn ? 'on' : ''}" role="switch" aria-checked="${drugEffectOn}">
+          <div class="toggle-thumb"></div>
+        </div>
+      </div>
+    </div>
+  `;
+  // Re-attach handler since toggle is re-created
+  document.getElementById('drugToggle').addEventListener('click', () => {
+    drugEffectOn = !drugEffectOn;
+    const tog = document.getElementById('drugToggle');
+    tog.classList.toggle('on', drugEffectOn);
+    renderVent();
+    renderPace();
+  });
+}
+
+function renderInfo() {
+  const d = drugDB[currentDrug];
+  document.getElementById('infoMechanism').innerHTML = d.mechanism;
+  document.getElementById('infoExamples').innerHTML = d.examples;
+  document.getElementById('infoIndications').innerHTML = d.indications;
+  document.getElementById('infoECG').innerHTML = d.ecg;
+  document.getElementById('pearlText').innerHTML = d.pearl;
+}
+
+/* -----------------------------------------------------------
+   EFFECTS GRID
+----------------------------------------------------------- */
+function pillFromScore(score) {
+  // -3..3 → pill class
+  if (score === 0) return { cls: 'neutral', txt: '—' };
+  if (score === 1) return { cls: 'up', txt: '↑' };
+  if (score === 2) return { cls: 'up', txt: '↑↑' };
+  if (score === 3) return { cls: 'up-strong', txt: '↑↑↑' };
+  if (score === -1) return { cls: 'dn', txt: '↓' };
+  if (score === -2) return { cls: 'dn', txt: '↓↓' };
+  if (score === -3) return { cls: 'dn-strong', txt: '↓↓↓' };
+  return { cls: 'neutral', txt: '—' };
+}
+
+function renderEffects() {
+  const d = drugDB[currentDrug];
+  const params = [
+    { key: 'p0',  label: 'Phase 0 V_max',     sub: 'I_Na upstroke',        score: d.effects.p0 },
+    { key: 'apd', label: 'AP Duration',       sub: 'phase 2 plateau',      score: d.effects.apd },
+    { key: 'p3',  label: 'Phase 3 repol.',    sub: 'I_K duration',         score: d.effects.p3 },
+    { key: 'p4',  label: 'Phase 4 slope',     sub: 'nodal automaticity',   score: d.effects.p4 },
+    { key: 'erp', label: 'ERP',               sub: 'effective refractory', score: d.effects.erp },
+    { key: 'hr',  label: 'Heart rate',        sub: 'SA node output',       score: d.effects.hr },
+  ];
+
+  const grid = document.getElementById('effectsGrid');
+  grid.innerHTML = params.map(p => {
+    const pill = pillFromScore(p.score);
+    return `
+      <div class="p-3 rounded-lg border border-slate-800/70 bg-slate-950/40">
+        <p class="font-mono text-[10px] text-slate-500 uppercase tracking-wider">${p.label}</p>
+        <p class="text-[10.5px] text-slate-600 italic font-mono mt-0.5">${p.sub}</p>
+        <div class="mt-2.5">
+          <span class="pill ${pill.cls}">${pill.txt}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* -----------------------------------------------------------
+   MAIN RENDER
+----------------------------------------------------------- */
+function renderAll() {
+  renderDrugList();
+  renderDrugHeader();
+  renderVent();
+  renderPace();
+  renderInfo();
+  renderEffects();
+}
+
+/* ==================================================================
+   DRUG VIEW HOVER TOOLTIP
+   Adds rich phase + drug-effect tooltip on vent/pace AP curves
+   ================================================================== */
+
+/* Vm samplers that match the path generators (parameterized by drug params) */
+function getVentVmAt(t, p) {
+  const tStart = 35;
+  const phase0Dur = 12 / p.p0;
+  const phase1Dur = 14;
+  const phase2Dur = 180 * p.p2dur;
+  const phase3Dur = 70 / p.p3;
+  const tP0End = tStart + phase0Dur;
+  const tP1End = tP0End + phase1Dur;
+  const tP2End = tP1End + phase2Dur;
+  const tP3End = tP2End + phase3Dur;
+  const peak = p.peak;
+  const notch = peak * 0.32 + 4;
+  const platStart = (notch + 2) / 2 * p.p2level + 2;
+  const platEnd = platStart - 6;
+  const rest = p.rest;
+  const sm = k => k * k * (3 - 2 * k);
+
+  if (t < tStart) return rest;
+  if (t < tP0End) return rest + (peak - rest) * sm((t - tStart) / phase0Dur);
+  if (t < tP1End) return peak + (notch - peak) * sm((t - tP0End) / phase1Dur);
+  if (t < tP2End) {
+    const k = (t - tP1End) / phase2Dur;
+    if (k < 0.5) return notch + (platStart - notch) * sm(k * 2);
+    return platStart + (platEnd - platStart) * sm((k - 0.5) * 2);
+  }
+  if (t < tP3End) return platEnd + (rest - platEnd) * sm((t - tP2End) / phase3Dur);
+  return rest;
+}
+
+function getPaceVmAt(t, p) {
+  const phase4Dur = 580 / p.p4slope;
+  const phase0Dur = 70 / p.p0;
+  const phase3Dur = 180 / p.p3;
+  const cycleLen = phase4Dur + phase0Dur + phase3Dur;
+  const mdp = p.mdp, threshold = -40, peak = p.peak;
+  const sm = k => k * k * (3 - 2 * k);
+
+  // If phase 4 is essentially flat (no firing), return MDP
+  if (p.p4slope <= 0.01) return mdp;
+
+  let tInCycle = t % cycleLen;
+  if (tInCycle < phase4Dur) {
+    const k = tInCycle / phase4Dur;
+    return mdp + (threshold - mdp) * (k * 0.45 + k * k * 0.55);
+  }
+  if (tInCycle < phase4Dur + phase0Dur) {
+    const k = (tInCycle - phase4Dur) / phase0Dur;
+    return threshold + (peak - threshold) * sm(k);
+  }
+  const k = (tInCycle - phase4Dur - phase0Dur) / phase3Dur;
+  return peak + (mdp - peak) * sm(k);
+}
+
+/* Phase definitions (computed from current drug params) */
+function getVentPhasesFor(p) {
+  const tStart = 35;
+  const phase0Dur = 12 / p.p0;
+  const phase1Dur = 14;
+  const phase2Dur = 180 * p.p2dur;
+  const phase3Dur = 70 / p.p3;
+  const tP0End = tStart + phase0Dur;
+  const tP1End = tP0End + phase1Dur;
+  const tP2End = tP1End + phase2Dur;
+  const tP3End = tP2End + phase3Dur;
+  return [
+    { id: 0, label: '4', name: 'Phase 4 — Resting Potential',
+      tStart: 0, tEnd: tStart, color: '#94a3b8', effectKey: null,
+      mech: 'I<sub>K1</sub> holds V<sub>m</sub> at the resting potential (≈−90 mV). All Na⁺ and Ca²⁺ channels are closed and available.' },
+    { id: 1, label: '0', name: 'Phase 0 — Rapid Upstroke',
+      tStart: tStart, tEnd: tP0End, color: '#fbbf24', effectKey: 'p0',
+      mech: 'Voltage-gated Na⁺ channels open; massive Na⁺ influx (I<sub>Na</sub>) drives V<sub>m</sub> from −90 to +30 mV in ~1 ms. Determines conduction velocity.' },
+    { id: 2, label: '1', name: 'Phase 1 — Early Repolarization',
+      tStart: tP0End, tEnd: tP1End, color: '#a3e635', effectKey: null,
+      mech: 'Na⁺ channels inactivate; transient outward K⁺ current (I<sub>to</sub>) creates the brief "notch".' },
+    { id: 3, label: '2', name: 'Phase 2 — Plateau',
+      tStart: tP1End, tEnd: tP2End, color: '#f472b6', effectKey: 'apd',
+      mech: 'L-type Ca²⁺ channels (I<sub>CaL</sub>) open; Ca²⁺ influx balances slowly-activating K⁺ efflux (I<sub>Ks</sub>). Triggers EC coupling.' },
+    { id: 4, label: '3', name: 'Phase 3 — Repolarization',
+      tStart: tP2End, tEnd: tP3End, color: '#22d3ee', effectKey: 'p3',
+      mech: 'Rapid delayed rectifier K⁺ (I<sub>Kr</sub>, hERG) drives repolarization. The target of Class III drugs and most QT-prolonging meds.' },
+    { id: 5, label: '4', name: 'Phase 4 — Restored Rest',
+      tStart: tP3End, tEnd: 500, color: '#94a3b8', effectKey: null,
+      mech: 'I<sub>K1</sub> restores stable RMP. Na/K-ATPase rebuilds gradients. Cell is refractory until Na⁺ channels recover.' }
+  ];
+}
+
+function getPacePhasesFor(p) {
+  const phase4Dur = 580 / p.p4slope;
+  const phase0Dur = 70 / p.p0;
+  const phase3Dur = 180 / p.p3;
+  const cycleLen = phase4Dur + phase0Dur + phase3Dur;
+  return {
+    cycleLen, phase4Dur, phase0Dur, phase3Dur,
+    phases: [
+      { id: 0, label: '4', name: 'Phase 4 — Spontaneous Depolarization',
+        color: '#34d399', effectKey: 'p4',
+        mech: 'I<sub>f</sub> "funny current" (HCN channels) carries inward Na⁺/K⁺, slowly drifting V<sub>m</sub> from MDP toward threshold. The pacemaker mechanism — accelerated by β-agonists, slowed by ACh/adenosine. T-type Ca²⁺ contributes near threshold.' },
+      { id: 1, label: '0', name: 'Phase 0 — Slow Upstroke',
+        color: '#f472b6', effectKey: 'p0',
+        mech: 'L-type Ca²⁺ channels carry the upstroke (NOT Na⁺ — they\'re inactivated at this MDP). Slow dV/dt (~10 V/s) explains slow nodal conduction. The selective target of Class IV (verapamil/diltiazem).' },
+      { id: 2, label: '3', name: 'Phase 3 — Repolarization',
+        color: '#22d3ee', effectKey: 'p3',
+        mech: 'Ca²⁺ channels inactivate; delayed rectifier K⁺ (I<sub>K</sub>) activates strongly, repolarizing back to MDP. Then I<sub>K</sub> deactivates and I<sub>f</sub> resumes — the next cycle begins.' }
+    ]
+  };
+}
+
+/* Drug-specific effect descriptions per phase
+   Convention (matches existing pillFromScore): negative = slower/reduced, positive = faster/increased
+   p0:  rate of phase-0 upstroke
+   apd: action potential duration
+   p3:  rate of phase-3 repolarization (negative = prolonged repolarization)
+   p4:  slope of phase-4 diastolic depolarization (negative = flatter / slower firing) */
+const DRUG_EFFECT_DESC = {
+  p0: {
+    '-3': 'markedly slows upstroke (↓↓ dV/dt, ↓↓ conduction)',
+    '-2': 'markedly slows upstroke (↓ dV/dt)',
+    '-1': 'mildly slows upstroke',
+    '1':  'mildly accelerates upstroke',
+    '2':  'accelerates upstroke',
+    '3':  'markedly accelerates upstroke'
+  },
+  apd: {
+    '-3': 'markedly shortens APD',
+    '-2': 'markedly shortens APD',
+    '-1': 'shortens APD',
+    '1':  'mildly prolongs APD',
+    '2':  'prolongs APD (↑ QT)',
+    '3':  'markedly prolongs APD (↑↑ QT)'
+  },
+  p3: {
+    '-3': 'markedly prolongs repolarization (Class III hallmark)',
+    '-2': 'prolongs phase 3',
+    '-1': 'mildly slows repolarization',
+    '1':  'mildly accelerates repolarization',
+    '2':  'accelerates repolarization',
+    '3':  'markedly accelerates repolarization'
+  },
+  p4: {
+    '-3': 'abolishes pacemaker firing (asystole/pause)',
+    '-2': 'markedly flattens phase 4 (↓↓ firing rate)',
+    '-1': 'flattens phase 4 (slower firing)',
+    '1':  'mildly steepens phase 4',
+    '2':  'steepens phase 4 (faster firing)',
+    '3':  'markedly steepens phase 4'
+  },
+  erp: {
+    '-3': 'markedly shortens ERP',
+    '-2': 'shortens ERP',
+    '-1': 'mildly shortens ERP',
+    '1':  'mildly prolongs ERP',
+    '2':  'prolongs ERP',
+    '3':  'markedly prolongs ERP'
+  }
+};
+
+function getDrugEffectAtPhase(drugKey, phase) {
+  if (drugKey === 'normal' || !phase.effectKey) return null;
+  const v = drugDB[drugKey].effects[phase.effectKey];
+  if (!v) return null;
+  return DRUG_EFFECT_DESC[phase.effectKey]?.[String(v)] || null;
+}
+
+/* Build & position tooltip near cursor */
+function buildDrugTooltipHTML(opts) {
+  const { phase, t, vm, vmBase, drugKey, showDrugEffect, drugName, drugColor } = opts;
+  const drugDeltaLine = (() => {
+    if (!showDrugEffect || drugKey === 'normal') return '';
+    const eff = getDrugEffectAtPhase(drugKey, phase);
+    if (!eff) return `<div class="ap-tooltip-drug" style="border-color:${drugColor}55; background:${drugColor}10;"><span class="dr-name" style="color:${drugColor};">${drugName}</span><span class="dr-eff">no major effect on this phase</span></div>`;
+    return `<div class="ap-tooltip-drug" style="border-color:${drugColor}55; background:${drugColor}10;"><span class="dr-name" style="color:${drugColor};">${drugName}</span><span class="dr-eff">${eff}</span></div>`;
+  })();
+  const baseDelta = (showDrugEffect && drugKey !== 'normal' && vmBase != null && Math.abs(vm - vmBase) > 0.5)
+    ? `<div class="ap-tooltip-readout-item"><div class="lbl">Δ vs baseline</div><div class="val" style="color:${drugColor};">${(vm - vmBase >= 0 ? '+' : '')}${(vm - vmBase).toFixed(1)} mV</div></div>`
+    : '';
+  return `
+    <div class="ap-tooltip-head">
+      <div class="ap-tooltip-phase-pill" style="background:${phase.color}22; color:${phase.color}; border:1px solid ${phase.color}66;">${phase.label}</div>
+      <div class="ap-tooltip-title" style="color:${phase.color};">${phase.name}</div>
+    </div>
+    <div class="ap-tooltip-readout">
+      <div class="ap-tooltip-readout-item">
+        <div class="lbl">Time</div>
+        <div class="val">${Math.round(t)} ms</div>
+      </div>
+      <div class="ap-tooltip-readout-item">
+        <div class="lbl">V<sub>m</sub></div>
+        <div class="val">${(vm >= 0 ? '+' : '')}${vm.toFixed(1)} mV</div>
+      </div>
+      ${baseDelta}
+    </div>
+    ${drugDeltaLine}
+    <div class="ap-tooltip-body">${phase.mech}</div>
+  `;
+}
+
+function positionTooltip(tooltip, e, svg) {
+  const cardRect = svg.parentElement.getBoundingClientRect();
+  const tooltipX = e.clientX - cardRect.left;
+  const tooltipY = e.clientY - cardRect.top;
+  tooltip.style.display = 'block';
+  tooltip.style.left = tooltipX + 'px';
+  tooltip.style.top  = tooltipY + 'px';
+  const ttRect = tooltip.getBoundingClientRect();
+  if (e.clientY - ttRect.height - 20 < 0) {
+    tooltip.style.transform = 'translate(-50%, 14px)';
+    tooltip.classList.add('tt-below');
+  } else {
+    tooltip.style.transform = 'translate(-50%, calc(-100% - 14px))';
+    tooltip.classList.remove('tt-below');
+  }
+  if (tooltipX - ttRect.width / 2 < 4) {
+    tooltip.style.left = (ttRect.width / 2 + 4) + 'px';
+  } else if (tooltipX + ttRect.width / 2 > cardRect.width - 4) {
+    tooltip.style.left = (cardRect.width - ttRect.width / 2 - 4) + 'px';
+  }
+}
+
+function setupVentHover() {
+  const svg = document.getElementById('ventSvg');
+  const tooltip = document.getElementById('ventTooltip');
+  if (!svg || !tooltip) return;
+  if (svg.dataset.hoverWired === '1') return;
+  svg.dataset.hoverWired = '1';
+
+  const handleMove = (e) => {
+    const rect = svg.getBoundingClientRect();
+    if (rect.width === 0) { tooltip.style.display = 'none'; return; }
+    const xInSvg = ((e.clientX - rect.left) / rect.width) * VENT.W;
+    if (xInSvg < VENT.padL || xInSvg > VENT.padL + VENT.plotW) {
+      tooltip.style.display = 'none';
+      return;
+    }
+    const t = ((xInSvg - VENT.padL) / VENT.plotW) * VENT.tMax;
+    const d = drugDB[currentDrug];
+    const baseD = drugDB.normal;
+    const phases = getVentPhasesFor(drugEffectOn ? d.vent : baseD.vent);
+    const phase = phases.find(ph => t >= ph.tStart && t < ph.tEnd) || phases[phases.length - 1];
+    const vm = getVentVmAt(t, drugEffectOn ? d.vent : baseD.vent);
+    const vmBase = getVentVmAt(t, baseD.vent);
+    tooltip.innerHTML = buildDrugTooltipHTML({
+      phase, t, vm, vmBase,
+      drugKey: currentDrug, showDrugEffect: drugEffectOn,
+      drugName: d.name, drugColor: d.color
+    });
+    positionTooltip(tooltip, e, svg);
+  };
+  svg.addEventListener('mousemove', handleMove);
+  svg.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+  svg.addEventListener('touchmove', (e) => { if (e.touches.length) handleMove(e.touches[0]); }, { passive: true });
+  svg.addEventListener('touchstart', (e) => { if (e.touches.length) handleMove(e.touches[0]); }, { passive: true });
+  svg.addEventListener('touchend', () => { tooltip.style.display = 'none'; });
+}
+
+function setupPaceHover() {
+  const svg = document.getElementById('paceSvg');
+  const tooltip = document.getElementById('paceTooltip');
+  if (!svg || !tooltip) return;
+  if (svg.dataset.hoverWired === '1') return;
+  svg.dataset.hoverWired = '1';
+
+  const handleMove = (e) => {
+    const rect = svg.getBoundingClientRect();
+    if (rect.width === 0) { tooltip.style.display = 'none'; return; }
+    const xInSvg = ((e.clientX - rect.left) / rect.width) * PACE.W;
+    if (xInSvg < PACE.padL || xInSvg > PACE.padL + PACE.plotW) {
+      tooltip.style.display = 'none';
+      return;
+    }
+    const t = ((xInSvg - PACE.padL) / PACE.plotW) * PACE.tMax;
+    const d = drugDB[currentDrug];
+    const baseD = drugDB.normal;
+    const activeP = drugEffectOn ? d.pace : baseD.pace;
+
+    // Detect phase within cycle (handle no-firing case)
+    let phase;
+    if (activeP.p4slope <= 0.01) {
+      // Suppressed firing — always phase 4-like state
+      phase = {
+        id: 0, label: '4', name: 'Phase 4 — Suppressed Firing',
+        color: '#94a3b8', effectKey: 'p4',
+        mech: 'Drug has flattened phase 4 sufficiently that the cell no longer reaches threshold. Spontaneous firing is abolished — useful for terminating SVT (adenosine) or controlling rate.'
+      };
+    } else {
+      const info = getPacePhasesFor(activeP);
+      const tInCycle = t % info.cycleLen;
+      if (tInCycle < info.phase4Dur) phase = info.phases[0];
+      else if (tInCycle < info.phase4Dur + info.phase0Dur) phase = info.phases[1];
+      else phase = info.phases[2];
+    }
+
+    const vm = getPaceVmAt(t, activeP);
+    const vmBase = getPaceVmAt(t, baseD.pace);
+    tooltip.innerHTML = buildDrugTooltipHTML({
+      phase, t, vm, vmBase,
+      drugKey: currentDrug, showDrugEffect: drugEffectOn,
+      drugName: d.name, drugColor: d.color
+    });
+    positionTooltip(tooltip, e, svg);
+  };
+  svg.addEventListener('mousemove', handleMove);
+  svg.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+  svg.addEventListener('touchmove', (e) => { if (e.touches.length) handleMove(e.touches[0]); }, { passive: true });
+  svg.addEventListener('touchstart', (e) => { if (e.touches.length) handleMove(e.touches[0]); }, { passive: true });
+  svg.addEventListener('touchend', () => { tooltip.style.display = 'none'; });
+}
+
+/* ==================================================================
+   ION CHANNEL DYNAMICS — Tab 2
+   Animated visualization of ion channel opening/closing and ion flux
+   ================================================================== */
+
+/* -----------------------------------------------------------
+   CELL DEFINITIONS — phases, channels, currents
+----------------------------------------------------------- */
+
+const ionCells = {
+  ventricular: {
+    title: 'Ventricular Myocyte',
+    cycleDuration: 500,   // ms of cell time per cycle (matches VENT plot)
+    restingVm: -90,
+    phases: [
+      {
+        id: 0, label: '4', name: 'Phase 4 — Resting Potential',
+        subtitle: 'Stable diastolic membrane',
+        tStart: 0, tEnd: 35, color: '#94a3b8',
+        significance: '<strong>Inward rectifier K⁺ channels (I<sub>K1</sub>)</strong> dominate, holding V<sub>m</sub> near the K⁺ equilibrium potential (E<sub>K</sub> ≈ −94 mV). All Na⁺ and Ca²⁺ channels are closed and in the available/resting state, ready to open when triggered. The Na/K-ATPase actively pumps 3 Na⁺ out and 2 K⁺ in, maintaining the gradients that store potential energy across the membrane.'
+      },
+      {
+        id: 1, label: '0', name: 'Phase 0 — Rapid Upstroke',
+        subtitle: 'Voltage-gated Na⁺ channels open',
+        tStart: 35, tEnd: 50, color: '#fbbf24',
+        significance: 'A propagated stimulus depolarizes V<sub>m</sub> past threshold (−65 mV). <strong>Voltage-gated Na⁺ channels open en masse</strong> in ~1 ms, driving a torrential Na⁺ influx (I<sub>Na</sub>). V<sub>m</sub> shoots from −90 to +30 mV. Channels then rapidly inactivate (h-gate closes), becoming refractory. This phase determines conduction velocity — the steeper the upstroke, the faster the impulse spreads. <em>This is the target of all Class I antiarrhythmics.</em>'
+      },
+      {
+        id: 2, label: '1', name: 'Phase 1 — Early Repolarization',
+        subtitle: 'Transient outward K⁺ current',
+        tStart: 50, tEnd: 67, color: '#a3e635',
+        significance: 'Na⁺ channels inactivate. <strong>Transient outward K⁺ channels (I<sub>to</sub>)</strong> activate briefly, producing a small K⁺ efflux that creates the characteristic "notch" — a brief partial repolarization to about +5 mV. I<sub>to</sub> is more prominent in epicardium than endocardium, contributing to transmural heterogeneity (and the J-wave on ECG).'
+      },
+      {
+        id: 3, label: '2', name: 'Phase 2 — Plateau',
+        subtitle: 'Ca²⁺ influx balances K⁺ efflux',
+        tStart: 67, tEnd: 240, color: '#f472b6',
+        significance: 'The defining feature of cardiac AP. <strong>L-type Ca²⁺ channels (I<sub>CaL</sub>)</strong> are open, providing sustained Ca²⁺ influx that balances slowly-activating <strong>delayed rectifier K⁺ currents (I<sub>Ks</sub>)</strong>. The Ca²⁺ influx triggers SR Ca²⁺ release via ryanodine receptors → <em>excitation–contraction coupling</em>. Plateau also maintains refractoriness, preventing tetany. <em>Class IV (verapamil/diltiazem) shortens this phase.</em>'
+      },
+      {
+        id: 4, label: '3', name: 'Phase 3 — Repolarization',
+        subtitle: 'Delayed rectifier K⁺ efflux dominates',
+        tStart: 240, tEnd: 310, color: '#22d3ee',
+        significance: 'L-type Ca²⁺ channels inactivate (Ca²⁺-dependent and voltage-dependent). <strong>Rapid delayed rectifier (I<sub>Kr</sub>, the hERG channel)</strong> drives the bulk of repolarization — this is the target of Class III drugs and the channel blocked by countless QT-prolonging medications. As V<sub>m</sub> falls below −40 mV, I<sub>K1</sub> reactivates to complete repolarization back to RMP.'
+      },
+      {
+        id: 5, label: '4', name: 'Phase 4 — Restored Resting',
+        subtitle: 'Returns to stable diastolic',
+        tStart: 310, tEnd: 500, color: '#94a3b8',
+        significance: 'I<sub>K1</sub> again dominates, locking V<sub>m</sub> at the resting potential. The Na/K-ATPase and Na/Ca exchanger work continuously to restore ionic gradients before the next AP. In ventricular cells, this phase is <em>flat</em> — no spontaneous depolarization (unlike pacemaker cells).'
+      }
+    ],
+    channels: {
+      INa: {
+        label: 'I_Na', longLabel: 'Voltage-gated Na⁺',
+        ion: 'Na', ionColor: '#fbbf24', direction: 'in',
+        activations: [{ tStart: 35, tEnd: 52, rampUp: 2, rampDown: 9, max: 1.0 }]
+      },
+      Ito: {
+        label: 'I_to', longLabel: 'Transient outward K⁺',
+        ion: 'K', ionColor: '#a78bfa', direction: 'out',
+        activations: [{ tStart: 48, tEnd: 72, rampUp: 4, rampDown: 14, max: 0.4 }]
+      },
+      ICaL: {
+        label: 'I_CaL', longLabel: 'L-type Ca²⁺',
+        ion: 'Ca', ionColor: '#f472b6', direction: 'in',
+        activations: [{ tStart: 50, tEnd: 250, rampUp: 12, rampDown: 35, max: 0.6 }]
+      },
+      IKr: {
+        label: 'I_Kr', longLabel: 'Rapid delayed rectifier K⁺',
+        ion: 'K', ionColor: '#a78bfa', direction: 'out',
+        activations: [{ tStart: 180, tEnd: 320, rampUp: 50, rampDown: 25, max: 0.7 }]
+      },
+      IKs: {
+        label: 'I_Ks', longLabel: 'Slow delayed rectifier K⁺',
+        ion: 'K', ionColor: '#2dd4bf', direction: 'out',
+        activations: [{ tStart: 100, tEnd: 320, rampUp: 90, rampDown: 35, max: 0.45 }]
+      },
+      IK1: {
+        label: 'I_K1', longLabel: 'Inward rectifier K⁺',
+        ion: 'K', ionColor: '#22d3ee', direction: 'out',
+        activations: [
+          { tStart: 0, tEnd: 40, rampUp: 6, rampDown: 8, max: 0.55 },
+          { tStart: 285, tEnd: 500, rampUp: 25, rampDown: 6, max: 0.55 }
+        ]
+      }
+    }
+  },
+
+  pacemaker: {
+    title: 'SA / AV Nodal Cell',
+    cycleDuration: 940,
+    restingVm: -60,
+    phases: [
+      {
+        id: 0, label: '4', name: 'Phase 4 — Spontaneous Diastolic Depolarization',
+        subtitle: 'I_f "funny current" drives upward drift',
+        tStart: 0, tEnd: 580, color: '#34d399',
+        significance: 'No stable resting potential. <strong>HCN channels carrying the "funny current" (I<sub>f</sub>)</strong> activate on hyperpolarization, allowing mixed Na⁺/K⁺ inward flux that slowly depolarizes the cell from MDP (−60 mV) toward threshold (−40 mV). Sympathetic tone increases I<sub>f</sub> (faster firing); vagal tone decreases it. <em>This is what makes the SA node the heart\'s natural pacemaker — and the target of ivabradine.</em>'
+      },
+      {
+        id: 1, label: '4', name: 'Phase 4 — T-type Ca²⁺ Contribution',
+        subtitle: 'I_CaT augments late diastolic upstroke',
+        tStart: 580, tEnd: 680, color: '#fb7185',
+        significance: 'As V<sub>m</sub> approaches −50 mV, <strong>T-type Ca²⁺ channels (I<sub>CaT</sub>)</strong> begin to open transiently. They accelerate the final approach to threshold. Once threshold is crossed, L-type Ca²⁺ channels take over and initiate the upstroke.'
+      },
+      {
+        id: 2, label: '0', name: 'Phase 0 — Slow Upstroke',
+        subtitle: 'L-type Ca²⁺ channels drive depolarization',
+        tStart: 680, tEnd: 760, color: '#f472b6',
+        significance: 'Unlike ventricular cells, the nodal upstroke is <strong>not Na⁺-driven</strong> — Na⁺ channels are largely inactivated at the depolarized MDP. Instead, <strong>L-type Ca²⁺ channels (I<sub>CaL</sub>)</strong> carry the upstroke current, giving a much slower dV/dt (~10 V/s vs ~300 V/s in ventricle). This is why nodal conduction is slow — and why Class IV (verapamil) works selectively here.'
+      },
+      {
+        id: 3, label: '3', name: 'Phase 3 — Repolarization',
+        subtitle: 'Delayed rectifier K⁺ efflux',
+        tStart: 760, tEnd: 940, color: '#22d3ee',
+        significance: 'Ca²⁺ channels inactivate. <strong>Delayed rectifier K⁺ channels (I<sub>K</sub>)</strong> activate strongly, producing K⁺ efflux that repolarizes the cell back to the maximum diastolic potential (MDP ≈ −60 mV). Once there, I<sub>K</sub> deactivates and I<sub>f</sub> resumes — beginning the next cycle. Heart rate is set by phase-4 slope (steeper = faster). β-agonists steepen phase 4; ACh / adenosine flattens it and hyperpolarizes MDP via I<sub>K-ACh</sub>.'
+      }
+    ],
+    channels: {
+      If: {
+        label: 'I_f', longLabel: '"Funny" current (HCN)',
+        ion: 'Na/K', ionColor: '#34d399', direction: 'in',
+        activations: [{ tStart: 0, tEnd: 680, rampUp: 80, rampDown: 80, max: 0.45 }]
+      },
+      ICaT: {
+        label: 'I_CaT', longLabel: 'T-type Ca²⁺',
+        ion: 'Ca', ionColor: '#fb7185', direction: 'in',
+        activations: [{ tStart: 560, tEnd: 720, rampUp: 30, rampDown: 35, max: 0.45 }]
+      },
+      ICaL: {
+        label: 'I_CaL', longLabel: 'L-type Ca²⁺',
+        ion: 'Ca', ionColor: '#f472b6', direction: 'in',
+        activations: [{ tStart: 670, tEnd: 800, rampUp: 18, rampDown: 28, max: 0.9 }]
+      },
+      IK: {
+        label: 'I_K', longLabel: 'Delayed rectifier K⁺',
+        ion: 'K', ionColor: '#22d3ee', direction: 'out',
+        activations: [{ tStart: 740, tEnd: 950, rampUp: 35, rampDown: 40, max: 0.85 }]
+      }
+    }
+  }
+};
+
+/* -----------------------------------------------------------
+   ANIMATION STATE
+----------------------------------------------------------- */
+let ionState = {
+  cell: 'ventricular',
+  t: 0,                    // current cell-time within cycle
+  playing: true,
+  speed: 1.0,
+  lastFrame: 0,
+  particles: [],
+  particleId: 0
+};
+
+/* -----------------------------------------------------------
+   Vm(t) — analytical sampler matching the path generators
+----------------------------------------------------------- */
+function ventVm(t) {
+  const p = drugDB.normal.vent;
+  const tStart = 35;
+  const phase0Dur = 12 / p.p0;
+  const phase1Dur = 14;
+  const phase2Dur = 180 * p.p2dur;
+  const phase3Dur = 70 / p.p3;
+  const tP0End = tStart + phase0Dur;
+  const tP1End = tP0End + phase1Dur;
+  const tP2End = tP1End + phase2Dur;
+  const tP3End = tP2End + phase3Dur;
+
+  const peak = p.peak;
+  const notch = peak * 0.32 + 4;
+  const platStart = (notch + 2) / 2 * p.p2level + 2;
+  const platEnd = platStart - 6;
+  const rest = p.rest;
+
+  const sm = k => k * k * (3 - 2 * k);
+
+  if (t < tStart) return rest;
+  if (t < tP0End) return rest + (peak - rest) * sm((t - tStart) / phase0Dur);
+  if (t < tP1End) return peak + (notch - peak) * sm((t - tP0End) / phase1Dur);
+  if (t < tP2End) {
+    const k = (t - tP1End) / phase2Dur;
+    if (k < 0.5) return notch + (platStart - notch) * sm(k * 2);
+    return platStart + (platEnd - platStart) * sm((k - 0.5) * 2);
+  }
+  if (t < tP3End) return platEnd + (rest - platEnd) * sm((t - tP2End) / phase3Dur);
+  return rest;
+}
+
+function paceVm(t) {
+  const p = drugDB.normal.pace;
+  const mdp = p.mdp;            // -60
+  const threshold = -40;
+  const peak = p.peak;          // +10
+  const sm = k => k * k * (3 - 2 * k);
+
+  // Cycle layout (matches phase bands)
+  const phase4Dur = 680;        // slow diastolic depolarization
+  const phase0Dur = 80;         // upstroke (Ca²⁺ driven)
+  const phase3Dur = 180;        // repolarization
+  const cycle = phase4Dur + phase0Dur + phase3Dur;  // 940ms
+
+  // Loop into single cycle
+  let cycleT = t % cycle;
+
+  if (cycleT < phase4Dur) {
+    // Slow drift from MDP toward threshold — concave-up (steeper near threshold)
+    const k = cycleT / phase4Dur;
+    return mdp + (threshold - mdp) * (k * 0.45 + k * k * 0.55);
+  }
+  if (cycleT < phase4Dur + phase0Dur) {
+    const k = (cycleT - phase4Dur) / phase0Dur;
+    return threshold + (peak - threshold) * sm(k);
+  }
+  const k = (cycleT - phase4Dur - phase0Dur) / phase3Dur;
+  return peak + (mdp - peak) * sm(k);
+}
+
+function getVm(t) {
+  return ionState.cell === 'ventricular' ? ventVm(t) : paceVm(t);
+}
+
+/* -----------------------------------------------------------
+   Channel intensity at time t — plateau-shape activation
+   Each activation has rampUp, plateau (1.0), rampDown phases
+----------------------------------------------------------- */
+function channelIntensity(channel, t) {
+  let total = 0;
+  for (const a of channel.activations) {
+    if (t >= a.tStart && t <= a.tEnd) {
+      const range = a.tEnd - a.tStart;
+      const rampUp = a.rampUp != null ? a.rampUp : range * 0.25;
+      const rampDown = a.rampDown != null ? a.rampDown : range * 0.25;
+      const tIn = t - a.tStart;
+      let v;
+      if (tIn < rampUp) {
+        const k = tIn / rampUp;
+        v = k * k * (3 - 2 * k);              // smoothstep up
+      } else if (tIn > range - rampDown) {
+        const k = (range - tIn) / rampDown;
+        v = k * k * (3 - 2 * k);              // smoothstep down
+      } else {
+        v = 1;                                 // plateau
+      }
+      total += v * a.max;
+    }
+  }
+  return Math.min(1, total);
+}
+
+/* -----------------------------------------------------------
+   AP PLOT — playhead version (no drug comparison)
+----------------------------------------------------------- */
+const ION_AP = {
+  W: 700, H: 230,
+  padL: 50, padR: 24, padT: 18, padB: 30,
+  get plotW() { return this.W - this.padL - this.padR; },
+  get plotH() { return this.H - this.padT - this.padB; }
+};
+
+function ionApGeom() {
+  const cell = ionCells[ionState.cell];
+  const tMax = cell.cycleDuration;
+  const mvMin = ionState.cell === 'ventricular' ? -100 : -90;
+  const mvMax = ionState.cell === 'ventricular' ? 40 : 30;
+  return {
+    xs: t => ION_AP.padL + (t / tMax) * ION_AP.plotW,
+    ys: mv => ION_AP.padT + ((mvMax - mv) / (mvMax - mvMin)) * ION_AP.plotH,
+    tMax, mvMin, mvMax
+  };
+}
+
+function renderIonApScaffold() {
+  const g = ionApGeom();
+  const { padL, padR, padT, padB, plotW, plotH } = ION_AP;
+  let s = '';
+
+  // Grid horizontal
+  for (let mv = g.mvMin; mv <= g.mvMax; mv += 20) {
+    const y = g.ys(mv);
+    const isMajor = mv === 0;
+    s += `<line class="${isMajor ? 'zero-line' : 'grid-line'}" x1="${padL}" y1="${y}" x2="${padL + plotW}" y2="${y}"/>`;
+    s += `<text class="axis-tick" x="${padL - 7}" y="${y + 3}" text-anchor="end">${mv}</text>`;
+  }
+
+  // Grid vertical
+  const tStep = g.tMax / 10;
+  for (let t = 0; t <= g.tMax; t += tStep) {
+    const x = g.xs(t);
+    s += `<line class="grid-line" x1="${x}" y1="${padT}" x2="${x}" y2="${padT + plotH}"/>`;
+    s += `<text class="axis-tick" x="${x}" y="${padT + plotH + 14}" text-anchor="middle">${Math.round(t)}</text>`;
+  }
+
+  // Phase bands (colored regions behind curve)
+  const cell = ionCells[ionState.cell];
+  cell.phases.forEach((ph, i) => {
+    const x1 = g.xs(ph.tStart);
+    const x2 = g.xs(ph.tEnd);
+    s += `<rect class="phase-band" data-phase="${i}" x="${x1}" y="${padT}" width="${x2 - x1}" height="${plotH}" fill="${ph.color}" opacity="0.04"/>`;
+    // Phase label at top
+    if ((x2 - x1) > 30) {
+      const lx = (x1 + x2) / 2;
+      s += `<text class="phase-band-label" data-phase-label="${i}" x="${lx}" y="${padT - 5}" text-anchor="middle">${ph.label}</text>`;
+    }
+  });
+
+  s += `<line class="axis-line" x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}"/>`;
+  s += `<line class="axis-line" x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}"/>`;
+  s += `<text class="axis-title" x="${padL + plotW / 2}" y="${padT + plotH + 30}" text-anchor="middle">Time · ms</text>`;
+  s += `<text class="axis-title" x="14" y="${padT + plotH / 2}" text-anchor="middle" transform="rotate(-90 14 ${padT + plotH / 2})">Vm · mV</text>`;
+
+  return s;
+}
+
+function renderIonApPath() {
+  const g = ionApGeom();
+  // Sample Vm at many points and build a path
+  const samples = 200;
+  let d = '';
+  for (let i = 0; i <= samples; i++) {
+    const t = (i / samples) * g.tMax;
+    const vm = getVm(t);
+    const x = g.xs(t);
+    const y = g.ys(vm);
+    d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(1) + ' ';
+  }
+  return `<path d="${d}" fill="none" stroke="#22d3ee" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 4px rgba(34,211,238,0.4))"/>`;
+}
+
+function renderIonAp() {
+  const svg = document.getElementById('ionApSvg');
+  if (!svg) return;
+  let s = renderIonApScaffold();
+  s += renderIonApPath();
+  // Playhead — vertical line + dot at current Vm(t)
+  const g = ionApGeom();
+  const vm = getVm(ionState.t);
+  const x = g.xs(ionState.t);
+  const y = g.ys(vm);
+  s += `<line class="playhead-line" x1="${x}" y1="${ION_AP.padT}" x2="${x}" y2="${ION_AP.padT + ION_AP.plotH}"/>`;
+  s += `<circle class="playhead-dot" cx="${x}" cy="${y}" r="5.5"/>`;
+  svg.innerHTML = s;
+}
+
+/* -----------------------------------------------------------
+   MEMBRANE & ION CHANNELS visualization
+----------------------------------------------------------- */
+const ION_MEM = {
+  W: 1000, H: 200,
+  memTop: 78, memBot: 120,    // membrane band (42px thick)
+  channelW: 60, channelH: 60
+};
+
+function getChannelPositions() {
+  const cell = ionCells[ionState.cell];
+  const ids = Object.keys(cell.channels);
+  const count = ids.length;
+  const totalW = ION_MEM.W - 80; // padding 40 each side
+  const spacing = totalW / count;
+  return ids.map((id, i) => ({
+    id,
+    channel: cell.channels[id],
+    x: 40 + spacing * (i + 0.5),
+    y: (ION_MEM.memTop + ION_MEM.memBot) / 2
+  }));
+}
+
+function renderMembraneScaffold() {
+  const { W, memTop, memBot } = ION_MEM;
+  let s = '';
+
+  // Extracellular background
+  s += `<rect class="mem-extra-bg" x="0" y="0" width="${W}" height="${memTop}"/>`;
+  // Intracellular background
+  s += `<rect class="mem-intra-bg" x="0" y="${memBot}" width="${W}" height="${ION_MEM.H - memBot}"/>`;
+
+  // ── Extracellular header (single row) ──
+  s += `<text class="mem-label-strong" x="20" y="20">EXTRACELLULAR</text>`;
+  s += `<g transform="translate(${W - 440}, 20)">`;
+  s += `<text class="mem-conc" x="0"   y="0" fill="#fbbf24">[Na⁺] 145</text>`;
+  s += `<text class="mem-conc" x="110" y="0" fill="#a78bfa">[K⁺] 4</text>`;
+  s += `<text class="mem-conc" x="200" y="0" fill="#f472b6">[Ca²⁺] 2</text>`;
+  s += `<text class="mem-conc" x="320" y="0">mM</text>`;
+  s += `</g>`;
+
+  // ── Intracellular footer (single row) ──
+  s += `<text class="mem-label-strong" x="20" y="${ION_MEM.H - 10}">INTRACELLULAR</text>`;
+  s += `<g transform="translate(${W - 440}, ${ION_MEM.H - 10})">`;
+  s += `<text class="mem-conc" x="0"   y="0" fill="#fbbf24">[Na⁺] 10</text>`;
+  s += `<text class="mem-conc" x="110" y="0" fill="#a78bfa">[K⁺] 140</text>`;
+  s += `<text class="mem-conc" x="200" y="0" fill="#f472b6">[Ca²⁺] 10⁻⁴</text>`;
+  s += `<text class="mem-conc" x="320" y="0">mM</text>`;
+  s += `</g>`;
+
+  // Lipid bilayer
+  s += `<rect class="mem-bilayer-fill" x="0" y="${memTop}" width="${W}" height="${memBot - memTop}"/>`;
+  s += `<line class="mem-bilayer-top" x1="0" y1="${memTop}" x2="${W}" y2="${memTop}"/>`;
+  s += `<line class="mem-bilayer-bot" x1="0" y1="${memBot}" x2="${W}" y2="${memBot}"/>`;
+  // Phospholipid heads (small circles along bilayer)
+  for (let x = 12; x < W; x += 18) {
+    s += `<circle cx="${x}" cy="${memTop}" r="2" fill="rgba(148,163,184,0.25)"/>`;
+    s += `<circle cx="${x}" cy="${memBot}" r="2" fill="rgba(148,163,184,0.25)"/>`;
+  }
+
+  return s;
+}
+
+function renderChannels() {
+  const positions = getChannelPositions();
+  const { memTop, memBot, channelW } = ION_MEM;
+  const channelHalf = channelW / 2;
+  let s = '';
+
+  for (const { id, channel, x } of positions) {
+    const intensity = channelIntensity(channel, ionState.t);
+    const isOpen = intensity > 0.05;
+    const color = channel.ionColor;
+    const opacity = 0.35 + intensity * 0.65;
+    const glowOpacity = intensity * 0.8;
+
+    // Channel body — two pillars (transmembrane domains) with a gap
+    const pillarW = 14;
+    const gap = 16;
+    const xL = x - gap / 2 - pillarW;
+    const xR = x + gap / 2;
+
+    s += `<g class="channel-group" data-channel="${id}" opacity="${opacity}">`;
+
+    // Outer glow on open
+    if (intensity > 0.1) {
+      s += `<rect x="${x - channelHalf}" y="${memTop - 6}" width="${channelW}" height="${memBot - memTop + 12}" fill="none" stroke="${color}" stroke-width="${1 + intensity * 2}" opacity="${glowOpacity * 0.6}" rx="6" filter="blur(2px)"/>`;
+    }
+
+    // Channel pillars
+    s += `<rect x="${xL}" y="${memTop - 4}" width="${pillarW}" height="${memBot - memTop + 8}" fill="${color}" opacity="0.7" rx="3"/>`;
+    s += `<rect x="${xR}" y="${memTop - 4}" width="${pillarW}" height="${memBot - memTop + 8}" fill="${color}" opacity="0.7" rx="3"/>`;
+
+    // Gate indicators — small bars that "open" when channel is active
+    const topGateY = memTop + 9;
+    const botGateY = memBot - 9;
+    if (isOpen) {
+      // open gate — angled away from center
+      s += `<line x1="${x - 7}" y1="${topGateY + 4}" x2="${x - 11}" y2="${topGateY}" stroke="${color}" stroke-width="2" stroke-linecap="round"/>`;
+      s += `<line x1="${x + 7}" y1="${topGateY + 4}" x2="${x + 11}" y2="${topGateY}" stroke="${color}" stroke-width="2" stroke-linecap="round"/>`;
+      s += `<line x1="${x - 7}" y1="${botGateY - 4}" x2="${x - 11}" y2="${botGateY}" stroke="${color}" stroke-width="2" stroke-linecap="round"/>`;
+      s += `<line x1="${x + 7}" y1="${botGateY - 4}" x2="${x + 11}" y2="${botGateY}" stroke="${color}" stroke-width="2" stroke-linecap="round"/>`;
+    } else {
+      // closed gate — horizontal bars blocking the pore
+      s += `<line x1="${x - 7}" y1="${topGateY + 1}" x2="${x + 7}" y2="${topGateY + 1}" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>`;
+      s += `<line x1="${x - 7}" y1="${botGateY - 1}" x2="${x + 7}" y2="${botGateY - 1}" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>`;
+    }
+
+    s += `</g>`;
+
+    // Channel label below membrane
+    const labelOpacity = isOpen ? 1 : 0.45;
+    s += `<text class="channel-label" x="${x}" y="${memBot + 22}" text-anchor="middle" fill="${color}" opacity="${labelOpacity}">${channel.label}</text>`;
+    s += `<text class="channel-label" x="${x}" y="${memBot + 34}" text-anchor="middle" fill="rgba(148,163,184,0.7)" style="font-size:8.5px; font-weight:400;">${channel.ion}${channel.direction === 'in' ? ' →in' : ' out→'}</text>`;
+
+    // Status indicator above
+    if (isOpen) {
+      s += `<text x="${x}" y="${memTop - 20}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" font-weight="600" fill="${color}" opacity="${intensity}">OPEN</text>`;
+    }
+  }
+  return s;
+}
+
+function renderParticles() {
+  let s = '';
+  for (const p of ionState.particles) {
+    const t = p.age / p.maxAge;
+    const fade = t < 0.15 ? t / 0.15 : (t > 0.85 ? (1 - t) / 0.15 : 1);
+    s += `<g opacity="${fade}">`;
+    s += `<circle cx="${p.x}" cy="${p.y}" r="${p.r}" fill="${p.color}" stroke="#fff" stroke-width="0.5" style="filter: drop-shadow(0 0 4px ${p.color})"/>`;
+    if (p.r >= 5) {
+      s += `<text x="${p.x}" y="${p.y + 2.5}" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" font-weight="700" fill="#ffffff">${p.charge}</text>`;
+    }
+    s += `</g>`;
+  }
+  return s;
+}
+
+function renderIonMembrane() {
+  const svg = document.getElementById('ionMemSvg');
+  if (!svg) return;
+  let s = '';
+  s += renderMembraneScaffold();
+  s += renderChannels();
+  s += renderParticles();
+  svg.innerHTML = s;
+}
+
+/* Spawn particles for a channel based on its current intensity */
+function spawnParticles(dt) {
+  const positions = getChannelPositions();
+  for (const { id, channel, x } of positions) {
+    const intensity = channelIntensity(channel, ionState.t);
+    if (intensity < 0.05) continue;
+
+    // Probability of spawn per ms — scales with intensity
+    const probPerMs = intensity * 0.06; // ~6% per ms at max intensity
+    if (Math.random() < probPerMs * (dt / 16)) {
+      const direction = channel.direction;
+      const startY = direction === 'in' ? ION_MEM.memTop - 40 : ION_MEM.memBot + 40;
+      const endY = direction === 'in' ? ION_MEM.memBot + 50 : ION_MEM.memTop - 50;
+
+      // Jittered start x
+      const jitterX = (Math.random() - 0.5) * 12;
+
+      ionState.particles.push({
+        id: ionState.particleId++,
+        x: x + jitterX,
+        startX: x + jitterX,
+        y: startY,
+        startY,
+        endY,
+        age: 0,
+        maxAge: 800 + Math.random() * 400,
+        color: channel.ionColor,
+        r: channel.ion === 'Ca' ? 5.5 : 5,
+        charge: channel.ion === 'Ca' ? '2+' : '+',
+        ion: channel.ion
+      });
+    }
+  }
+}
+
+function updateParticles(dt) {
+  const toRemove = [];
+  for (let i = 0; i < ionState.particles.length; i++) {
+    const p = ionState.particles[i];
+    p.age += dt;
+    if (p.age >= p.maxAge) { toRemove.push(i); continue; }
+    const t = p.age / p.maxAge;
+    // Position interpolated from start to end with slight x convergence to channel center
+    p.y = p.startY + (p.endY - p.startY) * t;
+    // Slight horizontal sinusoidal wobble for organic feel
+    p.x = p.startX + Math.sin(t * Math.PI * 2) * 1.5;
+  }
+  // Remove old particles
+  for (let i = toRemove.length - 1; i >= 0; i--) {
+    ionState.particles.splice(toRemove[i], 1);
+  }
+  // Hard cap to prevent memory bloat
+  if (ionState.particles.length > 80) {
+    ionState.particles.splice(0, ionState.particles.length - 80);
+  }
+}
+
+/* -----------------------------------------------------------
+   ION CURRENTS — multi-lane time plot
+----------------------------------------------------------- */
+const ION_CUR = {
+  W: 700, padL: 70, padR: 24, padT: 8,
+  laneH: 16, laneGap: 2
+};
+
+function renderIonCurrents() {
+  const svg = document.getElementById('ionCurSvg');
+  if (!svg) return;
+  const cell = ionCells[ionState.cell];
+  const ids = Object.keys(cell.channels);
+  const totalH = ION_CUR.padT + ids.length * (ION_CUR.laneH + ION_CUR.laneGap) + 28;
+  svg.setAttribute('viewBox', `0 0 ${ION_CUR.W} ${totalH}`);
+
+  const plotW = ION_CUR.W - ION_CUR.padL - ION_CUR.padR;
+  const tMax = cell.cycleDuration;
+  const samples = 120;
+
+  let s = '';
+
+  ids.forEach((id, i) => {
+    const ch = cell.channels[id];
+    const yTop = ION_CUR.padT + i * (ION_CUR.laneH + ION_CUR.laneGap);
+    const yBot = yTop + ION_CUR.laneH;
+    const yMid = (yTop + yBot) / 2;
+
+    // Lane background
+    s += `<rect x="${ION_CUR.padL}" y="${yTop}" width="${plotW}" height="${ION_CUR.laneH}" fill="rgba(15,26,46,0.4)" stroke="rgba(148,163,184,0.06)" stroke-width="0.5" rx="3"/>`;
+
+    // Label & direction (compact for 20px lane)
+    s += `<text class="trace-label" x="${ION_CUR.padL - 32}" y="${yMid + 3}" text-anchor="end" fill="${ch.ionColor}" font-weight="600" style="font-size:10px;">${ch.label}</text>`;
+    s += `<text class="trace-sub" x="${ION_CUR.padL - 6}" y="${yMid + 3}" text-anchor="end" style="font-size:8.5px;">${ch.direction === 'in' ? '↓in' : '↑out'}</text>`;
+
+    // Direction baseline
+    const baseline = ch.direction === 'in' ? yBot - 2 : yTop + 2;
+    s += `<line x1="${ION_CUR.padL}" y1="${baseline}" x2="${ION_CUR.padL + plotW}" y2="${baseline}" stroke="rgba(148,163,184,0.18)" stroke-width="0.5" stroke-dasharray="2 2"/>`;
+
+    // Build trace path
+    const laneScale = ION_CUR.laneH - 4;
+    let d = '';
+    for (let j = 0; j <= samples; j++) {
+      const t = (j / samples) * tMax;
+      const intensity = channelIntensity(ch, t);
+      const x = ION_CUR.padL + (t / tMax) * plotW;
+      const offset = intensity * laneScale;
+      const y = ch.direction === 'in' ? baseline - offset : baseline + offset;
+      d += (j === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(1) + ' ';
+    }
+
+    // Filled trace
+    const fillEndX = ION_CUR.padL + plotW;
+    s += `<path d="${d} L ${fillEndX} ${baseline} L ${ION_CUR.padL} ${baseline} Z" fill="${ch.ionColor}" opacity="0.18"/>`;
+    s += `<path d="${d}" fill="none" stroke="${ch.ionColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  });
+
+  // Time axis at bottom
+  const axisY = ION_CUR.padT + ids.length * (ION_CUR.laneH + ION_CUR.laneGap) + 4;
+  s += `<line class="axis-line" x1="${ION_CUR.padL}" y1="${axisY}" x2="${ION_CUR.padL + plotW}" y2="${axisY}"/>`;
+  for (let t = 0; t <= tMax; t += tMax / 10) {
+    const x = ION_CUR.padL + (t / tMax) * plotW;
+    s += `<line x1="${x}" y1="${axisY}" x2="${x}" y2="${axisY + 4}" stroke="rgba(148,163,184,0.3)" stroke-width="0.5"/>`;
+    s += `<text class="axis-tick" x="${x}" y="${axisY + 16}" text-anchor="middle">${Math.round(t)}</text>`;
+  }
+  s += `<text class="axis-title" x="${ION_CUR.padL + plotW / 2}" y="${axisY + 32}" text-anchor="middle">Time · ms</text>`;
+
+  // Vertical playhead spanning all lanes
+  const playX = ION_CUR.padL + (ionState.t / tMax) * plotW;
+  const playY1 = ION_CUR.padT - 4;
+  const playY2 = axisY;
+  s += `<line x1="${playX}" y1="${playY1}" x2="${playX}" y2="${playY2}" class="playhead-line"/>`;
+  s += `<circle cx="${playX}" cy="${playY1}" r="3" class="playhead-dot"/>`;
+
+  svg.innerHTML = s;
+}
+
+/* -----------------------------------------------------------
+   PHASE BANNER & SIGNIFICANCE UPDATE
+----------------------------------------------------------- */
+function getCurrentPhase() {
+  const cell = ionCells[ionState.cell];
+  for (const ph of cell.phases) {
+    if (ionState.t >= ph.tStart && ionState.t < ph.tEnd) return ph;
+  }
+  return cell.phases[cell.phases.length - 1];
+}
+
+function updatePhaseBanner() {
+  const ph = getCurrentPhase();
+  const vm = getVm(ionState.t);
+  const numBox = document.getElementById('ionPhaseNumBox');
+  if (numBox) {
+    numBox.textContent = ph.label;
+    numBox.style.borderColor = ph.color;
+    numBox.style.background = ph.color + '15';
+    numBox.style.color = ph.color;
+  }
+  const nameEl = document.getElementById('ionPhaseName');
+  if (nameEl) {
+    nameEl.textContent = ph.name;
+    nameEl.style.color = ph.color;
+  }
+  const subEl = document.getElementById('ionPhaseSub');
+  if (subEl) subEl.textContent = ph.subtitle;
+  const vmEl = document.getElementById('ionVm');
+  if (vmEl) {
+    vmEl.textContent = (vm >= 0 ? '+' : '') + vm.toFixed(1) + ' mV';
+    vmEl.style.color = ph.color;
+  }
+  const sigEl = document.getElementById('ionSignificance');
+  if (sigEl) sigEl.innerHTML = ph.significance;
+
+  const tEl = document.getElementById('ionTimeReadout');
+  if (tEl) tEl.textContent = Math.round(ionState.t);
+
+  // Update phase band highlights
+  document.querySelectorAll('[data-phase]').forEach(el => {
+    const idx = parseInt(el.getAttribute('data-phase'));
+    if (idx === ph.id) el.setAttribute('opacity', '0.18');
+    else el.setAttribute('opacity', '0.04');
+  });
+  document.querySelectorAll('[data-phase-label]').forEach(el => {
+    const idx = parseInt(el.getAttribute('data-phase-label'));
+    if (idx === ph.id) el.classList.add('active');
+    else el.classList.remove('active');
+  });
+}
+
+/* -----------------------------------------------------------
+   CELL TITLE UPDATE
+----------------------------------------------------------- */
+function updateCellTitle() {
+  const title = document.getElementById('ionCellTitle');
+  if (title) title.textContent = ionCells[ionState.cell].title;
+}
+
+/* -----------------------------------------------------------
+   AP CURVE HOVER TOOLTIP
+----------------------------------------------------------- */
+function setupApHover() {
+  const svg = document.getElementById('ionApSvg');
+  const tooltip = document.getElementById('ionApTooltip');
+  if (!svg || !tooltip) return;
+  if (svg.dataset.hoverWired === '1') return;  // wire only once
+  svg.dataset.hoverWired = '1';
+
+  const handleMove = (e) => {
+    const rect = svg.getBoundingClientRect();
+    if (rect.width === 0) { tooltip.style.display = 'none'; return; }
+
+    // Convert client X to SVG viewBox X
+    const xInSvg = ((e.clientX - rect.left) / rect.width) * ION_AP.W;
+
+    // Bound to plot area
+    if (xInSvg < ION_AP.padL || xInSvg > ION_AP.padL + ION_AP.plotW) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    // Convert to cell-time
+    const g = ionApGeom();
+    const t = ((xInSvg - ION_AP.padL) / ION_AP.plotW) * g.tMax;
+
+    // Find phase, Vm, active channels
+    const cell = ionCells[ionState.cell];
+    const phase = cell.phases.find(ph => t >= ph.tStart && t < ph.tEnd)
+                  || cell.phases[cell.phases.length - 1];
+    const vm = getVm(t);
+    const activeChans = [];
+    for (const [id, ch] of Object.entries(cell.channels)) {
+      const intensity = channelIntensity(ch, t);
+      if (intensity > 0.12) activeChans.push({ id, ch, intensity });
+    }
+    activeChans.sort((a, b) => b.intensity - a.intensity);
+
+    // Short significance: first sentence(s) up to ~180 chars
+    const sigPlain = phase.significance.replace(/<[^>]+>/g, '');
+    const sentences = sigPlain.split(/(?<=\.)\s+/);
+    let shortSig = sentences[0] || sigPlain;
+    if (shortSig.length < 90 && sentences[1]) shortSig += ' ' + sentences[1];
+    if (shortSig.length > 200) shortSig = shortSig.slice(0, 198).replace(/\s\S*$/, '') + '…';
+
+    // Channel chips
+    let chanChips = '';
+    if (activeChans.length) {
+      chanChips = '<div class="ap-tooltip-channels">' +
+        activeChans.slice(0, 5).map(c =>
+          `<span class="ap-tooltip-chan" style="color:${c.ch.ionColor}; border-color:${c.ch.ionColor}55; background:${c.ch.ionColor}10;">${c.ch.label}</span>`
+        ).join('') +
+        '</div>';
+    } else {
+      chanChips = '<div class="ap-tooltip-channels"><span class="ap-tooltip-chan" style="color:#94a3b8;">No major currents active</span></div>';
+    }
+
+    tooltip.innerHTML = `
+      <div class="ap-tooltip-head">
+        <div class="ap-tooltip-phase-pill" style="background:${phase.color}22; color:${phase.color}; border:1px solid ${phase.color}66;">${phase.label}</div>
+        <div class="ap-tooltip-title" style="color:${phase.color};">${phase.name}</div>
+      </div>
+      <div class="ap-tooltip-readout">
+        <div class="ap-tooltip-readout-item">
+          <div class="lbl">Time</div>
+          <div class="val">${Math.round(t)} ms</div>
+        </div>
+        <div class="ap-tooltip-readout-item">
+          <div class="lbl">V<sub>m</sub></div>
+          <div class="val">${(vm >= 0 ? '+' : '')}${vm.toFixed(1)} mV</div>
+        </div>
+      </div>
+      <div class="ap-tooltip-body">${shortSig}</div>
+      ${chanChips}
+    `;
+
+    // Position relative to the card (svg's parent) — keep tooltip inside bounds
+    const cardRect = svg.parentElement.getBoundingClientRect();
+    let tooltipX = e.clientX - cardRect.left;
+    let tooltipY = e.clientY - cardRect.top;
+
+    tooltip.style.display = 'block';
+    tooltip.style.left = tooltipX + 'px';
+    tooltip.style.top  = tooltipY + 'px';
+
+    // Edge guard: if too close to top, flip below cursor
+    const ttRect = tooltip.getBoundingClientRect();
+    if (e.clientY - ttRect.height - 20 < 0) {
+      tooltip.style.transform = 'translate(-50%, 14px)';
+      // Repoint the arrow
+      tooltip.classList.add('tt-below');
+    } else {
+      tooltip.style.transform = 'translate(-50%, calc(-100% - 14px))';
+      tooltip.classList.remove('tt-below');
+    }
+    // Horizontal edge guard
+    if (tooltipX - ttRect.width / 2 < 4) {
+      tooltip.style.left = (ttRect.width / 2 + 4) + 'px';
+    } else if (tooltipX + ttRect.width / 2 > cardRect.width - 4) {
+      tooltip.style.left = (cardRect.width - ttRect.width / 2 - 4) + 'px';
+    }
+  };
+
+  svg.addEventListener('mousemove', handleMove);
+  svg.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+  // Touch support
+  svg.addEventListener('touchstart', (e) => {
+    if (e.touches.length) handleMove(e.touches[0]);
+  }, { passive: true });
+  svg.addEventListener('touchmove', (e) => {
+    if (e.touches.length) handleMove(e.touches[0]);
+  }, { passive: true });
+  svg.addEventListener('touchend', () => { tooltip.style.display = 'none'; });
+}
+
+/* -----------------------------------------------------------
+   ANIMATION LOOP
+----------------------------------------------------------- */
+function ionFrame(now) {
+  if (!ionState.lastFrame) ionState.lastFrame = now;
+  const dt = Math.min(80, now - ionState.lastFrame);
+  ionState.lastFrame = now;
+
+  if (ionState.playing) {
+    // Cell-time advance rate: at speed=1, ~30 real-ms = 1 cell-ms
+    const cellDtPerRealMs = 0.033 * ionState.speed;
+    ionState.t += dt * cellDtPerRealMs;
+    const cycle = ionCells[ionState.cell].cycleDuration;
+    if (ionState.t >= cycle) ionState.t -= cycle;
+
+    spawnParticles(dt);
+    updateParticles(dt);
+
+    renderIonAp();
+    renderIonMembrane();
+    renderIonCurrents();
+    updatePhaseBanner();
+  }
+
+  requestAnimationFrame(ionFrame);
+}
+
+/* -----------------------------------------------------------
+   FULL ION VIEW RENDER (for cell type changes)
+----------------------------------------------------------- */
+function renderIonsAll() {
+  updateCellTitle();
+  ionState.particles = [];
+  renderIonAp();
+  renderIonMembrane();
+  renderIonCurrents();
+  updatePhaseBanner();
+}
+
+/* -----------------------------------------------------------
+   TAB SWITCHING
+----------------------------------------------------------- */
+let currentView = 'drugs';
+
+function switchView(view) {
+  currentView = view;
+  document.querySelectorAll('.view-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.view === view);
+  });
+  document.getElementById('view-drugs').classList.toggle('hidden', view !== 'drugs');
+  document.getElementById('view-ions').classList.toggle('hidden', view !== 'ions');
+  document.getElementById('sidebar-drugs').classList.toggle('hidden', view !== 'drugs');
+  document.getElementById('sidebar-ions').classList.toggle('hidden', view !== 'ions');
+
+  if (view === 'ions') {
+    // Reset and start playing when entering ions view
+    ionState.lastFrame = 0;
+    renderIonsAll();
+    setupApHover();
+  }
+}
+
+document.querySelectorAll('.view-tab').forEach(btn => {
+  btn.addEventListener('click', () => switchView(btn.dataset.view));
+});
+
+/* -----------------------------------------------------------
+   ION CONTROL HANDLERS
+----------------------------------------------------------- */
+// Cell type selector (in sidebar)
+document.querySelectorAll('[data-cell]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-cell]').forEach(b => b.classList.toggle('active', b === btn));
+    ionState.cell = btn.dataset.cell;
+    ionState.t = 0;
+    renderIonsAll();
+  });
+});
+
+// Play / pause
+document.getElementById('ionPlayBtn').addEventListener('click', () => {
+  ionState.playing = !ionState.playing;
+  const btn = document.getElementById('ionPlayBtn');
+  if (ionState.playing) {
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>';
+  } else {
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+  }
+});
+
+// Reset
+document.getElementById('ionResetBtn').addEventListener('click', () => {
+  ionState.t = 0;
+  ionState.particles = [];
+  renderIonsAll();
+});
+
+// Speed
+document.querySelectorAll('[data-speed]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-speed]').forEach(b => b.classList.toggle('active', b === btn));
+    ionState.speed = parseFloat(btn.dataset.speed);
+  });
+});
+
+/* Kick off the animation loop (runs even when ions tab hidden — cheap when hidden) */
+requestAnimationFrame(ionFrame);
+
+/* Init */
+renderAll();
+setupVentHover();
+setupPaceHover();
+</script>
+</body>
+</html>
