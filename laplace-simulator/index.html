@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Law of Laplace · Cardiac Wall Stress Simulator</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Outfit:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --bg-0:#0c1117;
+    --bg-1:#131922;
+    --bg-2:#1a2230;
+    --bg-3:#222c3d;
+    --line:#2a3447;
+    --line-soft:#1f2734;
+    --gold:#d4af6a;
+    --gold-dim:#8a7044;
+    --gold-glow:rgba(212,175,106,.18);
+    --txt-0:#eaecef;
+    --txt-1:#b8bdc7;
+    --txt-2:#8a92a0;
+    --txt-3:#5e6776;
+    --green:#5fb878;
+    --yellow:#e6c068;
+    --orange:#e89548;
+    --red:#d65555;
+    --crimson:#b8324c;
+  }
+  *{ -webkit-font-smoothing:antialiased; }
+  html,body{ background:var(--bg-0); color:var(--txt-0); }
+  body{
+    font-family:'Outfit', system-ui, sans-serif;
+    font-weight:300;
+    letter-spacing:.005em;
+    background-image:
+      radial-gradient(ellipse 1200px 600px at 30% -10%, rgba(212,175,106,.04), transparent 60%),
+      radial-gradient(ellipse 800px 400px at 90% 110%, rgba(184,50,76,.05), transparent 60%);
+  }
+  .serif{ font-family:'Cormorant Garamond', serif; }
+  .mono{ font-family:'JetBrains Mono', monospace; }
+  .gold{ color:var(--gold); }
+  .panel{
+    background:linear-gradient(180deg, var(--bg-1) 0%, #11171f 100%);
+    border:1px solid var(--line);
+    border-radius:6px;
+    position:relative;
+  }
+  .panel::before{
+    content:'';
+    position:absolute; top:-1px; left:24px; right:24px; height:1px;
+    background:linear-gradient(90deg, transparent, var(--gold-dim) 30%, var(--gold-dim) 70%, transparent);
+    opacity:.5;
+  }
+  .label-tiny{
+    font-size:.62rem;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--txt-3);
+    font-weight:500;
+  }
+  .label-small{
+    font-size:.7rem;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--txt-2);
+    font-weight:500;
+  }
+  .gold-rule{
+    height:1px;
+    background:linear-gradient(90deg, transparent, var(--gold-dim) 50%, transparent);
+    opacity:.6;
+  }
+  .ornament{
+    display:flex; align-items:center; gap:.75rem;
+  }
+  .ornament::before, .ornament::after{
+    content:''; flex:1; height:1px;
+    background:linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+    opacity:.5;
+  }
+  .ornament-left::before{ display:none; }
+  .ornament-left::after{ display:block; }
+  .diamond{ color:var(--gold); font-size:.5rem; transform:translateY(-1px); }
+
+  /* slider */
+  input[type=range]{
+    -webkit-appearance:none; appearance:none;
+    width:100%; background:transparent; cursor:pointer;
+    margin:0;
+  }
+  input[type=range]:focus{ outline:none; }
+  input[type=range]::-webkit-slider-runnable-track{
+    height:2px;
+    background:linear-gradient(90deg, var(--gold-dim) 0%, var(--gold-dim) var(--fill,0%), var(--line) var(--fill,0%), var(--line) 100%);
+    border-radius:1px;
+  }
+  input[type=range]::-moz-range-track{
+    height:2px;
+    background:var(--line);
+    border-radius:1px;
+  }
+  input[type=range]::-moz-range-progress{
+    height:2px;
+    background:var(--gold-dim);
+    border-radius:1px;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:13px; height:13px; border-radius:50%;
+    background:var(--gold);
+    margin-top:-5.5px;
+    cursor:grab;
+    border:2px solid var(--bg-0);
+    box-shadow:0 0 0 1px var(--gold), 0 0 12px var(--gold-glow);
+    transition:transform .15s, box-shadow .15s;
+  }
+  input[type=range]::-webkit-slider-thumb:active{
+    transform:scale(1.15);
+    cursor:grabbing;
+    box-shadow:0 0 0 1px var(--gold), 0 0 18px var(--gold);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:13px; height:13px; border-radius:50%;
+    background:var(--gold);
+    cursor:grab;
+    border:2px solid var(--bg-0);
+    box-shadow:0 0 0 1px var(--gold), 0 0 12px var(--gold-glow);
+  }
+
+  /* preset buttons */
+  .preset-btn{
+    background:var(--bg-1);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:.55rem .75rem;
+    text-align:left;
+    transition:all .2s ease;
+    cursor:pointer;
+    font-size:.78rem;
+    color:var(--txt-1);
+    line-height:1.2;
+    width:100%;
+  }
+  .preset-btn:hover{
+    border-color:var(--gold-dim);
+    color:var(--txt-0);
+    background:var(--bg-2);
+  }
+  .preset-btn.active{
+    border-color:var(--gold);
+    background:rgba(212,175,106,.06);
+    color:var(--gold);
+    box-shadow:inset 0 0 0 1px rgba(212,175,106,.15);
+  }
+  .preset-btn .preset-sub{
+    font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; color:var(--txt-3);
+    margin-top:2px; font-weight:400;
+  }
+  .preset-btn.active .preset-sub{ color:var(--gold-dim); }
+
+  /* toggle */
+  .toggle{
+    width:34px; height:18px; background:var(--bg-3);
+    border-radius:10px; position:relative; cursor:pointer;
+    transition:background .25s;
+    border:1px solid var(--line);
+  }
+  .toggle.on{ background:var(--crimson); border-color:#8b2538; }
+  .toggle::after{
+    content:''; position:absolute; top:1px; left:1px;
+    width:14px; height:14px; background:var(--txt-0);
+    border-radius:50%; transition:left .25s;
+  }
+  .toggle.on::after{ left:17px; background:#fff; }
+
+  /* SVG */
+  #lv-svg text{ font-family:'JetBrains Mono', monospace; fill:var(--txt-2); }
+  #heart-group{
+    transform-origin:200px 200px;
+    animation:cardiac-cycle 1.05s ease-in-out infinite;
+  }
+  @keyframes cardiac-cycle{
+    0%, 100%{ transform:scale(1.0); }
+    25%{ transform:scale(.93); }
+    35%{ transform:scale(.93); }
+    55%{ transform:scale(1.0); }
+  }
+  .glow-anim{ animation:wall-glow 1.8s ease-in-out infinite; }
+  @keyframes wall-glow{
+    0%, 100%{ opacity:var(--glow-min,.4); }
+    50%{ opacity:var(--glow-max,.85); }
+  }
+
+  /* stress bar */
+  .stress-bar{
+    height:6px; border-radius:3px;
+    background:linear-gradient(90deg,
+      var(--green) 0%,
+      var(--green) 22%,
+      var(--yellow) 38%,
+      var(--orange) 58%,
+      var(--red) 78%,
+      var(--crimson) 100%);
+    position:relative;
+    box-shadow:inset 0 0 0 1px var(--line);
+  }
+  .stress-marker{
+    position:absolute; top:-4px;
+    width:2px; height:14px; background:var(--txt-0);
+    box-shadow:0 0 8px rgba(255,255,255,.7);
+    transition:left .3s ease-out;
+    transform:translateX(-1px);
+  }
+
+  /* MVO2 dots */
+  .heart-dot{
+    width:9px; height:9px; border-radius:50%; background:var(--bg-3);
+    border:1px solid var(--line); display:inline-block;
+    transition:all .3s;
+  }
+  .heart-dot.active{
+    background:var(--crimson);
+    border-color:var(--red);
+    box-shadow:0 0 8px rgba(214,85,85,.6);
+  }
+
+  /* arrows for direction indicators */
+  .arrow-up::before{ content:'▲'; color:var(--red); font-size:.6em; margin-right:.2em; }
+  .arrow-down::before{ content:'▼'; color:var(--green); font-size:.6em; margin-right:.2em; }
+
+  /* numbered card heads */
+  .card-num{
+    font-family:'Cormorant Garamond', serif;
+    font-size:1.6rem; font-style:italic; font-weight:500;
+    color:var(--gold); line-height:1;
+  }
+
+  /* status pill */
+  .pill{
+    display:inline-flex; align-items:center; gap:.4rem;
+    padding:3px 10px; border-radius:2px;
+    font-size:.65rem; letter-spacing:.18em; text-transform:uppercase;
+    font-weight:500; font-family:'Outfit',sans-serif;
+  }
+  .pill-normal{ background:rgba(95,184,120,.1); color:var(--green); border:1px solid rgba(95,184,120,.3); }
+  .pill-elev{ background:rgba(230,192,104,.1); color:var(--yellow); border:1px solid rgba(230,192,104,.3); }
+  .pill-high{ background:rgba(232,149,72,.1); color:var(--orange); border:1px solid rgba(232,149,72,.3); }
+  .pill-crit{ background:rgba(184,50,76,.12); color:var(--red); border:1px solid rgba(214,85,85,.4); }
+
+  /* live equation */
+  .live-eq{
+    background:var(--bg-0);
+    border:1px solid var(--line-soft);
+    border-radius:4px;
+    padding:.85rem 1rem;
+    overflow-x:auto;
+  }
+
+  /* decompensation banner */
+  .decomp-banner{
+    background:linear-gradient(90deg, rgba(184,50,76,.18), rgba(184,50,76,.06));
+    border:1px solid rgba(214,85,85,.4);
+    border-left:3px solid var(--red);
+  }
+  .decomp-banner.hidden{ display:none; }
+
+  /* scroll snap for preset row on mobile */
+  .preset-grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:.4rem;
+  }
+  @media(min-width:480px){
+    .preset-grid{ grid-template-columns:1fr 1fr; }
+  }
+
+  /* hide scrollbars on slim panels */
+  ::-webkit-scrollbar{ width:6px; height:6px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  ::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
+
+  /* implication list bullet */
+  .implication{
+    position:relative; padding-left:1.1rem;
+    color:var(--txt-1); font-size:.85rem; line-height:1.55;
+    margin-bottom:.6rem;
+  }
+  .implication::before{
+    content:'◆'; position:absolute; left:0; top:.05em;
+    color:var(--gold); font-size:.55em;
+  }
+
+  /* fade-in for dynamic content */
+  .fade-swap{ animation:fade .3s ease-out; }
+  @keyframes fade{ from{opacity:0; transform:translateY(2px);} to{opacity:1; transform:none;} }
+</style>
+</head>
+
+<body>
+<div class="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-10 py-8 lg:py-12">
+
+  <!-- ======================= HEADER ======================= -->
+  <header class="text-center mb-10 lg:mb-14">
+    <div class="ornament max-w-md mx-auto mb-5">
+      <span class="diamond">◆</span>
+      <span class="label-tiny">Cardiovascular Physiology · Module IV</span>
+      <span class="diamond">◆</span>
+    </div>
+    <h1 class="serif text-5xl sm:text-6xl lg:text-7xl font-medium tracking-tight" style="letter-spacing:-.02em;">
+      The Law of <em class="gold">Laplace</em>
+    </h1>
+    <div class="serif italic text-base sm:text-lg mt-2" style="color:var(--txt-2);">
+      an interactive exploration of myocardial wall stress
+    </div>
+    <div class="mt-7 mb-1 flex justify-center">
+      <div id="main-equation" class="text-2xl sm:text-3xl"></div>
+    </div>
+    <div class="mono text-[.72rem] mt-3" style="color:var(--txt-3); letter-spacing:.05em;">
+      σ&nbsp;= wall stress&nbsp;&nbsp;·&nbsp;&nbsp;P&nbsp;= transmural pressure&nbsp;&nbsp;·&nbsp;&nbsp;r&nbsp;= chamber radius&nbsp;&nbsp;·&nbsp;&nbsp;h&nbsp;= wall thickness
+    </div>
+  </header>
+
+  <!-- ======================= TOP DECOMP BANNER ======================= -->
+  <div id="decomp-banner" class="decomp-banner hidden rounded mb-6 px-5 py-3 flex items-center gap-4">
+    <div class="text-xl serif italic" style="color:var(--red);">⚠</div>
+    <div class="flex-1">
+      <div class="label-small" style="color:var(--red);">Decompensation Mode · Active</div>
+      <div class="text-sm mt-1" style="color:var(--txt-1);">
+        LV is dilating progressively. Watch how rising <span class="mono gold">r</span> drives a self-perpetuating rise in σ — the Laplace vicious cycle.
+      </div>
+    </div>
+    <div class="mono text-xs" style="color:var(--txt-2);">
+      Δr / sec: <span id="decomp-rate" class="gold">+0.04</span>
+    </div>
+  </div>
+
+  <!-- ======================= MAIN GRID ======================= -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6">
+
+    <!-- ===== LEFT: CONTROLS ===== -->
+    <section class="panel p-5 lg:p-6 lg:col-span-3">
+
+      <div class="ornament ornament-left mb-4">
+        <span class="serif italic gold" style="font-size:.95rem;">i&nbsp;·&nbsp;Hemodynamic Variables</span>
+      </div>
+
+      <!-- Pressure slider -->
+      <div class="mb-5">
+        <div class="flex items-baseline justify-between mb-1.5">
+          <div>
+            <span class="serif text-lg gold italic">P</span>
+            <span class="label-tiny ml-2">Ventricular Pressure</span>
+          </div>
+          <div>
+            <span id="P-val" class="mono text-base">120</span>
+            <span class="mono text-xs" style="color:var(--txt-3);">mmHg</span>
+          </div>
+        </div>
+        <input type="range" id="P-slider" min="60" max="280" step="1" value="120" />
+        <div class="flex justify-between mono text-[.6rem] mt-1" style="color:var(--txt-3);">
+          <span>60</span><span>120</span><span>280</span>
+        </div>
+      </div>
+
+      <!-- Radius slider -->
+      <div class="mb-5">
+        <div class="flex items-baseline justify-between mb-1.5">
+          <div>
+            <span class="serif text-lg gold italic">r</span>
+            <span class="label-tiny ml-2">Chamber Radius</span>
+          </div>
+          <div>
+            <span id="r-val" class="mono text-base">2.50</span>
+            <span class="mono text-xs" style="color:var(--txt-3);">cm</span>
+          </div>
+        </div>
+        <input type="range" id="r-slider" min="1.5" max="5.5" step="0.05" value="2.5" />
+        <div class="flex justify-between mono text-[.6rem] mt-1" style="color:var(--txt-3);">
+          <span>1.5</span><span>2.5</span><span>5.5</span>
+        </div>
+      </div>
+
+      <!-- Wall thickness slider -->
+      <div class="mb-2">
+        <div class="flex items-baseline justify-between mb-1.5">
+          <div>
+            <span class="serif text-lg gold italic">h</span>
+            <span class="label-tiny ml-2">Wall Thickness</span>
+          </div>
+          <div>
+            <span id="h-val" class="mono text-base">1.00</span>
+            <span class="mono text-xs" style="color:var(--txt-3);">cm</span>
+          </div>
+        </div>
+        <input type="range" id="h-slider" min="0.4" max="2.2" step="0.02" value="1.0" />
+        <div class="flex justify-between mono text-[.6rem] mt-1" style="color:var(--txt-3);">
+          <span>0.4</span><span>1.0</span><span>2.2</span>
+        </div>
+      </div>
+
+      <div class="gold-rule my-5"></div>
+
+      <!-- Reset -->
+      <button id="reset-btn" class="w-full text-center label-small py-2 rounded transition-all hover:text-white"
+        style="background:var(--bg-2); border:1px solid var(--line); color:var(--txt-2);">
+        ↺&nbsp; Reset to Physiologic Baseline
+      </button>
+
+      <div class="ornament ornament-left mt-7 mb-4">
+        <span class="serif italic gold" style="font-size:.95rem;">ii&nbsp;·&nbsp;Clinical Presets</span>
+      </div>
+      <div class="preset-grid" id="preset-grid"></div>
+
+      <div class="ornament ornament-left mt-7 mb-4">
+        <span class="serif italic gold" style="font-size:.95rem;">iii&nbsp;·&nbsp;Decompensation</span>
+      </div>
+      <div class="flex items-center justify-between gap-3 mb-2">
+        <div class="text-xs" style="color:var(--txt-1);">Engage vicious-cycle dilation</div>
+        <div id="decomp-toggle" class="toggle" role="switch" tabindex="0"></div>
+      </div>
+      <div class="text-[.7rem] leading-snug" style="color:var(--txt-3);">
+        Simulates progressive ventricular dilation in DCM. <span class="gold">r</span> rises ~0.04 cm/s, demonstrating Laplace as a driver of HF progression.
+      </div>
+
+    </section>
+
+
+    <!-- ===== CENTER: VISUALIZATION ===== -->
+    <section class="panel p-5 lg:p-7 lg:col-span-5">
+
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <div class="label-tiny">Cross-Section · Left Ventricle</div>
+          <div class="serif italic text-lg" style="color:var(--txt-1);">Short-axis · mid-cavity</div>
+        </div>
+        <div class="text-right">
+          <div class="label-tiny">Geometry</div>
+          <div id="geometry-pill" class="pill pill-normal mt-1.5">Normal</div>
+        </div>
+      </div>
+
+      <!-- SVG -->
+      <div class="relative">
+        <svg id="lv-svg" viewBox="0 0 400 400" class="w-full" style="max-height:480px;">
+          <defs>
+            <radialGradient id="cavity-grad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#0a0d12" stop-opacity="1"/>
+              <stop offset="100%" stop-color="#1a2230" stop-opacity="1"/>
+            </radialGradient>
+            <radialGradient id="glow-grad" cx="50%" cy="50%" r="50%">
+              <stop offset="40%" stop-color="currentColor" stop-opacity=".0"/>
+              <stop offset="70%" stop-color="currentColor" stop-opacity=".25"/>
+              <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
+            </radialGradient>
+            <pattern id="myocardium-pattern" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(0,0,0,.15)" stroke-width=".4"/>
+            </pattern>
+          </defs>
+
+          <!-- subtle reference grid -->
+          <g opacity=".25">
+            <circle cx="200" cy="200" r="170" fill="none" stroke="var(--line-soft)" stroke-width=".5" stroke-dasharray="2 4"/>
+            <circle cx="200" cy="200" r="120" fill="none" stroke="var(--line-soft)" stroke-width=".5" stroke-dasharray="2 4"/>
+            <circle cx="200" cy="200" r="70" fill="none" stroke="var(--line-soft)" stroke-width=".5" stroke-dasharray="2 4"/>
+          </g>
+
+          <!-- Outer stress glow -->
+          <circle id="glow-circle" cx="200" cy="200" r="140" fill="url(#glow-grad)" class="glow-anim" style="color:var(--green);"/>
+
+          <!-- Heart group (animates with cardiac cycle) -->
+          <g id="heart-group">
+            <!-- Wall (annular ring) -->
+            <circle id="wall-circle" cx="200" cy="200" r="85" fill="none" stroke="var(--green)" stroke-width="30" stroke-opacity=".85"/>
+            <!-- Wall texture overlay -->
+            <circle id="wall-pattern" cx="200" cy="200" r="85" fill="none" stroke="url(#myocardium-pattern)" stroke-width="30" pointer-events="none"/>
+            <!-- Wall borders -->
+            <circle id="epicardium" cx="200" cy="200" r="100" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="1"/>
+            <circle id="endocardium-line" cx="200" cy="200" r="70" fill="none" stroke="rgba(0,0,0,.4)" stroke-width="1"/>
+            <!-- Cavity -->
+            <circle id="cavity-circle" cx="200" cy="200" r="70" fill="url(#cavity-grad)"/>
+
+            <!-- Dimension annotations -->
+            <!-- r line: from center to right edge of cavity -->
+            <line id="r-line" x1="200" y1="200" x2="270" y2="200" stroke="var(--gold)" stroke-width="1" stroke-dasharray="2 3"/>
+            <circle cx="200" cy="200" r="2.5" fill="var(--gold)"/>
+            <text id="r-label" x="235" y="194" text-anchor="middle" font-size="11" fill="var(--gold)" font-style="italic" font-family="Cormorant Garamond">r</text>
+            <text id="r-value-txt" x="235" y="216" text-anchor="middle" font-size="9" fill="var(--txt-2)">2.50 cm</text>
+
+            <!-- h indicator: vertical from inner to outer at top -->
+            <line id="h-line" x1="200" y1="130" x2="200" y2="100" stroke="var(--gold)" stroke-width="1"/>
+            <line id="h-tick-1" x1="194" y1="130" x2="206" y2="130" stroke="var(--gold)" stroke-width="1"/>
+            <line id="h-tick-2" x1="194" y1="100" x2="206" y2="100" stroke="var(--gold)" stroke-width="1"/>
+            <text id="h-label" x="220" y="112" font-size="11" fill="var(--gold)" font-style="italic" font-family="Cormorant Garamond">h</text>
+            <text id="h-value-txt" x="220" y="124" font-size="9" fill="var(--txt-2)">1.00 cm</text>
+          </g>
+
+          <!-- Anatomical compass markers -->
+          <text x="200" y="22" text-anchor="middle" font-size="8" fill="var(--txt-3)" letter-spacing="2">ANT</text>
+          <text x="200" y="388" text-anchor="middle" font-size="8" fill="var(--txt-3)" letter-spacing="2">INF</text>
+          <text x="20" y="204" text-anchor="middle" font-size="8" fill="var(--txt-3)" letter-spacing="2">SEPT</text>
+          <text x="380" y="204" text-anchor="middle" font-size="8" fill="var(--txt-3)" letter-spacing="2">LAT</text>
+        </svg>
+      </div>
+
+      <!-- Stress readout -->
+      <div class="mt-2 px-1">
+        <!-- Live equation -->
+        <div class="live-eq mb-4">
+          <div class="label-tiny mb-1.5">Live computation</div>
+          <div id="live-equation" class="text-sm sm:text-base"></div>
+        </div>
+
+        <!-- Wall stress bar -->
+        <div class="flex items-baseline justify-between mb-1.5">
+          <span class="label-small">Wall Stress&nbsp; <span class="serif italic gold normal-case">σ</span></span>
+          <div>
+            <span id="sigma-val" class="mono text-2xl gold">200</span>
+            <span class="mono text-xs ml-1" style="color:var(--txt-3);">×10³ dyne/cm²</span>
+          </div>
+        </div>
+        <div class="stress-bar relative">
+          <div class="stress-marker" id="stress-marker" style="left:22%;"></div>
+        </div>
+        <div class="flex justify-between mono text-[.6rem] mt-1.5" style="color:var(--txt-3);">
+          <span>0</span><span>NORMAL</span><span>ELEVATED</span><span>HIGH</span><span>CRITICAL</span>
+        </div>
+
+        <!-- MVO2 row -->
+        <div class="flex items-center justify-between mt-5 pt-4" style="border-top:1px solid var(--line-soft);">
+          <div>
+            <span class="label-small">Myocardial O₂ Demand&nbsp;</span>
+            <span class="mono text-xs" style="color:var(--txt-3);">(MVO₂)</span>
+          </div>
+          <div class="flex items-center gap-1.5" id="mvo2-dots">
+            <span class="heart-dot active"></span>
+            <span class="heart-dot"></span>
+            <span class="heart-dot"></span>
+            <span class="heart-dot"></span>
+            <span class="heart-dot"></span>
+            <span class="heart-dot"></span>
+            <span class="heart-dot"></span>
+            <span class="heart-dot"></span>
+          </div>
+          <div class="mono text-sm">
+            <span id="mvo2-mult" class="gold">1.0</span>
+            <span class="text-xs" style="color:var(--txt-3);">× baseline</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ===== RIGHT: CLINICAL INTERPRETATION ===== -->
+    <section class="panel p-5 lg:p-6 lg:col-span-4">
+      <div class="ornament ornament-left mb-4">
+        <span class="serif italic gold" style="font-size:.95rem;">iv&nbsp;·&nbsp;Clinical Interpretation</span>
+      </div>
+
+      <!-- Geometry classification -->
+      <div class="mb-5">
+        <div class="label-tiny mb-2">Geometric Pattern</div>
+        <div class="flex items-baseline justify-between flex-wrap gap-2">
+          <div id="geometry-name" class="serif italic text-2xl gold">Normal Geometry</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mt-3 text-sm">
+          <div>
+            <div class="label-tiny">Relative Wall Thickness</div>
+            <div class="mono mt-0.5"><span id="rwt-val">0.80</span> <span class="text-xs" style="color:var(--txt-3);">(2h/r)</span></div>
+          </div>
+          <div>
+            <div class="label-tiny">LV Mass Index <span style="color:var(--txt-3);">(proxy)</span></div>
+            <div class="mono mt-0.5"><span id="lvmi-val">26</span> <span class="text-xs" style="color:var(--txt-3);">cm³</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="gold-rule my-4"></div>
+
+      <!-- Hemodynamic status -->
+      <div class="mb-5">
+        <div class="label-tiny mb-2">Hemodynamic Status</div>
+        <div id="hemo-status" class="text-sm leading-relaxed" style="color:var(--txt-1);">
+          Wall stress is within physiologic range. Afterload is balanced; oxygen demand is normal.
+        </div>
+      </div>
+
+      <div class="gold-rule my-4"></div>
+
+      <!-- Clinical implications -->
+      <div>
+        <div class="label-tiny mb-3">Clinical Implications · MVO₂ &amp; Afterload</div>
+        <div id="implications-list"></div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <!-- ======================= WHY MODULE ======================= -->
+  <section class="mt-10 lg:mt-14">
+    <div class="text-center mb-7">
+      <div class="ornament max-w-md mx-auto mb-3">
+        <span class="diamond">◆</span>
+        <span class="label-tiny">The Physiological Why</span>
+        <span class="diamond">◆</span>
+      </div>
+      <h2 class="serif text-3xl sm:text-4xl font-medium" style="letter-spacing:-.01em;">
+        compensatory loops &amp; <em class="gold">decompensation</em>
+      </h2>
+      <p class="serif italic mt-2 text-sm sm:text-base" style="color:var(--txt-2);">
+        why the heart remodels — and why those very adaptations can become its undoing
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
+
+      <!-- ① Compensatory Response -->
+      <div class="panel p-6">
+        <div class="flex items-baseline gap-3 mb-3">
+          <span class="card-num">i</span>
+          <span class="serif italic gold text-xl">The Compensatory Response</span>
+        </div>
+        <div id="compensatory-body" class="text-sm leading-relaxed" style="color:var(--txt-1);"></div>
+      </div>
+
+      <!-- ② Energetic Cost -->
+      <div class="panel p-6">
+        <div class="flex items-baseline gap-3 mb-3">
+          <span class="card-num">ii</span>
+          <span class="serif italic gold text-xl">The Energetic Cost</span>
+        </div>
+        <div id="energetic-body" class="text-sm leading-relaxed" style="color:var(--txt-1);"></div>
+      </div>
+
+      <!-- ③ Failure Threshold -->
+      <div class="panel p-6">
+        <div class="flex items-baseline gap-3 mb-3">
+          <span class="card-num">iii</span>
+          <span class="serif italic gold text-xl">The Failure Threshold</span>
+        </div>
+        <div id="failure-body" class="text-sm leading-relaxed" style="color:var(--txt-1);"></div>
+      </div>
+
+      <!-- ④ Clinical Correlation -->
+      <div class="panel p-6">
+        <div class="flex items-baseline gap-3 mb-3">
+          <span class="card-num">iv</span>
+          <span class="serif italic gold text-xl">Clinical Correlation</span>
+        </div>
+        <div id="correlation-body" class="text-sm leading-relaxed" style="color:var(--txt-1);"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ======================= FOOTER ======================= -->
+  <footer class="mt-14 mb-2 text-center">
+    <div class="ornament max-w-sm mx-auto mb-4">
+      <span class="diamond">◆</span>
+    </div>
+    <div class="serif italic text-base" style="color:var(--txt-2);">
+      "The heart, more than any other organ, demonstrates that form follows function — and pays the energetic price for it."
+    </div>
+    <div class="mono text-[.65rem] mt-4" style="color:var(--txt-3); letter-spacing:.15em;">
+      REFERENCES&nbsp;·&nbsp;KLABUNDE&nbsp;·&nbsp;OPIE&nbsp;·&nbsp;BRAUNWALD&nbsp;·&nbsp;GROSSMAN (1975)&nbsp;·&nbsp;ESC GUIDELINES
+    </div>
+  </footer>
+
+</div>
+
+<!-- ======================= SCRIPT ======================= -->
+<script>
+'use strict';
+
+/* ============================================================
+   CONSTANTS & STATE
+   ============================================================ */
+const BASELINE = { P: 120, r: 2.5, h: 1.0 };
+const MMHG_TO_DYNE = 1333; // 1 mmHg = 1333 dyne/cm²
+const SVG_CX = 200, SVG_CY = 200;
+const SVG_SCALE = 24; // px per cm  (max outer = 5.5+2.2 = 7.7 cm → ~185 px)
+
+const state = {
+  P: 120, r: 2.5, h: 1.0,
+  preset: 'normal',
+  decomp: false,
+  decompTimer: null
+};
+
+/* Baseline reference values */
+const SIGMA_BASELINE = computeStress(BASELINE.P, BASELINE.r, BASELINE.h); // ≈ 200 kdyne/cm²
+const LVMI_BASELINE = computeLVMI(BASELINE.r, BASELINE.h);
+
+/* ============================================================
+   CORE PHYSICS
+   ============================================================ */
+function computeStress(P, r, h){
+  // σ in kdyne/cm² (kilo-dyne/cm²) — clinically familiar units
+  // σ = P[mmHg] × 1333[dyne/cm² per mmHg] × r[cm] / (2 × h[cm])
+  // Then ÷ 1000 to get kdyne/cm²
+  return (P * MMHG_TO_DYNE * r) / (2 * h) / 1000;
+}
+function computeRWT(r, h){ return (2 * h) / r; }
+function computeLVMI(r, h){
+  // Geometric proxy for LV mass: shell volume ∝ (r+h)³ - r³
+  return Math.pow(r + h, 3) - Math.pow(r, 3);
+}
+function computeMVO2(P, r, h){
+  // Tension-time index proxy: σ × P (×HR×time, both held constant)
+  // Normalized to baseline
+  const sigma = computeStress(P, r, h);
+  const tti  = sigma * P;
+  const tti0 = SIGMA_BASELINE * BASELINE.P;
+  return tti / tti0;
+}
+
+/* ============================================================
+   CLASSIFICATION
+   ============================================================ */
+function classifyGeometry(r, h){
+  // Grossman framework (1975) + Ganau 4-quadrant (1992):
+  //   - Pressure overload → wall thickens, chamber preserved → CONCENTRIC
+  //   - Volume overload   → chamber dilates, wall grows in proportion → ECCENTRIC
+  // Key insight: dilation of the chamber (↑r) is the defining feature of eccentric
+  // remodeling, regardless of whether RWT is preserved. RWT alone misclassifies
+  // proportional growth (both r and h increased) as "concentric".
+  const rwt        = computeRWT(r, h);
+  const lvmi       = computeLVMI(r, h);
+  const massHigh   = lvmi > LVMI_BASELINE * 1.30;
+  const dilated    = r   > BASELINE.r * 1.15;   // chamber enlargement
+  const thickened  = h   > BASELINE.h * 1.15;   // wall thickening
+  const rwtHigh    = rwt > 0.45;                // ASE concentric threshold
+  const rwtLow     = rwt < 0.32;                // eccentric threshold
+
+  // 1. Normal — no significant deviation
+  if (!massHigh && !dilated && !thickened) {
+    return { name:'Normal Geometry', tone:'pill-normal' };
+  }
+  // 2. Concentric remodeling — wall thickened, chamber NOT dilated, mass not yet high
+  if (!massHigh && thickened && !dilated) {
+    return { name:'Concentric Remodeling', tone:'pill-elev' };
+  }
+  // 3. Concentric hypertrophy — wall thickened, chamber NOT dilated, mass increased
+  if (massHigh && thickened && !dilated) {
+    return { name:'Concentric Hypertrophy', tone:'pill-elev' };
+  }
+  // 4. Eccentric hypertrophy — chamber dilated (with or without wall thickening)
+  //    This is the classic signature of chronic volume overload (AR, MR).
+  //    The wall may grow proportionally, but the dilation defines the phenotype.
+  if (dilated && massHigh) {
+    return { name:'Eccentric Hypertrophy', tone:'pill-high' };
+  }
+  // 5. Pure dilation without sufficient mass — failing/dilated phenotype
+  if (dilated && !thickened) {
+    return { name:'Eccentric Remodeling', tone:'pill-high' };
+  }
+  // 6. Wall thinning with low RWT — late decompensated dilation (DCM end-stage)
+  if (rwtLow) {
+    return { name:'Eccentric Remodeling', tone:'pill-crit' };
+  }
+  // Fallback
+  return { name:'Mixed Remodeling', tone:'pill-elev' };
+}
+
+function classifyStress(sigma){
+  if (sigma < 250) return { tier:'normal',  pill:'pill-normal', label:'Physiologic' };
+  if (sigma < 400) return { tier:'elev',    pill:'pill-elev',   label:'Elevated' };
+  if (sigma < 600) return { tier:'high',    pill:'pill-high',   label:'High' };
+  return                  { tier:'crit',    pill:'pill-crit',   label:'Critical' };
+}
+
+function dominantPathology(P, r, h){
+  // Returns the dominant physiologic deviation from baseline
+  const dP = (P - BASELINE.P) / BASELINE.P;
+  const dr = (r - BASELINE.r) / BASELINE.r;
+  const dh = (h - BASELINE.h) / BASELINE.h;
+  // Score
+  const pressureOverload = dP > 0.20;
+  const volumeOverload   = dr > 0.20;
+  const hypertrophy      = dh > 0.20;
+  const wallThinning     = dh < -0.20;
+  return { pressureOverload, volumeOverload, hypertrophy, wallThinning, dP, dr, dh };
+}
+
+/* ============================================================
+   COLOR INTERPOLATION
+   ============================================================ */
+function lerpColor(c1, c2, t){
+  return c1.map((v,i) => Math.round(v + (c2[i]-v)*t));
+}
+function stressColor(sigma){
+  // Stops keyed to wall stress in kdyne/cm²
+  const stops = [
+    { v:   0, c:[ 95,184,120] },  // green
+    { v: 220, c:[ 95,184,120] },  // green
+    { v: 320, c:[230,192,104] },  // yellow
+    { v: 480, c:[232,149,72]  },  // orange
+    { v: 700, c:[214, 85, 85] },  // red
+    { v:1100, c:[184, 50, 76] }   // crimson
+  ];
+  for (let i=0; i<stops.length-1; i++){
+    if (sigma <= stops[i+1].v){
+      const t = Math.max(0, Math.min(1, (sigma - stops[i].v)/(stops[i+1].v - stops[i].v)));
+      const c = lerpColor(stops[i].c, stops[i+1].c, t);
+      return `rgb(${c.join(',')})`;
+    }
+  }
+  return `rgb(${stops[stops.length-1].c.join(',')})`;
+}
+
+/* ============================================================
+   PRESETS
+   ============================================================ */
+const PRESETS = [
+  { id:'normal',    name:'Normal Heart',          sub:'baseline',          P:120, r:2.50, h:1.00 },
+  { id:'as-acute',  name:'Aortic Stenosis',       sub:'pressure overload', P:200, r:2.50, h:1.00 },
+  { id:'as-comp',   name:'AS · Compensated',      sub:'concentric LVH',    P:200, r:2.40, h:1.55 },
+  { id:'hhd',       name:'Hypertensive HD',       sub:'concentric LVH',    P:170, r:2.50, h:1.50 },
+  { id:'dcm',       name:'Dilated CMP',           sub:'volume overload',   P:110, r:4.30, h:0.85 },
+  { id:'eccentric', name:'Chronic AR / MR',       sub:'eccentric LVH',     P:135, r:4.00, h:1.30 },
+  { id:'endstage',  name:'End-Stage HF',          sub:'decompensated',     P: 85, r:5.20, h:0.65 },
+  { id:'athlete',   name:'Athletic Heart',        sub:'physiologic LVH',   P:120, r:2.85, h:1.25 }
+];
+
+function buildPresets(){
+  const grid = document.getElementById('preset-grid');
+  grid.innerHTML = '';
+  PRESETS.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn';
+    btn.dataset.id = p.id;
+    btn.innerHTML = `<div>${p.name}</div><div class="preset-sub">${p.sub}</div>`;
+    btn.addEventListener('click', () => applyPreset(p.id));
+    grid.appendChild(btn);
+  });
+}
+
+function applyPreset(id){
+  const p = PRESETS.find(x => x.id === id);
+  if (!p) return;
+  setDecomp(false);
+  state.preset = id;
+  state.P = p.P; state.r = p.r; state.h = p.h;
+  syncSliders();
+  render();
+  highlightPreset();
+}
+
+function highlightPreset(){
+  document.querySelectorAll('.preset-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.id === state.preset);
+  });
+}
+
+/* Detect if current state matches any preset */
+function detectPreset(){
+  for (const p of PRESETS){
+    if (Math.abs(p.P - state.P) < 0.5 &&
+        Math.abs(p.r - state.r) < 0.03 &&
+        Math.abs(p.h - state.h) < 0.02){
+      return p.id;
+    }
+  }
+  return 'custom';
+}
+
+/* ============================================================
+   SLIDER WIRING
+   ============================================================ */
+function syncSliders(){
+  const P_s = document.getElementById('P-slider');
+  const r_s = document.getElementById('r-slider');
+  const h_s = document.getElementById('h-slider');
+  P_s.value = state.P; r_s.value = state.r; h_s.value = state.h;
+  updateSliderFill(P_s);
+  updateSliderFill(r_s);
+  updateSliderFill(h_s);
+}
+
+function updateSliderFill(el){
+  const min = parseFloat(el.min), max = parseFloat(el.max), val = parseFloat(el.value);
+  const pct = ((val - min) / (max - min)) * 100;
+  el.style.setProperty('--fill', pct + '%');
+}
+
+function bindSliders(){
+  const sliders = [
+    ['P-slider', 'P', v => parseInt(v,10)],
+    ['r-slider', 'r', v => parseFloat(v)],
+    ['h-slider', 'h', v => parseFloat(v)]
+  ];
+  sliders.forEach(([id, key, parse]) => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', () => {
+      state[key] = parse(el.value);
+      state.preset = detectPreset();
+      updateSliderFill(el);
+      render();
+      highlightPreset();
+    });
+  });
+}
+
+/* ============================================================
+   DECOMPENSATION
+   ============================================================ */
+function setDecomp(on){
+  state.decomp = on;
+  document.getElementById('decomp-toggle').classList.toggle('on', on);
+  document.getElementById('decomp-banner').classList.toggle('hidden', !on);
+  if (on){
+    if (state.decompTimer) clearInterval(state.decompTimer);
+    state.decompTimer = setInterval(() => {
+      // r increases, but as σ rises, h "thins" subtly to model failing remodeling
+      state.r = Math.min(5.5, state.r + 0.04);
+      // Subtle progressive wall thinning at extreme dilation
+      if (state.r > 4.5) state.h = Math.max(0.4, state.h - 0.005);
+      state.preset = detectPreset();
+      syncSliders();
+      render();
+      highlightPreset();
+      if (state.r >= 5.5) setDecomp(false);
+    }, 1000);
+  } else {
+    if (state.decompTimer){ clearInterval(state.decompTimer); state.decompTimer = null; }
+  }
+}
+
+function bindDecomp(){
+  const tog = document.getElementById('decomp-toggle');
+  tog.addEventListener('click', () => setDecomp(!state.decomp));
+  tog.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); setDecomp(!state.decomp); } });
+}
+
+/* ============================================================
+   RENDER · NUMERIC READOUTS
+   ============================================================ */
+function render(){
+  const sigma  = computeStress(state.P, state.r, state.h);
+  const rwt    = computeRWT(state.r, state.h);
+  const lvmi   = computeLVMI(state.r, state.h);
+  const mvo2   = computeMVO2(state.P, state.r, state.h);
+  const geom   = classifyGeometry(state.r, state.h);
+  const stress = classifyStress(sigma);
+  const dom    = dominantPathology(state.P, state.r, state.h);
+
+  // Slider value labels
+  document.getElementById('P-val').textContent = state.P;
+  document.getElementById('r-val').textContent = state.r.toFixed(2);
+  document.getElementById('h-val').textContent = state.h.toFixed(2);
+
+  // Wall stress numeric
+  document.getElementById('sigma-val').textContent = sigma.toFixed(0);
+  document.getElementById('sigma-val').style.color = stressColor(sigma);
+
+  // Stress marker on bar (clamp 0→1100 mapped to 0–100%)
+  const pct = Math.min(100, (sigma / 1100) * 100);
+  document.getElementById('stress-marker').style.left = pct + '%';
+
+  // RWT, LVMI
+  document.getElementById('rwt-val').textContent = rwt.toFixed(2);
+  document.getElementById('lvmi-val').textContent = lvmi.toFixed(0);
+
+  // Geometry
+  const geomName = document.getElementById('geometry-name');
+  geomName.textContent = geom.name;
+  geomName.classList.add('fade-swap');
+  setTimeout(() => geomName.classList.remove('fade-swap'), 320);
+
+  const geomPill = document.getElementById('geometry-pill');
+  geomPill.className = 'pill ' + geom.tone + ' mt-1.5';
+  geomPill.textContent = geom.name;
+
+  // MVO₂ dots (out of 8)
+  const mvoMult = mvo2;
+  document.getElementById('mvo2-mult').textContent = mvoMult.toFixed(1);
+  const dots = document.querySelectorAll('#mvo2-dots .heart-dot');
+  const filled = Math.max(1, Math.min(8, Math.round(mvoMult * 2)));
+  dots.forEach((d,i) => d.classList.toggle('active', i < filled));
+
+  // Live equation
+  renderLiveEquation(sigma);
+
+  // Hemodynamic status
+  document.getElementById('hemo-status').innerHTML = hemoStatusText(sigma, stress, dom);
+
+  // Clinical implications
+  document.getElementById('implications-list').innerHTML = implicationsList(sigma, dom, geom).map(t =>
+    `<div class="implication">${t}</div>`).join('');
+
+  // Why module
+  document.getElementById('compensatory-body').innerHTML = compensatoryText(dom, geom, sigma, rwt);
+  document.getElementById('energetic-body').innerHTML    = energeticText(sigma, mvoMult);
+  document.getElementById('failure-body').innerHTML      = failureText(sigma, dom, geom);
+  document.getElementById('correlation-body').innerHTML  = correlationText(dom, geom);
+
+  // SVG
+  drawHeart(sigma, geom);
+}
+
+/* ============================================================
+   RENDER · KATEX EQUATIONS
+   ============================================================ */
+function renderMainEquation(){
+  katex.render(
+    '\\sigma = \\dfrac{P \\cdot r}{2h}',
+    document.getElementById('main-equation'),
+    { displayMode:true, throwOnError:false }
+  );
+}
+function renderLiveEquation(sigma){
+  const tex = `\\sigma = \\dfrac{${state.P}\\,\\text{mmHg} \\;\\times\\; ${state.r.toFixed(2)}\\,\\text{cm}}{2 \\times ${state.h.toFixed(2)}\\,\\text{cm}} \\;\\approx\\; \\boxed{${sigma.toFixed(0)}}\\,\\;{\\scriptstyle \\times 10^3\\, \\text{dyne/cm}^2}`;
+  katex.render(tex, document.getElementById('live-equation'), { displayMode:true, throwOnError:false });
+}
+
+/* ============================================================
+   RENDER · SVG HEART
+   ============================================================ */
+function drawHeart(sigma, geom){
+  const innerR = state.r * SVG_SCALE;
+  const wallW  = state.h * SVG_SCALE;
+  const midR   = innerR + wallW/2;
+  const outerR = innerR + wallW;
+  const color  = stressColor(sigma);
+
+  // Wall (annular ring via stroked circle at mid-wall)
+  const wall = document.getElementById('wall-circle');
+  wall.setAttribute('r', midR);
+  wall.setAttribute('stroke', color);
+  wall.setAttribute('stroke-width', wallW);
+
+  // Pattern overlay matches wall
+  const pat = document.getElementById('wall-pattern');
+  pat.setAttribute('r', midR);
+  pat.setAttribute('stroke-width', wallW);
+
+  // Endo / Epi guide lines
+  document.getElementById('epicardium').setAttribute('r', outerR);
+  document.getElementById('endocardium-line').setAttribute('r', innerR);
+
+  // Cavity
+  document.getElementById('cavity-circle').setAttribute('r', innerR);
+
+  // Glow halo - intensity scales with stress
+  const glow = document.getElementById('glow-circle');
+  const glowR = outerR + 30;
+  glow.setAttribute('r', glowR);
+  glow.style.color = color;
+  // Opacity scales with stress
+  const glowMin = Math.min(0.55, sigma / 1500);
+  const glowMax = Math.min(0.95, sigma / 900);
+  glow.style.setProperty('--glow-min', glowMin);
+  glow.style.setProperty('--glow-max', glowMax);
+
+  // r line
+  const rLine = document.getElementById('r-line');
+  rLine.setAttribute('x2', SVG_CX + innerR);
+
+  // r value position & text
+  document.getElementById('r-label').setAttribute('x', SVG_CX + innerR/2);
+  document.getElementById('r-value-txt').setAttribute('x', SVG_CX + innerR/2);
+  document.getElementById('r-value-txt').textContent = state.r.toFixed(2) + ' cm';
+
+  // h indicator (vertical at top)
+  document.getElementById('h-line').setAttribute('y1', SVG_CY - innerR);
+  document.getElementById('h-line').setAttribute('y2', SVG_CY - outerR);
+  document.getElementById('h-tick-1').setAttribute('y1', SVG_CY - innerR);
+  document.getElementById('h-tick-1').setAttribute('y2', SVG_CY - innerR);
+  document.getElementById('h-tick-2').setAttribute('y1', SVG_CY - outerR);
+  document.getElementById('h-tick-2').setAttribute('y2', SVG_CY - outerR);
+  document.getElementById('h-label').setAttribute('y', SVG_CY - innerR - wallW/2 - 2);
+  document.getElementById('h-value-txt').setAttribute('y', SVG_CY - innerR - wallW/2 + 10);
+  document.getElementById('h-value-txt').textContent = state.h.toFixed(2) + ' cm';
+}
+
+/* ============================================================
+   TEXT GENERATORS (the "Why" engine)
+   ============================================================ */
+function hemoStatusText(sigma, stress, dom){
+  const ratio = (sigma/SIGMA_BASELINE).toFixed(1);
+  const arrow = sigma > SIGMA_BASELINE * 1.15 ? '<span class="arrow-up"></span>' :
+                sigma < SIGMA_BASELINE * 0.85 ? '<span class="arrow-down"></span>' : '';
+  let lead = `Wall stress is <strong style="color:${stressColor(sigma)}">${stress.label.toLowerCase()}</strong> — ${arrow}<span class="mono">${ratio}×</span> the physiologic baseline. `;
+  if (stress.tier === 'normal'){
+    lead += `Afterload is matched to contractility; the myocardium is operating within its energetic envelope.`;
+  } else if (stress.tier === 'elev'){
+    lead += `Afterload is increased. Compensatory hypertrophy is being recruited to normalize σ via the Grossman framework.`;
+  } else if (stress.tier === 'high'){
+    lead += `The myocardium is operating outside its energetic comfort zone. Subendocardial perfusion may be compromised, particularly during systole.`;
+  } else {
+    lead += `<strong style="color:var(--red)">Critical wall stress.</strong> Myocyte energetics are unsustainable; subendocardial ischemia and progressive systolic dysfunction are inevitable without intervention.`;
+  }
+  return lead;
+}
+
+function implicationsList(sigma, dom, geom){
+  const out = [];
+  // MVO2 link
+  const mvoFold = (computeMVO2(state.P, state.r, state.h)).toFixed(1);
+  out.push(`<strong>MVO₂ ≈ ${mvoFold}× baseline.</strong> Wall stress is the dominant determinant of oxygen demand — ranking above heart rate and contractility in the tension-time integral.`);
+
+  // Subendocardial perfusion
+  if (sigma > 400){
+    out.push(`<strong>Subendocardial perfusion at risk.</strong> Elevated intramural pressure compresses subendocardial vessels in systole; high σ extends this compression and shortens the diastolic perfusion window.`);
+  }
+
+  // Geometry-specific
+  if (geom.name.includes('Concentric')){
+    out.push(`Increased <span class="gold">h</span> reduces σ at the cost of impaired relaxation — the substrate for HFpEF and diastolic dysfunction.`);
+  }
+  if (geom.name.includes('Eccentric')){
+    out.push(`Sarcomere replication in series allows accommodation of volume but raises σ for any given pressure — the substrate for HFrEF progression.`);
+  }
+  // Pressure-specific
+  if (dom.pressureOverload){
+    out.push(`Pressure overload activates the <span class="gold">parallel sarcomere</span> response: each myocyte adds contractile units side-by-side, thickening the wall to restore σ ≈ Pr/2h.`);
+  }
+  // Volume-specific
+  if (dom.volumeOverload){
+    out.push(`Volume overload activates the <span class="gold">series sarcomere</span> response: chamber elongation outpaces wall growth, meaning σ may not normalize even after remodeling.`);
+  }
+  if (dom.wallThinning){
+    out.push(`<strong style="color:var(--red)">Wall thinning</strong> abolishes the geometric compensation. σ rises disproportionately, accelerating the failure trajectory.`);
+  }
+  return out;
+}
+
+function compensatoryText(dom, geom, sigma, rwt){
+  let html = '';
+  if (dom.pressureOverload && !dom.volumeOverload){
+    html += `<p>Elevated <span class="gold mono">P</span> inflates σ instantaneously. To restore stress to baseline, the heart deposits sarcomeres <em>in parallel</em> — each myocyte thickens, the wall (<span class="gold mono">h</span>) grows, and σ = P·r/2h returns toward physiologic.</p>
+    <p class="mt-3"><strong>This is concentric hypertrophy</strong> — the elegant Grossman response to pressure overload (1975). The chamber lumen is preserved; the price is impaired diastolic filling and a stiff ventricle.</p>`;
+  } else if (dom.volumeOverload && !dom.pressureOverload){
+    html += `<p>Volume overload elongates myocytes, adding sarcomeres <em>in series</em>. The chamber radius (<span class="gold mono">r</span>) enlarges; the wall (<span class="gold mono">h</span>) grows proportionally, but rarely fast enough.</p>
+    <p class="mt-3"><strong>This is eccentric hypertrophy</strong> — the response to chronic AR or MR. Stroke volume is preserved via Frank-Starling, but σ creeps up because the geometry itself works against the heart.</p>`;
+  } else if (dom.hypertrophy && rwt > 0.45){
+    html += `<p>The wall has thickened (<span class="gold mono">h</span>↑), reducing σ for any given pressure. <span class="serif italic gold">Concentric remodeling</span> is now established: <span class="mono">RWT = ${rwt.toFixed(2)} &gt; 0.42</span>.</p>
+    <p class="mt-3">σ has been geometrically tamed — but at the cost of a smaller, stiffer chamber. The heart trades systolic protection for diastolic dysfunction.</p>`;
+  } else if (dom.dr > 0.4 && rwt < 0.40){
+    html += `<p>Chamber dilation has outrun wall growth. <span class="gold mono">2h/r</span> has fallen — the geometric advantage is lost. <strong>Each unit increase in <span class="mono">r</span> raises σ linearly</strong>, even when pressure is normal or low.</p>
+    <p class="mt-3">This is the failing-heart phenotype: σ stays high not because pressure is high, but because the chamber has remodeled into a thin-walled sphere — the worst possible geometry by Laplace.</p>`;
+  } else {
+    html += `<p>The ventricle sits near its physiologic operating point. Wall stress (σ ≈ ${sigma.toFixed(0)} ×10³ dyne/cm²) is matched to contractile reserve, and the heart pays only its baseline metabolic cost.</p>
+    <p class="mt-3">Move pressure, radius, or thickness off baseline and watch the compensatory loops engage in real time.</p>`;
+  }
+  return html;
+}
+
+function energeticText(sigma, mvoMult){
+  return `
+    <p>Myocardial oxygen consumption (<span class="gold">MVO₂</span>) is governed by the <em>tension-time integral</em>:
+      a product of wall stress, heart rate, and the duration of systole.</p>
+    <p class="mt-2 pl-3" style="border-left:2px solid var(--gold-dim);">
+      <span class="mono text-xs gold">MVO₂ ∝ σ × HR × t<sub>systole</sub> + cost(contractility)</span>
+    </p>
+    <p class="mt-3">At current settings, <span class="mono gold">MVO₂ ≈ ${mvoMult.toFixed(1)}×</span> baseline — driven by σ at <span class="mono" style="color:${stressColor(sigma)}">${sigma.toFixed(0)} ×10³ dyne/cm²</span>.</p>
+    <p class="mt-3"><strong>σ is the dominant variable.</strong> A doubling of wall stress doubles oxygen demand more reliably than a doubling of heart rate. This is why afterload reduction — far more than rate control alone — is the cornerstone of failing-heart management.</p>
+  `;
+}
+
+function failureText(sigma, dom, geom){
+  const inDecomp = state.decomp;
+  let html = '';
+  if (inDecomp || (dom.dr > 0.5 && computeRWT(state.r, state.h) < 0.40)){
+    html += `<p style="color:var(--red);"><strong>The vicious cycle is engaged.</strong></p>
+    <div class="mt-3 mono text-[.78rem] leading-relaxed pl-3" style="border-left:2px solid var(--red);">
+      ↑ r &nbsp;→&nbsp; ↑ σ (Laplace)<br>
+      ↑ σ &nbsp;→&nbsp; ↑ MVO₂<br>
+      ↑ MVO₂ &nbsp;→&nbsp; ↓ subendocardial perfusion<br>
+      ↓ perfusion &nbsp;→&nbsp; ↓ contractility<br>
+      ↓ contractility &nbsp;→&nbsp; ↑ EDV &nbsp;→&nbsp; ↑ r&nbsp;…
+    </div>
+    <p class="mt-3">Frank-Starling reserve is exhausted; further preload no longer augments stroke volume. The chamber is now operating on the descending limb of the length-tension curve, and Laplace itself has become a driver of progression.</p>`;
+  } else if (sigma > 500){
+    html += `<p>σ is approaching the <strong>decompensation threshold</strong>. Subendocardial perfusion is increasingly demand-limited; small further rises in σ may precipitate ischemia even with patent coronaries.</p>
+    <p class="mt-3">Engage <em>Decompensation Mode</em> to watch how, once the chamber begins to dilate beyond its compensatory capacity, Laplace becomes a self-amplifying force in HF progression.</p>`;
+  } else {
+    html += `<p>The ventricle is on the <em>compensated</em> limb of the failure curve. Wall stress remains within the energetic envelope, and the chamber retains the geometric reserve to absorb perturbations in load.</p>
+    <p class="mt-3">In dilated cardiomyopathy, this reserve is lost: every millimeter of further dilation forces a measurable rise in σ, which in turn raises MVO₂ and erodes systolic efficiency. <strong>Engage decompensation</strong> to visualize the cycle.</p>`;
+  }
+  return html;
+}
+
+function correlationText(dom, geom){
+  let html = '';
+  html += `<p><strong class="gold serif italic">Frank-Starling vs. Laplace.</strong> Starling is the <em>acute</em> compensatory mechanism — preload-dependent stroke-volume augmentation. Laplace is the <em>chronic</em> ledger: the geometric cost of that augmentation paid in wall stress and oxygen.</p>`;
+
+  html += `<p class="mt-3"><strong>In chronic volume overload</strong> (AR, MR, anemia, AV fistula), Starling sustains forward flow while the chamber dilates. Laplace then dictates remodeling: σ rises with r, eccentric hypertrophy attempts compensation, and once <span class="mono">2h/r</span> falls below ~0.40, decompensation is mechanically inevitable.</p>`;
+
+  if (dom.pressureOverload){
+    html += `<p class="mt-3"><strong>In aortic stenosis</strong>, σ-driven concentric hypertrophy is initially adaptive — but the same thickening produces <em>supply-side</em> mismatch: capillary density fails to keep pace with myocyte mass, and angina occurs even with normal coronaries.</p>`;
+  }
+  if (geom.name.includes('Eccentric')){
+    html += `<p class="mt-3"><strong>In dilated cardiomyopathy</strong>, the heart loses its leverage over Laplace. Standard therapy (β-blockers, ACEi/ARB/ARNI, MRA, SGLT2i) works partly by <em>reverse remodeling</em> — shrinking r, thickening h, and lowering σ to break the cycle.</p>`;
+  }
+
+  return html;
+}
+
+/* ============================================================
+   RESET
+   ============================================================ */
+function bindReset(){
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    setDecomp(false);
+    applyPreset('normal');
+  });
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function init(){
+  // Wait for KaTeX
+  if (typeof katex === 'undefined'){
+    setTimeout(init, 50);
+    return;
+  }
+  renderMainEquation();
+  buildPresets();
+  bindSliders();
+  bindDecomp();
+  bindReset();
+  syncSliders();
+  applyPreset('normal');
+}
+
+if (document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
