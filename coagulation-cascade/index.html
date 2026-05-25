@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kaskade Koagulasi · Visualisasi Interaktif</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0c1117;
+    --bg-secondary: #131922;
+    --bg-tertiary: #1a212c;
+    --bg-elevated: #222a37;
+    --bg-deepest: #080b10;
+    --accent-gold: #d4af6a;
+    --accent-gold-soft: rgba(212, 175, 106, 0.15);
+    --accent-gold-glow: rgba(212, 175, 106, 0.35);
+    --accent-gold-dim: #8a7549;
+    --text-primary: #e8e4d8;
+    --text-secondary: #a8b0bd;
+    --text-muted: #6b7280;
+    --border-subtle: #2a3340;
+    --border-default: #364152;
+    --status-inactive: #4b5563;
+    --status-active: #d4af6a;
+    --status-inhibited: #ef4444;
+    --status-clot: #10b981;
+    --status-warning: #f59e0b;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    margin: 0; padding: 0; min-height: 100vh;
+  }
+  body {
+    background-image:
+      radial-gradient(ellipse at top right, rgba(212, 175, 106, 0.04), transparent 50%),
+      radial-gradient(ellipse at bottom left, rgba(16, 185, 129, 0.025), transparent 50%);
+  }
+  .font-display { font-family: 'Cormorant Garamond', serif; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  .text-accent { color: var(--accent-gold); }
+  .text-accent-dim { color: var(--accent-gold-dim); }
+  .text-muted { color: var(--text-muted); }
+  .text-secondary-c { color: var(--text-secondary); }
+  .bg-elevated { background: var(--bg-elevated); }
+  .bg-deepest { background: var(--bg-deepest); }
+  .border-subtle { border-color: var(--border-subtle); }
+
+  /* Factor Nodes */
+  .factor-node { cursor: pointer; }
+  .factor-rect { fill: var(--bg-tertiary); stroke: var(--status-inactive); stroke-width: 1.5; transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+  .factor-node:hover .factor-rect { stroke: var(--accent-gold); stroke-width: 2; filter: drop-shadow(0 0 8px rgba(212, 175, 106, 0.4)); }
+  .factor-node:hover .factor-text { fill: var(--accent-gold); }
+  .factor-text { fill: var(--text-secondary); font-family: 'JetBrains Mono', monospace; font-weight: 500; transition: fill 0.6s ease; pointer-events: none; }
+  .factor-label { fill: var(--text-muted); font-family: 'Outfit', sans-serif; font-size: 7.5px; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; pointer-events: none; transition: fill 0.6s ease; }
+  .factor-node.active .factor-rect { fill: var(--accent-gold-soft); stroke: var(--accent-gold); stroke-width: 2; filter: drop-shadow(0 0 10px var(--accent-gold-glow)); }
+  .factor-node.active .factor-text { fill: var(--accent-gold); }
+  .factor-node.active .factor-label { fill: var(--accent-gold-dim); }
+  .factor-node.activating .factor-rect { animation: pulse-gold 1.2s ease-out; }
+  .factor-node.inhibited .factor-rect { fill: rgba(239, 68, 68, 0.08); stroke: var(--status-inhibited); stroke-dasharray: 4 3; stroke-width: 1.5; filter: none; }
+  .factor-node.inhibited .factor-text { fill: var(--status-inhibited); opacity: 0.7; }
+  .factor-node.inhibited .factor-label { fill: var(--status-inhibited); opacity: 0.5; }
+  .factor-node.selected .factor-rect { stroke-width: 2.5; filter: drop-shadow(0 0 14px rgba(212, 175, 106, 0.6)); }
+  .factor-node.clot .factor-rect { fill: rgba(16, 185, 129, 0.12); stroke: var(--status-clot); stroke-width: 2; filter: drop-shadow(0 0 14px rgba(16, 185, 129, 0.5)); animation: pulse-clot 2.5s ease-in-out infinite; }
+  .factor-node.clot .factor-text { fill: var(--status-clot); }
+  .factor-node.clot .factor-label { fill: var(--status-clot); opacity: 0.85; }
+
+  /* Prelude (Cell-based Model FASE INISIASI) — trace amount */
+  .factor-node.prelude .factor-rect { fill: rgba(212, 175, 106, 0.04); stroke: rgba(212, 175, 106, 0.5); stroke-width: 1; stroke-dasharray: 3 2; filter: drop-shadow(0 0 4px rgba(212, 175, 106, 0.15)); }
+  .factor-node.prelude .factor-text { fill: rgba(212, 175, 106, 0.55); }
+  .factor-node.prelude .factor-label { fill: rgba(212, 175, 106, 0.4); }
+  .cascade-arrow.prelude { stroke: var(--accent-gold); stroke-width: 1; opacity: 0.4; stroke-dasharray: 3 3; }
+  .feedback-arrow.prelude { stroke: var(--accent-gold); opacity: 0.35; }
+  .trigger-node.prelude .trigger-rect { fill: rgba(245, 158, 11, 0.06); stroke: rgba(245, 158, 11, 0.45); stroke-width: 1; stroke-dasharray: 3 2; }
+  .trigger-node.prelude .trigger-text { fill: rgba(245, 158, 11, 0.55); }
+  .trigger-node.prelude .trigger-sub { fill: rgba(245, 158, 11, 0.4); }
+
+  /* Regulator Fisiologis (endogenous anticoagulants) */
+  .regulator-node { cursor: pointer; }
+  .regulator-rect {
+    fill: var(--bg-secondary);
+    stroke: rgba(110, 231, 183, 0.35);
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+    transition: all 0.5s ease;
+  }
+  .regulator-text {
+    fill: rgba(110, 231, 183, 0.7);
+    font-family: 'Outfit', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    pointer-events: none;
+    transition: fill 0.5s ease;
+  }
+  .regulator-label {
+    fill: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: fill 0.5s ease;
+  }
+  .regulator-node:hover .regulator-rect { stroke: #6ee7b7; stroke-width: 1.5; }
+  .regulator-node:hover .regulator-text { fill: #a7f3d0; }
+  .regulator-node.active .regulator-rect {
+    fill: rgba(16, 185, 129, 0.1);
+    stroke: var(--status-clot);
+    stroke-width: 1.8;
+    stroke-dasharray: none;
+    filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.4));
+  }
+  .regulator-node.active .regulator-text { fill: var(--status-clot); }
+  .regulator-node.active .regulator-label { fill: rgba(110, 231, 183, 0.7); }
+
+  /* Inhibition arrows (regulators → factors) */
+  .inhibit-arrow {
+    stroke: rgba(110, 231, 183, 0.25);
+    stroke-width: 1.2;
+    stroke-dasharray: 3 3;
+    fill: none;
+    opacity: 0;
+    transition: all 0.5s ease;
+  }
+  .inhibit-arrow.show { opacity: 1; }
+  .inhibit-arrow.active {
+    stroke: var(--status-clot);
+    stroke-width: 1.8;
+    opacity: 0.85;
+  }
+
+  /* Fibrinolysis section */
+  .fibrinolysis-region {
+    fill: rgba(167, 139, 250, 0.03);
+    stroke: rgba(167, 139, 250, 0.3);
+    stroke-width: 1;
+    stroke-dasharray: 6 4;
+    opacity: 0.6;
+  }
+  .fibrinolysis-label {
+    fill: #c4b5fd;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-style: italic;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    opacity: 0.9;
+  }
+  .fibrinolysis-sublabel {
+    fill: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .fibrinolysis-node { cursor: pointer; }
+  .fibrinolysis-rect {
+    fill: var(--bg-secondary);
+    stroke: rgba(167, 139, 250, 0.4);
+    stroke-width: 1.5;
+    transition: all 0.5s ease;
+  }
+  .fibrinolysis-text {
+    fill: rgba(196, 181, 253, 0.75);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    transition: fill 0.5s ease;
+    pointer-events: none;
+  }
+  .fibrinolysis-label-small {
+    fill: var(--text-muted);
+    font-family: 'Outfit', sans-serif;
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+  .fibrinolysis-node:hover .fibrinolysis-rect { stroke: #a78bfa; }
+  .fibrinolysis-node:hover .fibrinolysis-text { fill: #c4b5fd; }
+  .fibrinolysis-node.active .fibrinolysis-rect {
+    fill: rgba(167, 139, 250, 0.12);
+    stroke: #a78bfa;
+    stroke-width: 2;
+    filter: drop-shadow(0 0 12px rgba(167, 139, 250, 0.5));
+  }
+  .fibrinolysis-node.active .fibrinolysis-text { fill: #c4b5fd; }
+  .fibrinolysis-node.inhibited .fibrinolysis-rect {
+    fill: rgba(239, 68, 68, 0.08);
+    stroke: var(--status-inhibited);
+    stroke-dasharray: 4 3;
+  }
+  .fibrinolysis-node.inhibited .fibrinolysis-text { fill: var(--status-inhibited); opacity: 0.7; }
+  .fibrinolysis-arrow {
+    stroke: rgba(167, 139, 250, 0.3);
+    stroke-width: 1.5;
+    fill: none;
+    transition: all 0.5s ease;
+  }
+  .fibrinolysis-arrow.active {
+    stroke: #a78bfa;
+    stroke-width: 2;
+    opacity: 0.95;
+  }
+
+  /* Tags */
+  .tag-physio { background: rgba(16, 185, 129, 0.12); color: #6ee7b7; }
+  .tag-fibrinolytic { background: rgba(167, 139, 250, 0.12); color: #c4b5fd; }
+
+  /* Arrows */
+  .cascade-arrow { stroke: var(--status-inactive); stroke-width: 1.5; fill: none; opacity: 0.35; transition: all 0.6s ease; }
+  .cascade-arrow.active { stroke: var(--accent-gold); stroke-width: 2; opacity: 0.9; }
+  .cascade-arrow.activating { stroke: var(--accent-gold); stroke-width: 2.5; opacity: 1; animation: dash-flow 1.5s linear; }
+  .feedback-arrow { stroke: var(--accent-gold-dim); stroke-width: 1.2; stroke-dasharray: 4 3; fill: none; opacity: 0.25; transition: opacity 0.6s ease; }
+  .feedback-arrow.active { stroke: var(--accent-gold); opacity: 0.6; }
+
+  /* Pathway Regions */
+  .pathway-region { fill: none; stroke: var(--border-subtle); stroke-width: 1; stroke-dasharray: 6 4; opacity: 0.4; }
+  .pathway-label { fill: var(--accent-gold-dim); font-family: 'Cormorant Garamond', serif; font-size: 18px; font-style: italic; font-weight: 600; letter-spacing: 0.1em; opacity: 0.9; }
+  .pathway-sublabel { fill: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 400; letter-spacing: 0.18em; text-transform: uppercase; }
+
+  /* Trigger Nodes */
+  .trigger-node { cursor: pointer; transition: all 0.3s ease; }
+  .trigger-rect { fill: var(--bg-secondary); stroke: var(--border-default); stroke-width: 1.5; transition: all 0.5s ease; }
+  .trigger-text { fill: var(--text-secondary); font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; pointer-events: none; }
+  .trigger-sub { fill: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.05em; pointer-events: none; }
+  .trigger-node:hover .trigger-rect { stroke: var(--status-warning); }
+  .trigger-node.active .trigger-rect { fill: rgba(245, 158, 11, 0.12); stroke: var(--status-warning); filter: drop-shadow(0 0 14px rgba(245, 158, 11, 0.45)); }
+  .trigger-node.active .trigger-text { fill: var(--status-warning); }
+  .trigger-node.active .trigger-sub { fill: rgba(245, 158, 11, 0.7); }
+
+  /* Complex Boxes */
+  .complex-box { fill: none; stroke: var(--accent-gold-dim); stroke-width: 1; stroke-dasharray: 3 2; opacity: 0; transition: opacity 0.7s ease; }
+  .complex-box.active { opacity: 0.75; }
+  .complex-label { fill: var(--accent-gold-dim); font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0; transition: opacity 0.7s ease; pointer-events: none; }
+  .complex-label.active { opacity: 0.95; }
+
+  /* Drug Inhibitor Markers */
+  .inhibitor-mark { opacity: 0; transition: opacity 0.4s ease; pointer-events: none; }
+  .inhibitor-mark.show { opacity: 1; }
+  .inhibitor-mark rect { fill: rgba(239, 68, 68, 0.2); stroke: var(--status-inhibited); stroke-width: 1; }
+  .inhibitor-mark text { fill: var(--status-inhibited); font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 600; }
+
+  /* Animations */
+  @keyframes pulse-gold {
+    0% { filter: drop-shadow(0 0 4px rgba(212, 175, 106, 0.3)); }
+    50% { filter: drop-shadow(0 0 24px rgba(212, 175, 106, 0.95)); }
+    100% { filter: drop-shadow(0 0 10px var(--accent-gold-glow)); }
+  }
+  @keyframes dash-flow { from { stroke-dasharray: 4 4; stroke-dashoffset: 32; } to { stroke-dasharray: 4 4; stroke-dashoffset: 0; } }
+  @keyframes pulse-clot {
+    0%, 100% { filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.4)); }
+    50% { filter: drop-shadow(0 0 20px rgba(16, 185, 129, 0.7)); }
+  }
+
+  /* UI Components */
+  .btn-primary { background: var(--accent-gold); color: var(--bg-primary); font-weight: 500; letter-spacing: 0.06em; transition: all 0.2s; }
+  .btn-primary:hover:not(:disabled) { background: #e0bd7a; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+  .btn-secondary { background: var(--bg-elevated); color: var(--text-primary); border: 1px solid var(--border-default); transition: all 0.2s; }
+  .btn-secondary:hover:not(:disabled) { border-color: var(--accent-gold); color: var(--accent-gold); }
+  .btn-secondary:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-trigger { background: var(--bg-elevated); color: var(--text-primary); border: 1px solid var(--border-default); transition: all 0.2s; }
+  .btn-trigger:hover { border-color: var(--status-warning); color: var(--status-warning); }
+  .btn-trigger.active { border-color: var(--status-warning); color: var(--status-warning); background: rgba(245, 158, 11, 0.1); box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.3); }
+  .drug-toggle { background: var(--bg-elevated); border: 1px solid var(--border-default); transition: all 0.2s; cursor: pointer; text-align: left; width: 100%; }
+  .drug-toggle:hover { border-color: var(--accent-gold-dim); }
+  .drug-toggle.active { border-color: var(--status-inhibited); background: rgba(239, 68, 68, 0.08); box-shadow: inset 3px 0 0 var(--status-inhibited); }
+  .info-card { background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 8px; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-default); }
+
+  /* Sticky sidebar — desktop only (xl: ≥ 1280px) */
+  @media (min-width: 1280px) {
+    .sidebar-sticky {
+      position: sticky;
+      top: 1rem;
+      align-self: flex-start;
+      max-height: calc(100vh - 2rem);
+      overflow-y: auto;
+      padding-right: 4px;
+      scrollbar-gutter: stable;
+    }
+    /* Subtle gradient hint at top/bottom when scrollable */
+    .sidebar-sticky {
+      mask-image: linear-gradient(to bottom, transparent 0, black 8px, black calc(100% - 8px), transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 8px, black calc(100% - 8px), transparent 100%);
+    }
+  }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 9px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'Outfit', sans-serif; }
+  .tag-intrinsic { background: rgba(96, 165, 250, 0.12); color: #93c5fd; }
+  .tag-extrinsic { background: rgba(244, 114, 182, 0.12); color: #f9a8d4; }
+  .tag-common { background: rgba(16, 185, 129, 0.12); color: #6ee7b7; }
+  .tag-vitk { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
+
+  .status-info { border-left: 2px solid var(--accent-gold); }
+  .status-warning { border-left: 2px solid var(--status-warning); }
+  .status-success { border-left: 2px solid var(--status-clot); }
+  .status-danger { border-left: 2px solid var(--status-inhibited); }
+
+  .fade-in { animation: fadeIn 0.4s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body class="min-h-screen">
+
+<header class="border-b border-subtle px-4 md:px-8 py-5 bg-[#0a0d12]/50 backdrop-blur-sm">
+  <div class="max-w-[1700px] mx-auto flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: linear-gradient(135deg, var(--accent-gold-soft), transparent); border: 1px solid var(--accent-gold-dim);">
+        <i data-lucide="droplet" class="w-5 h-5 text-accent"></i>
+      </div>
+      <div>
+        <h1 class="font-display text-2xl md:text-3xl font-semibold tracking-wide text-accent leading-tight">Kaskade Koagulasi</h1>
+        <p class="font-mono text-[10px] md:text-xs text-muted mt-0.5 tracking-[0.2em] uppercase">Visualisasi Interaktif · Hemostasis Sekunder</p>
+      </div>
+    </div>
+    <div class="hidden md:flex items-center gap-3 text-xs">
+      <div class="flex items-center gap-2 font-mono text-muted">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>Edukasi Hematologi</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1700px] mx-auto px-4 md:px-8 py-6 grid grid-cols-12 gap-5">
+  <section class="col-span-12 xl:col-span-9">
+    <div class="info-card p-4 md:p-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="font-display text-xl text-accent">Diagram Kaskade</h2>
+          <p class="text-xs text-muted mt-0.5">Klik node faktor untuk detail · Klik pemicu untuk simulasi</p>
+        </div>
+        <div id="step-counter" class="font-mono text-xs text-muted text-right">
+          <div class="text-[10px] uppercase tracking-widest text-muted/70">Progres</div>
+          <div class="text-accent text-sm"><span id="step-num">0</span> <span class="text-muted/50">/</span> <span id="step-total">—</span></div>
+        </div>
+      </div>
+
+      <div class="bg-deepest rounded-lg p-3 overflow-x-auto" style="border: 1px solid var(--border-subtle);">
+        <svg id="cascade-svg" viewBox="0 0 1200 1380" class="w-full h-auto" style="min-width: 850px;" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <marker id="arrow-inactive" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#4b5563"/></marker>
+            <marker id="arrow-active" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#d4af6a"/></marker>
+            <marker id="arrow-feedback" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8a7549" opacity="0.7"/></marker>
+            <marker id="inhibit-physio" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto"><line x1="5" y1="1" x2="5" y2="9" stroke="#10b981" stroke-width="2"/></marker>
+            <marker id="arrow-fibrinolysis-marker" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a78bfa"/></marker>
+          </defs>
+
+          <rect class="pathway-region" x="60" y="90" width="380" height="350" rx="10"/>
+          <rect class="pathway-region" x="870" y="90" width="280" height="260" rx="10"/>
+          <rect class="pathway-region" x="430" y="430" width="380" height="490" rx="10"/>
+
+          <text class="pathway-label" x="70" y="118">Jalur Intrinsik</text>
+          <text class="pathway-sublabel" x="70" y="135">Contact Activation · aPTT</text>
+          <text class="pathway-label" x="880" y="118">Jalur Ekstrinsik</text>
+          <text class="pathway-sublabel" x="880" y="135">Tissue Factor · PT/INR</text>
+          <text class="pathway-label" x="445" y="458">Jalur Bersama</text>
+          <text class="pathway-sublabel" x="445" y="475">Common · Fibrin Formation</text>
+
+          <g class="trigger-node" id="trigger-intrinsic-svg" data-trigger="intrinsic">
+            <rect class="trigger-rect" x="100" y="20" width="200" height="50" rx="6"/>
+            <text class="trigger-text" x="200" y="42" text-anchor="middle">Kontak Permukaan</text>
+            <text class="trigger-sub" x="200" y="58" text-anchor="middle">Kolagen · Subendotelium</text>
+          </g>
+          <g class="trigger-node" id="trigger-extrinsic-svg" data-trigger="extrinsic">
+            <rect class="trigger-rect" x="900" y="20" width="200" height="50" rx="6"/>
+            <text class="trigger-text" x="1000" y="42" text-anchor="middle">Cedera Jaringan</text>
+            <text class="trigger-sub" x="1000" y="58" text-anchor="middle">Tissue Factor Exposure</text>
+          </g>
+
+          <path id="arrow-trig-intrinsic" class="cascade-arrow" d="M 200,70 L 200,182" marker-end="url(#arrow-inactive)"/>
+          <path id="arrow-trig-extrinsic" class="cascade-arrow" d="M 1000,70 L 1000,182" marker-end="url(#arrow-inactive)"/>
+          <path id="arrow-XII-XI" class="cascade-arrow" d="M 200,235 L 200,272" marker-end="url(#arrow-inactive)"/>
+          <path id="arrow-XI-IX" class="cascade-arrow" d="M 200,325 L 200,362" marker-end="url(#arrow-inactive)"/>
+          <path id="arrow-tenase-X" class="cascade-arrow" d="M 280,432 C 280,470 420,495 540,505" marker-end="url(#arrow-inactive)"/>
+          <path id="arrow-TF-VII" class="cascade-arrow" d="M 1000,235 L 1000,272" marker-end="url(#arrow-inactive)"/>
+          <path id="arrow-ext-X" class="cascade-arrow" d="M 1000,325 C 1000,420 820,490 660,505" marker-end="url(#arrow-inactive)"/>
+          <path id="arrow-X-II" class="cascade-arrow" d="M 600,540 L 600,632" marker-end="url(#arrow-inactive)"/>
+          <path id="arrow-II-I" class="cascade-arrow" d="M 600,685 L 600,722" marker-end="url(#arrow-inactive)"/>
+          <path id="arrow-I-clot" class="cascade-arrow" d="M 600,775 L 600,825" marker-end="url(#arrow-inactive)"/>
+          <path id="arrow-V-prothrombinase" class="cascade-arrow" d="M 710,515 L 660,515" marker-end="url(#arrow-inactive)"/>
+          <path id="arrow-XIII-fibrin" class="cascade-arrow" d="M 710,750 L 660,750" marker-end="url(#arrow-inactive)"/>
+          <path id="arrow-IIa-V" class="feedback-arrow" d="M 650,650 C 820,650 870,560 800,538" marker-end="url(#arrow-feedback)"/>
+          <path id="arrow-IIa-VIII" class="feedback-arrow" d="M 550,660 C 380,660 360,440 370,418" marker-end="url(#arrow-feedback)"/>
+          <path id="arrow-IIa-XI" class="feedback-arrow" d="M 555,660 C 350,690 90,650 90,450 C 90,360 100,310 148,300" marker-end="url(#arrow-feedback)"/>
+          <path id="arrow-IIa-XIII" class="feedback-arrow" d="M 650,670 C 740,700 770,728 800,745" marker-end="url(#arrow-feedback)"/>
+          <text x="780" y="595" class="pathway-sublabel" style="font-size: 8px; fill: var(--accent-gold-dim); opacity: 0.6;">amplifikasi</text>
+          <text x="395" y="640" class="pathway-sublabel" style="font-size: 7.5px; fill: var(--accent-gold-dim); opacity: 0.6;">IIa amplifikasi</text>
+
+          <rect id="complex-tenase" class="complex-box" x="135" y="352" width="295" height="73" rx="6"/>
+          <text id="complex-tenase-label" class="complex-label" x="282" y="442" text-anchor="middle">Tenase Intrinsik · IXa · VIIIa · Ca²⁺ · PL</text>
+          <rect id="complex-tf-viia" class="complex-box" x="940" y="172" width="120" height="160" rx="6"/>
+          <text id="complex-tf-viia-label" class="complex-label" x="1000" y="348" text-anchor="middle">TF · VIIa · Ca²⁺</text>
+          <rect id="complex-prothrombinase" class="complex-box" x="540" y="482" width="290" height="60" rx="6"/>
+          <text id="complex-prothrombinase-label" class="complex-label" x="685" y="558" text-anchor="middle">Kompleks Prothrombinase · Ca²⁺ · Phospholipid</text>
+
+          <g class="factor-node" id="factor-XII" data-factor="XII"><rect class="factor-rect" x="150" y="182" width="100" height="53" rx="6"/><text class="factor-text" x="200" y="208" text-anchor="middle" font-size="18">XII</text><text class="factor-label" x="200" y="225" text-anchor="middle">Hageman</text></g>
+          <g class="factor-node" id="factor-XI" data-factor="XI"><rect class="factor-rect" x="150" y="272" width="100" height="53" rx="6"/><text class="factor-text" x="200" y="298" text-anchor="middle" font-size="18">XI</text><text class="factor-label" x="200" y="315" text-anchor="middle">PTA</text></g>
+          <g class="factor-node" id="factor-IX" data-factor="IX"><rect class="factor-rect" x="150" y="362" width="100" height="53" rx="6"/><text class="factor-text" x="200" y="388" text-anchor="middle" font-size="18">IX</text><text class="factor-label" x="200" y="405" text-anchor="middle">Christmas · VitK</text></g>
+          <g class="factor-node" id="factor-VIII" data-factor="VIII"><rect class="factor-rect" x="320" y="362" width="100" height="53" rx="6"/><text class="factor-text" x="370" y="388" text-anchor="middle" font-size="18">VIII</text><text class="factor-label" x="370" y="405" text-anchor="middle">Antihemofilik</text></g>
+          <g class="factor-node" id="factor-TF" data-factor="TF"><rect class="factor-rect" x="950" y="182" width="100" height="53" rx="6"/><text class="factor-text" x="1000" y="208" text-anchor="middle" font-size="15">TF (III)</text><text class="factor-label" x="1000" y="225" text-anchor="middle">Tissue Factor</text></g>
+          <g class="factor-node" id="factor-VII" data-factor="VII"><rect class="factor-rect" x="950" y="272" width="100" height="53" rx="6"/><text class="factor-text" x="1000" y="298" text-anchor="middle" font-size="18">VII</text><text class="factor-label" x="1000" y="315" text-anchor="middle">Prokonvertin · VitK</text></g>
+          <g class="factor-node" id="factor-X" data-factor="X"><rect class="factor-rect" x="550" y="488" width="100" height="53" rx="6"/><text class="factor-text" x="600" y="514" text-anchor="middle" font-size="18">X</text><text class="factor-label" x="600" y="531" text-anchor="middle">Stuart-Prower · VitK</text></g>
+          <g class="factor-node" id="factor-V" data-factor="V"><rect class="factor-rect" x="710" y="488" width="100" height="53" rx="6"/><text class="factor-text" x="760" y="514" text-anchor="middle" font-size="18">V</text><text class="factor-label" x="760" y="531" text-anchor="middle">Proaccelerin</text></g>
+          <g class="factor-node" id="factor-II" data-factor="II"><rect class="factor-rect" x="550" y="632" width="100" height="53" rx="6"/><text class="factor-text" x="600" y="658" text-anchor="middle" font-size="16">II</text><text class="factor-label" x="600" y="675" text-anchor="middle">Prothrombin · VitK</text></g>
+          <g class="factor-node" id="factor-I" data-factor="I"><rect class="factor-rect" x="550" y="722" width="100" height="53" rx="6"/><text class="factor-text" x="600" y="748" text-anchor="middle" font-size="16">I</text><text class="factor-label" x="600" y="765" text-anchor="middle">Fibrinogen</text></g>
+          <g class="factor-node" id="factor-XIII" data-factor="XIII"><rect class="factor-rect" x="710" y="722" width="100" height="53" rx="6"/><text class="factor-text" x="760" y="748" text-anchor="middle" font-size="16">XIII</text><text class="factor-label" x="760" y="765" text-anchor="middle">Fibrin Stabilizing</text></g>
+          <g class="factor-node" id="factor-clot" data-factor="clot"><rect class="factor-rect" x="440" y="825" width="320" height="75" rx="8"/><text class="factor-text" x="600" y="855" text-anchor="middle" font-size="13" style="font-family: 'Cormorant Garamond', serif; font-weight: 600; letter-spacing: 0.08em;">BEKUAN FIBRIN STABIL</text><text class="factor-label" x="600" y="878" text-anchor="middle" style="font-size: 8px;">Cross-linked Polymer · Hemostasis Sekunder</text></g>
+
+          <g class="inhibitor-mark" data-drug="warfarin" data-factor="IX"><rect x="112" y="378" width="32" height="20" rx="3"/><text x="128" y="392" text-anchor="middle">W</text></g>
+          <g class="inhibitor-mark" data-drug="warfarin" data-factor="VII"><rect x="1056" y="288" width="32" height="20" rx="3"/><text x="1072" y="302" text-anchor="middle">W</text></g>
+          <g class="inhibitor-mark" data-drug="warfarin" data-factor="X"><rect x="510" y="504" width="32" height="20" rx="3"/><text x="526" y="518" text-anchor="middle">W</text></g>
+          <g class="inhibitor-mark" data-drug="warfarin" data-factor="II"><rect x="510" y="648" width="32" height="20" rx="3"/><text x="526" y="662" text-anchor="middle">W</text></g>
+          <g class="inhibitor-mark" data-drug="heparin" data-factor="X"><rect x="658" y="480" width="32" height="20" rx="3"/><text x="674" y="494" text-anchor="middle">H</text></g>
+          <g class="inhibitor-mark" data-drug="heparin" data-factor="II"><rect x="658" y="624" width="32" height="20" rx="3"/><text x="674" y="638" text-anchor="middle">H</text></g>
+          <g class="inhibitor-mark" data-drug="doac" data-factor="X"><rect x="658" y="546" width="32" height="20" rx="3"/><text x="674" y="560" text-anchor="middle">D</text></g>
+          <g class="inhibitor-mark" data-drug="dabigatran" data-factor="II"><rect x="658" y="690" width="32" height="20" rx="3"/><text x="674" y="704" text-anchor="middle">T</text></g>
+
+          <!-- ====== REGULATOR FISIOLOGIS ====== -->
+
+          <!-- TFPI - top right of TF·VIIa -->
+          <g class="regulator-node" id="reg-tfpi" data-regulator="tfpi">
+            <rect class="regulator-rect" x="820" y="180" width="100" height="40" rx="5"/>
+            <text class="regulator-text" x="870" y="200" text-anchor="middle" font-size="12">TFPI</text>
+            <text class="regulator-label" x="870" y="213" text-anchor="middle">Endotelium</text>
+          </g>
+          <path id="inhibit-tfpi-tf" class="inhibit-arrow" d="M 920,200 L 945,200" marker-end="url(#inhibit-physio)"/>
+          <path id="inhibit-tfpi-x" class="inhibit-arrow" d="M 870,220 C 870,360 760,490 660,510" marker-end="url(#inhibit-physio)"/>
+
+          <!-- Thrombomodulin -->
+          <g class="regulator-node" id="reg-tm" data-regulator="thrombomodulin">
+            <rect class="regulator-rect" x="820" y="620" width="105" height="42" rx="5"/>
+            <text class="regulator-text" x="872" y="640" text-anchor="middle" font-size="10">Thrombomodulin</text>
+            <text class="regulator-label" x="872" y="655" text-anchor="middle">Endotelium</text>
+          </g>
+          <path id="inhibit-tm-ii" class="inhibit-arrow" d="M 820,650 L 660,658" marker-end="url(#inhibit-physio)"/>
+
+          <!-- Protein C / Protein S -->
+          <g class="regulator-node" id="reg-proteinc" data-regulator="proteinc">
+            <rect class="regulator-rect" x="950" y="500" width="170" height="55" rx="5"/>
+            <text class="regulator-text" x="1035" y="520" text-anchor="middle" font-size="11">Protein C · Protein S</text>
+            <text class="regulator-label" x="1035" y="535" text-anchor="middle">APC · Vit K Dependent</text>
+            <text class="regulator-label" x="1035" y="548" text-anchor="middle" style="font-size: 6.5px;">Inaktivasi Va, VIIIa</text>
+          </g>
+          <path id="activate-tm-pc" class="inhibit-arrow" d="M 920,640 C 970,620 1010,590 1015,555" marker-end="url(#inhibit-physio)"/>
+          <path id="inhibit-pc-v" class="inhibit-arrow" d="M 950,515 L 815,515" marker-end="url(#inhibit-physio)"/>
+          <path id="inhibit-pc-viii" class="inhibit-arrow" d="M 950,510 C 800,470 600,420 425,395" marker-end="url(#inhibit-physio)"/>
+
+          <!-- Antithrombin -->
+          <g class="regulator-node" id="reg-at" data-regulator="antithrombin">
+            <rect class="regulator-rect" x="950" y="700" width="170" height="55" rx="5"/>
+            <text class="regulator-text" x="1035" y="720" text-anchor="middle" font-size="11">Antithrombin (AT)</text>
+            <text class="regulator-label" x="1035" y="735" text-anchor="middle">Serpin · Endogen</text>
+            <text class="regulator-label" x="1035" y="748" text-anchor="middle" style="font-size: 6.5px;">Inh: IIa, Xa, IXa, XIa</text>
+          </g>
+          <path id="inhibit-at-ii" class="inhibit-arrow" d="M 950,720 C 800,720 700,690 655,665" marker-end="url(#inhibit-physio)"/>
+          <path id="inhibit-at-x" class="inhibit-arrow" d="M 950,710 C 800,650 720,560 655,525" marker-end="url(#inhibit-physio)"/>
+          <path id="inhibit-at-ix" class="inhibit-arrow" d="M 950,705 C 750,720 450,560 255,395" marker-end="url(#inhibit-physio)"/>
+          <path id="inhibit-at-xi" class="inhibit-arrow" d="M 950,700 C 700,700 350,560 255,305" marker-end="url(#inhibit-physio)"/>
+
+          <!-- ====== FIBRINOLISIS SECTION ====== -->
+          <rect class="fibrinolysis-region" x="60" y="940" width="1080" height="400" rx="10"/>
+          <text class="fibrinolysis-label" x="80" y="975">Fibrinolisis</text>
+          <text class="fibrinolysis-sublabel" x="80" y="992">Plasmin Cascade · Resolusi Bekuan</text>
+
+          <!-- Plasminogen → Plasmin → FDP -->
+          <g class="fibrinolysis-node" id="fib-plasminogen" data-fibrinolysis="plasminogen">
+            <rect class="fibrinolysis-rect" x="100" y="1040" width="160" height="55" rx="6"/>
+            <text class="fibrinolysis-text" x="180" y="1066" text-anchor="middle" font-size="14">Plasminogen</text>
+            <text class="fibrinolysis-label-small" x="180" y="1083" text-anchor="middle">Zimogen · Hepar</text>
+          </g>
+
+          <g class="fibrinolysis-node" id="fib-tpa" data-fibrinolysis="tpa">
+            <rect class="fibrinolysis-rect" x="290" y="990" width="160" height="45" rx="6"/>
+            <text class="fibrinolysis-text" x="370" y="1010" text-anchor="middle" font-size="13">t-PA / u-PA</text>
+            <text class="fibrinolysis-label-small" x="370" y="1025" text-anchor="middle">Endotelium · Alteplase</text>
+          </g>
+
+          <g class="fibrinolysis-node" id="fib-plasmin" data-fibrinolysis="plasmin">
+            <rect class="fibrinolysis-rect" x="480" y="1040" width="160" height="55" rx="6"/>
+            <text class="fibrinolysis-text" x="560" y="1066" text-anchor="middle" font-size="14">Plasmin</text>
+            <text class="fibrinolysis-label-small" x="560" y="1083" text-anchor="middle">Serin Protease Aktif</text>
+          </g>
+
+          <g class="fibrinolysis-node" id="fib-fdp" data-fibrinolysis="fdp">
+            <rect class="fibrinolysis-rect" x="850" y="1040" width="200" height="55" rx="6"/>
+            <text class="fibrinolysis-text" x="950" y="1066" text-anchor="middle" font-size="13">FDP · D-dimer</text>
+            <text class="fibrinolysis-label-small" x="950" y="1083" text-anchor="middle">Produk Degradasi Fibrin</text>
+          </g>
+
+          <!-- Arrows -->
+          <path id="fib-arrow-1" class="fibrinolysis-arrow" d="M 260,1067 L 478,1067" marker-end="url(#arrow-fibrinolysis-marker)"/>
+          <path id="fib-arrow-tpa" class="fibrinolysis-arrow" d="M 370,1035 L 370,1057" marker-end="url(#arrow-fibrinolysis-marker)"/>
+          <path id="fib-arrow-2" class="fibrinolysis-arrow" d="M 640,1067 L 848,1067" marker-end="url(#arrow-fibrinolysis-marker)"/>
+          <path id="fib-arrow-clot" class="fibrinolysis-arrow" d="M 600,900 C 580,950 565,1000 560,1038" marker-end="url(#arrow-fibrinolysis-marker)"/>
+          <text x="585" y="975" class="fibrinolysis-sublabel" style="font-size: 8px;">substrat</text>
+
+          <!-- TXA -->
+          <g class="fibrinolysis-node" id="fib-txa" data-fibrinolysis="txa">
+            <rect class="fibrinolysis-rect" x="290" y="1140" width="180" height="45" rx="6" style="stroke: rgba(239, 68, 68, 0.4); stroke-dasharray: 4 3;"/>
+            <text class="fibrinolysis-text" x="380" y="1161" text-anchor="middle" font-size="12" style="fill: rgba(239, 68, 68, 0.7);">TXA · α2-Antiplasmin</text>
+            <text class="fibrinolysis-label-small" x="380" y="1175" text-anchor="middle">Antifibrinolitik</text>
+          </g>
+          <path id="txa-block-plasminogen" class="inhibit-arrow" d="M 380,1140 L 220,1100" marker-end="url(#inhibit-physio)" style="stroke: rgba(239, 68, 68, 0.5);"/>
+          <path id="txa-block-plasmin" class="inhibit-arrow" d="M 470,1160 L 555,1100" marker-end="url(#inhibit-physio)" style="stroke: rgba(239, 68, 68, 0.5);"/>
+
+          <!-- PAI -->
+          <g class="fibrinolysis-node" id="fib-pai" data-fibrinolysis="pai">
+            <rect class="fibrinolysis-rect" x="540" y="940" width="150" height="40" rx="5" style="stroke: rgba(110, 231, 183, 0.35); stroke-dasharray: 4 3;"/>
+            <text class="fibrinolysis-text" x="615" y="960" text-anchor="middle" font-size="11" style="fill: rgba(110, 231, 183, 0.7);">PAI-1 / PAI-2</text>
+            <text class="fibrinolysis-label-small" x="615" y="973" text-anchor="middle">Endogen · Inh. tPA</text>
+          </g>
+          <path id="pai-block-tpa" class="inhibit-arrow" d="M 540,975 L 450,1005" marker-end="url(#inhibit-physio)"/>
+
+          <!-- Summary annotation -->
+          <text x="80" y="1235" class="fibrinolysis-sublabel" style="fill: rgba(196, 181, 253, 0.7);">KESEIMBANGAN HEMOSTATIK:</text>
+          <text x="80" y="1255" class="fibrinolysis-label-small" style="font-size: 10px;">Trombosis ↔ Fibrinolisis · Disregulasi → DIC, VTE, atau perdarahan</text>
+          <text x="80" y="1275" class="fibrinolysis-label-small" style="font-size: 10px;">D-dimer ↑ → spesifik untuk degradasi fibrin cross-linked (XIIIa) — bukan fibrinogen</text>
+          <text x="80" y="1295" class="fibrinolysis-label-small" style="font-size: 10px;">α2-antiplasmin: inh. plasmin · PAI-1: inh. tPA · TAFI: inh. fibrinolisis (diaktivasi thrombin)</text>
+
+          <!-- Alteplase drug marker -->
+          <g class="inhibitor-mark" data-drug="alteplase" data-factor="plasminogen">
+            <rect x="262" y="1052" width="32" height="20" rx="3" style="fill: rgba(167, 139, 250, 0.2); stroke: #a78bfa;"/>
+            <text x="278" y="1066" text-anchor="middle" style="fill: #a78bfa;">A</text>
+          </g>
+        </svg>
+      </div>
+
+      <div id="status-bar" class="mt-4 p-4 bg-deepest rounded status-info fade-in" style="border: 1px solid var(--border-subtle);">
+        <div class="flex items-start gap-3">
+          <i data-lucide="info" id="status-icon" class="w-4 h-4 mt-0.5 text-accent flex-shrink-0"></i>
+          <div class="flex-1">
+            <div id="status-label" class="text-[10px] uppercase tracking-widest text-accent-dim mb-1">Status</div>
+            <p id="status-text" class="text-sm text-secondary-c leading-relaxed">
+              Pilih jalur pemicu (Intrinsik atau Ekstrinsik) untuk memulai simulasi kaskade koagulasi. Anda juga dapat mengaktifkan antikoagulan untuk melihat titik inhibisi obat.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 flex flex-wrap items-center gap-3 md:gap-5 text-xs px-2 py-2">
+        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-sm border" style="background: var(--bg-tertiary); border-color: var(--status-inactive);"></div><span class="text-muted text-[11px]">Inaktif</span></div>
+        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-sm border" style="background: var(--accent-gold-soft); border-color: var(--accent-gold);"></div><span class="text-muted text-[11px]">Aktif (a)</span></div>
+        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-sm border" style="background: rgba(239,68,68,0.1); border-color: var(--status-inhibited); border-style: dashed;"></div><span class="text-muted text-[11px]">Diinhibisi</span></div>
+        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-sm border" style="background: rgba(16,185,129,0.12); border-color: var(--status-clot);"></div><span class="text-muted text-[11px]">Bekuan</span></div>
+        <div class="flex items-center gap-2 ml-auto text-[11px] text-muted/70 font-mono flex-wrap">
+          <span class="px-1.5 py-0.5 rounded border" style="border-color: var(--status-inhibited); color: var(--status-inhibited);">W</span> Warfarin
+          <span class="px-1.5 py-0.5 rounded border ml-1" style="border-color: var(--status-inhibited); color: var(--status-inhibited);">H</span> Heparin
+          <span class="px-1.5 py-0.5 rounded border ml-1" style="border-color: var(--status-inhibited); color: var(--status-inhibited);">D</span> DOAC
+          <span class="px-1.5 py-0.5 rounded border ml-1" style="border-color: var(--status-inhibited); color: var(--status-inhibited);">T</span> Dabigatran
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="col-span-12 xl:col-span-3 space-y-4 xl:sticky xl:top-4 xl:self-start xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto xl:pr-1 sidebar-sticky">
+    <div class="info-card p-4">
+      <h3 class="font-display text-base text-accent mb-3 flex items-center gap-2"><i data-lucide="zap" class="w-4 h-4"></i>Pemicu Kaskade</h3>
+      <div class="grid grid-cols-2 gap-2">
+        <button id="trigger-intrinsic-btn" class="btn-trigger px-3 py-2.5 rounded text-[11px] font-medium uppercase tracking-wider">Intrinsik</button>
+        <button id="trigger-extrinsic-btn" class="btn-trigger px-3 py-2.5 rounded text-[11px] font-medium uppercase tracking-wider">Ekstrinsik</button>
+      </div>
+      <p class="text-[11px] text-muted mt-2.5 leading-relaxed">
+        <span class="text-accent-dim">Intrinsik:</span> aPTT · in vitro relevance.
+        <span class="text-accent-dim">Ekstrinsik:</span> PT · dominan in vivo.
+      </p>
+    </div>
+
+    <div class="info-card p-4">
+      <h3 class="font-display text-base text-accent mb-3 flex items-center gap-2"><i data-lucide="play-circle" class="w-4 h-4"></i>Kontrol Simulasi</h3>
+      <div class="grid grid-cols-3 gap-2">
+        <button id="play-btn" class="btn-primary px-2 py-2 rounded text-[10px] uppercase tracking-wider font-medium" disabled><i data-lucide="play" class="w-3 h-3 inline mb-0.5"></i> <span id="play-btn-text">Putar</span></button>
+        <button id="step-btn" class="btn-secondary px-2 py-2 rounded text-[10px] uppercase tracking-wider font-medium" disabled><i data-lucide="skip-forward" class="w-3 h-3 inline mb-0.5"></i> Langkah</button>
+        <button id="reset-btn" class="btn-secondary px-2 py-2 rounded text-[10px] uppercase tracking-wider font-medium"><i data-lucide="rotate-ccw" class="w-3 h-3 inline mb-0.5"></i> Reset</button>
+      </div>
+      <div class="mt-3 flex items-center justify-between">
+        <label class="text-[11px] text-muted">Kecepatan</label>
+        <select id="speed-select" class="bg-elevated text-xs px-2 py-1 rounded border" style="border-color: var(--border-default); color: var(--text-secondary);">
+          <option value="2200">Lambat</option>
+          <option value="1500" selected>Normal</option>
+          <option value="900">Cepat</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="info-card p-4">
+      <h3 class="font-display text-base text-accent mb-3 flex items-center gap-2"><i data-lucide="pill" class="w-4 h-4"></i>Overlay Antikoagulan</h3>
+      <div class="space-y-2">
+        <button class="drug-toggle px-3 py-2 rounded" data-drug="heparin"><div class="flex items-center justify-between"><span class="font-medium text-sm">Heparin / LMWH</span><span class="font-mono text-[10px] text-muted">IIa · Xa</span></div><p class="text-[10px] text-muted mt-0.5">Inhibisi via Antithrombin III</p></button>
+        <button class="drug-toggle px-3 py-2 rounded" data-drug="warfarin"><div class="flex items-center justify-between"><span class="font-medium text-sm">Warfarin</span><span class="font-mono text-[10px] text-muted">II·VII·IX·X</span></div><p class="text-[10px] text-muted mt-0.5">Antagonis Vitamin K (VKORC1)</p></button>
+        <button class="drug-toggle px-3 py-2 rounded" data-drug="doac"><div class="flex items-center justify-between"><span class="font-medium text-sm">Rivaroxaban / Apixaban</span><span class="font-mono text-[10px] text-muted">Xa</span></div><p class="text-[10px] text-muted mt-0.5">Inhibitor Faktor Xa langsung</p></button>
+        <button class="drug-toggle px-3 py-2 rounded" data-drug="dabigatran"><div class="flex items-center justify-between"><span class="font-medium text-sm">Dabigatran</span><span class="font-mono text-[10px] text-muted">IIa</span></div><p class="text-[10px] text-muted mt-0.5">Inhibitor Thrombin langsung</p></button>
+      </div>
+      <button id="clear-drugs-btn" class="mt-3 w-full text-[10px] uppercase tracking-wider text-muted hover:text-accent transition-colors py-1.5 border-t" style="border-color: var(--border-subtle);">Hapus Semua Inhibitor</button>
+    </div>
+
+    <!-- ==== REGULATOR FISIOLOGIS ==== -->
+    <div class="info-card p-4">
+      <h3 class="font-display text-base text-accent mb-1 flex items-center gap-2"><i data-lucide="shield-check" class="w-4 h-4"></i>Regulator Fisiologis</h3>
+      <p class="text-[10px] text-muted mb-3">Antikoagulan endogen · Mencegah trombosis spontan</p>
+      <div class="space-y-2">
+        <button class="reg-toggle drug-toggle px-3 py-2 rounded" data-regulator="antithrombin"><div class="flex items-center justify-between"><span class="font-medium text-sm">Antithrombin (AT)</span><span class="font-mono text-[10px] text-muted">IIa·Xa·IXa·XIa</span></div><p class="text-[10px] text-muted mt-0.5">Serpin · Target Heparin</p></button>
+        <button class="reg-toggle drug-toggle px-3 py-2 rounded" data-regulator="proteinc"><div class="flex items-center justify-between"><span class="font-medium text-sm">Protein C / S</span><span class="font-mono text-[10px] text-muted">Va · VIIIa</span></div><p class="text-[10px] text-muted mt-0.5">APC · Vit K Dependent</p></button>
+        <button class="reg-toggle drug-toggle px-3 py-2 rounded" data-regulator="tfpi"><div class="flex items-center justify-between"><span class="font-medium text-sm">TFPI</span><span class="font-mono text-[10px] text-muted">TF·VIIa · Xa</span></div><p class="text-[10px] text-muted mt-0.5">Membatasi inisiasi ekstrinsik</p></button>
+        <button class="reg-toggle drug-toggle px-3 py-2 rounded" data-regulator="thrombomodulin"><div class="flex items-center justify-between"><span class="font-medium text-sm">Thrombomodulin</span><span class="font-mono text-[10px] text-muted">→ APC</span></div><p class="text-[10px] text-muted mt-0.5">Switch thrombin: pro→antikoagulan</p></button>
+      </div>
+      <button id="clear-regs-btn" class="mt-3 w-full text-[10px] uppercase tracking-wider text-muted hover:text-accent transition-colors py-1.5 border-t" style="border-color: var(--border-subtle);">Reset Regulator</button>
+    </div>
+
+    <!-- ==== SISTEM FIBRINOLISIS ==== -->
+    <div class="info-card p-4">
+      <h3 class="font-display text-base text-accent mb-1 flex items-center gap-2"><i data-lucide="waves" class="w-4 h-4"></i>Sistem Fibrinolisis</h3>
+      <p class="text-[10px] text-muted mb-3">Resolusi bekuan · Trombolitik & Antifibrinolitik</p>
+      <div class="space-y-2">
+        <button id="fib-play-btn" class="btn-primary w-full px-3 py-2 rounded text-[11px] uppercase tracking-wider font-medium" disabled><i data-lucide="play-circle" class="w-3.5 h-3.5 inline mb-0.5 mr-1"></i> Jalankan Fibrinolisis</button>
+        <button class="fib-toggle drug-toggle px-3 py-2 rounded" data-fibrinolysis="tpa-drug"><div class="flex items-center justify-between"><span class="font-medium text-sm">Alteplase (rt-PA)</span><span class="font-mono text-[10px] text-muted">Trombolitik</span></div><p class="text-[10px] text-muted mt-0.5">STEMI · Stroke iskemik · PE masif</p></button>
+        <button class="fib-toggle drug-toggle px-3 py-2 rounded" data-fibrinolysis="txa-drug"><div class="flex items-center justify-between"><span class="font-medium text-sm">Asam Traneksamat</span><span class="font-mono text-[10px] text-muted">Antifibrinolitik</span></div><p class="text-[10px] text-muted mt-0.5">Trauma · Perdarahan obstetri · CRASH-2</p></button>
+      </div>
+      <button id="clear-fibs-btn" class="mt-3 w-full text-[10px] uppercase tracking-wider text-muted hover:text-accent transition-colors py-1.5 border-t" style="border-color: var(--border-subtle);">Reset Fibrinolisis</button>
+    </div>
+
+    <div id="factor-info" class="info-card p-4 min-h-[200px]">
+      <h3 class="font-display text-base text-accent mb-3 flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4"></i>Detail Faktor</h3>
+      <div id="factor-info-empty" class="text-center py-8">
+        <i data-lucide="mouse-pointer-click" class="w-7 h-7 mx-auto text-muted opacity-40"></i>
+        <p class="text-[11px] text-muted mt-3 leading-relaxed px-2">Klik salah satu node faktor pada diagram untuk melihat fungsi, kofaktor, dan implikasi klinisnya.</p>
+      </div>
+      <div id="factor-info-content" class="hidden fade-in"></div>
+    </div>
+
+    <div id="drug-info" class="info-card p-4 hidden">
+      <h3 class="font-display text-base text-accent mb-3 flex items-center gap-2"><i data-lucide="flask-conical" class="w-4 h-4"></i>Antikoagulan Aktif</h3>
+      <div id="drug-info-content"></div>
+    </div>
+  </aside>
+</main>
+
+<footer class="border-t border-subtle px-4 md:px-8 py-4 mt-6">
+  <div class="max-w-[1700px] mx-auto flex flex-col md:flex-row items-center justify-between gap-2 text-[11px] text-muted">
+    <span class="font-mono tracking-wider">Referensi: Hoffbrand's Essential Haematology · Harrison's Internal Medicine · Goodman & Gilman's</span>
+    <span class="font-mono opacity-70">v1.0 · Media Edukasi PPDS</span>
+  </div>
+</footer>
+
+<script>
+// ============== DATA FAKTOR ==============
+const factorData = {
+  'XII': {
+    name: 'Faktor XII — Hageman Factor',
+    fn: 'Inisiator klasik jalur intrinsik. Diaktivasi (autoaktivasi) saat berkontak dengan permukaan bermuatan negatif: kolagen subendotelium, kaca, kaolin, atau ellagic acid (in vitro).',
+    cof: 'HMWK, Prekallikrein',
+    act: 'XI → XIa',
+    clin: 'Defisiensi TIDAK menyebabkan perdarahan klinis meskipun aPTT memanjang signifikan (paradoks klasik). Beberapa laporan justru mengaitkan defisiensi XII dengan kecenderungan trombosis.',
+    path: 'intrinsic'
+  },
+  'XI': {
+    name: 'Faktor XI — Plasma Thromboplastin Antecedent',
+    fn: 'Serin protease, diaktivasi oleh XIIa dan (lebih penting in vivo) oleh thrombin sebagai bagian dari loop amplifikasi.',
+    cof: 'Ca²⁺',
+    act: 'IX → IXa',
+    clin: 'Defisiensi → Hemofilia C (Rosenthal syndrome). Autosomal resesif. Prevalensi tinggi pada Yahudi Ashkenazi (~8% heterozigot). Perdarahan ringan-sedang, terutama post-operatif di area fibrinolisis tinggi (rongga mulut, traktus urinarius).',
+    path: 'intrinsic'
+  },
+  'IX': {
+    name: 'Faktor IX — Christmas Factor',
+    fn: 'Zimogen serin protease dependen Vitamin K. Komponen enzimatik kompleks tenase intrinsik (IXa·VIIIa).',
+    cof: 'Ca²⁺, Phospholipid, VIIIa',
+    act: 'X → Xa (bersama VIIIa)',
+    clin: 'Defisiensi → Hemofilia B (Christmas disease). X-linked resesif. Manifestasi identik dengan Hemofilia A: hemarthrosis, hematoma otot, perdarahan intrakranial. Tata laksana: konsentrat FIX rekombinan atau terapi gen (etranacogene dezaparvovec).',
+    path: 'intrinsic', vitK: true
+  },
+  'VIII': {
+    name: 'Faktor VIII — Antihemophilic Factor',
+    fn: 'Glikoprotein KOFAKTOR (bukan enzim). Akselerator dramatis untuk IXa dalam kompleks tenase. Bersirkulasi dalam kompleks non-kovalen dengan vWF.',
+    cof: 'Diaktivasi oleh thrombin (IIa) → VIIIa',
+    act: 'Kofaktor IXa untuk aktivasi X (meningkatkan kₐₜ ~200.000×)',
+    clin: 'Defisiensi → Hemofilia A (~80% dari semua hemofilia, paling umum). X-linked resesif. Hemofilia A berat (<1%) → hemarthrosis spontan, arthropathy kronis. Perpanjangan aPTT, PT normal. Tata laksana: rFVIII, emicizumab (bispecific Ab), atau terapi gen.',
+    path: 'intrinsic'
+  },
+  'TF': {
+    name: 'Tissue Factor (Faktor III)',
+    fn: 'Glikoprotein transmembran tipe-I diekspresikan konstitutif pada sel ekstravaskular (fibroblas, adventitia, otot polos, otak, paru, plasenta). Inisiator UTAMA hemostasis in vivo.',
+    cof: '—',
+    act: 'Mengikat & mengaktivasi VII → VIIa',
+    clin: 'Ekspresi aberan pada sel tumor → status hiperkoagulabilitas dan tromboemboli paraneoplastik (Trousseau syndrome). Juga diekspresikan monosit teraktivasi pada sepsis → koagulopati DIC.',
+    path: 'extrinsic'
+  },
+  'VII': {
+    name: 'Faktor VII — Prokonvertin',
+    fn: 'Serin protease dependen Vitamin K dengan half-life TERPENDEK (~4–6 jam). ±1% sudah dalam bentuk VIIa di sirkulasi.',
+    cof: 'TF, Ca²⁺, Phospholipid',
+    act: 'X → Xa (juga IX → IXa, cross-talk)',
+    clin: 'Faktor PERTAMA yang menurun pada inisiasi warfarin → PT/INR memanjang lebih awal dari aPTT. rFVIIa (NovoSeven) sebagai bypass agent pada hemofilia dengan inhibitor.',
+    path: 'extrinsic', vitK: true
+  },
+  'X': {
+    name: 'Faktor X — Stuart-Prower',
+    fn: 'Serin protease dependen Vitamin K. Komponen enzimatik kompleks prothrombinase (Xa·Va). TITIK KONVERGENSI jalur intrinsik & ekstrinsik.',
+    cof: 'Va, Ca²⁺, Phospholipid',
+    act: 'Prothrombin (II) → Thrombin (IIa)',
+    clin: 'Target farmakologis utama era modern: DOACs (Rivaroxaban, Apixaban, Edoxaban) menghambat langsung; LMWH/fondaparinux menghambat via antithrombin. Andexanet alfa = reversal agent untuk inhibitor Xa.',
+    path: 'common', vitK: true
+  },
+  'V': {
+    name: 'Faktor V — Proaccelerin (Labile Factor)',
+    fn: 'Glikoprotein KOFAKTOR (non-enzim). Akselerator untuk Xa dalam kompleks prothrombinase. Diaktivasi thrombin → loop amplifikasi.',
+    cof: 'Diaktivasi oleh IIa → Va',
+    act: 'Kofaktor Xa (meningkatkan kₐₜ ~10.000×)',
+    clin: 'FAKTOR V LEIDEN (G1691A → Arg506Gln) menyebabkan resistensi terhadap inaktivasi oleh Activated Protein C → trombofilia herediter TERSERING (3–8% Kaukasia, jarang di Asia). Risiko VTE ↑ 4–8× heterozigot, hingga 80× homozigot.',
+    path: 'common'
+  },
+  'II': {
+    name: 'Faktor II — Prothrombin → Thrombin (IIa)',
+    fn: 'Zimogen dependen Vitamin K. Setelah dipecah kompleks prothrombinase → THROMBIN (IIa), enzim SENTRAL hemostasis dengan peran multi-fungsi.',
+    cof: 'Va, Ca²⁺, Phospholipid',
+    act: 'I→Ia (fibrin); aktivasi V, VIII, XI, XIII; agregasi platelet via PAR-1/4',
+    clin: 'Mutasi G20210A pada 3´-UTR → kadar prothrombin plasma ↑ ~30% → trombofilia (herediter ke-2 tersering). Target Dabigatran. Idarucizumab (Praxbind) = reversal agent untuk dabigatran.',
+    path: 'common', vitK: true
+  },
+  'I': {
+    name: 'Faktor I — Fibrinogen',
+    fn: 'Glikoprotein plasma 340 kDa (Aα-Bβ-γ)₂. Substrat akhir thrombin. Thrombin memecah fibrinopeptide A & B → monomer fibrin yang berpolimerisasi membentuk "soft clot".',
+    cof: '—',
+    act: 'Polimer fibrin soluble (Ia)',
+    clin: 'Reagen fase akut — meningkat pada inflamasi. MENURUN pada DIC (dikonsumsi), hepatopati berat, atau terapi trombolitik. Afibrinogenemia kongenital: perdarahan berat sejak lahir. Kadar normal: 200–400 mg/dL.',
+    path: 'common'
+  },
+  'XIII': {
+    name: 'Faktor XIII — Fibrin Stabilizing Factor',
+    fn: 'Transglutaminase. Diaktivasi thrombin (XIII → XIIIa). Membentuk ikatan kovalen isopeptida (γ-glutamyl-ε-lysine) antar monomer fibrin → bekuan resistan fibrinolisis.',
+    cof: 'Ca²⁺',
+    act: 'Cross-linking fibrin → "hard clot"',
+    clin: 'Defisiensi (langka, autosomal resesif) → perdarahan TERTUNDA setelah trauma (24–48 jam), gangguan penyembuhan luka, perdarahan umbilikal pada neonatus, abortus rekuren. PT, aPTT, trombosit NORMAL — sering missed. Uji konfirmasi: solubilitas bekuan dalam 5M urea.',
+    path: 'common'
+  },
+  'clot': {
+    name: 'Bekuan Fibrin Stabil',
+    fn: 'Hasil akhir hemostasis sekunder: polimer fibrin yang di-cross-link kovalen oleh XIIIa. Menjebak eritrosit, platelet, leukosit membentuk thrombus merah-putih.',
+    cof: '—',
+    act: 'Substrat fibrinolisis (oleh plasmin) saat penyembuhan',
+    clin: 'Resistan terhadap plasmin tanpa katalis. Disregulasi → trombosis patologis (DVT, PE, MI, stroke iskemik). Disolusi prematur → perdarahan. Diatur oleh sistem fibrinolitik (tPA, plasmin, α2-antiplasmin) & antikoagulan endogen (Protein C, S, antithrombin).',
+    path: 'common'
+  }
+};
+
+const drugData = {
+  'heparin': {
+    name: 'Heparin (UFH / LMWH / Fondaparinux)',
+    mech: 'Mempotensiasi Antithrombin III (~1000×). UFH menginhibisi IIa & Xa setara; LMWH (Enoxaparin) lebih selektif Xa karena rantai pendek tidak cukup untuk ternary complex AT-IIa. Fondaparinux: pentasaccharide → hanya Xa.',
+    mon: 'UFH → aPTT (1.5–2.5×) atau anti-Xa (0.3–0.7 IU/mL). LMWH → tidak rutin; anti-Xa pada gagal ginjal/obesitas/kehamilan.',
+    rev: 'Protamine sulfate (lengkap UFH, ~60% LMWH).'
+  },
+  'warfarin': {
+    name: 'Warfarin (Kumarin)',
+    mech: 'Inhibisi enzim VKORC1 → mencegah regenerasi Vitamin K hidrokuinon → menghambat γ-karboksilasi residu glutamat (Gla) pada II, VII, IX, X, serta Protein C & S. PIVKAs yang dihasilkan non-fungsional.',
+    mon: 'PT/INR. Target 2.0–3.0 (VTE, AFib); 2.5–3.5 untuk katup mekanik mitral.',
+    rev: 'Vitamin K (slow), 4F-PCC atau FFP (urgent).',
+    caveat: 'Hati-hati efek prokoagulan transien hari 1–3 (Protein C half-life 8 jam < Faktor II half-life 60 jam) → "warfarin-induced skin necrosis". Bridging dengan heparin pada risiko tinggi.'
+  },
+  'doac': {
+    name: 'DOAC Anti-Xa (Rivaroxaban, Apixaban, Edoxaban)',
+    mech: 'Inhibisi langsung, reversibel, kompetitif terhadap active site Xa — baik Xa bebas maupun terikat dalam kompleks prothrombinase. Tidak memerlukan antithrombin.',
+    mon: 'Tidak rutin. Anti-Xa kalibrasi spesifik bila perlu.',
+    rev: 'Andexanet alfa (rekombinan Xa decoy) atau 4F-PCC.'
+  },
+  'dabigatran': {
+    name: 'Dabigatran (Pradaxa)',
+    mech: 'Inhibisi langsung reversibel thrombin (IIa) — baik thrombin bebas maupun terikat fibrin (keunggulan vs heparin). Prodrug dabigatran etexilate diaktivasi esterase hati.',
+    mon: 'Tidak rutin. dTT atau ecarin clotting time bila perlu.',
+    rev: 'Idarucizumab (Praxbind) — fragmen antibodi monoklonal dengan afinitas 350× thrombin.'
+  }
+};
+
+const drugTargets = {
+  heparin: ['X', 'II'],
+  warfarin: ['II', 'VII', 'IX', 'X'],
+  doac: ['X'],
+  dabigatran: ['II']
+};
+
+// ============== REGULATOR FISIOLOGIS DATA ==============
+const regulatorData = {
+  'antithrombin': {
+    name: 'Antithrombin (AT-III)',
+    type: 'Serine Protease Inhibitor (Serpin)',
+    fn: 'Glikoprotein plasma yang menonaktifkan secara IRREVERSIBEL beberapa serin protease aktif (IIa, Xa, IXa, XIa, XIIa). Membentuk kompleks 1:1 stoikiometrik dengan target.',
+    targets: ['II', 'X', 'IX', 'XI'],
+    inhibitArrows: ['inhibit-at-ii', 'inhibit-at-x', 'inhibit-at-ix', 'inhibit-at-xi'],
+    potentiation: 'Heparin (UFH, LMWH, fondaparinux) meningkatkan aktivitas AT ~1000× dengan menginduksi perubahan konformasi pada AT — reaksi yang awalnya berlangsung dalam menit menjadi instan.',
+    clin: 'Defisiensi herediter AT (autosomal dominan, prevalensi 1:2000–5000) → trombofilia berat dengan VTE rekuren onset dini (<40 tahun). Resistensi heparin pada defisiensi AT → butuh konsentrat AT atau dosis tinggi. Defisiensi didapat: DIC, sepsis (konsumsi), sindroma nefrotik (lost in urine), hepatopati.'
+  },
+  'proteinc': {
+    name: 'Sistem Protein C / Protein S',
+    type: 'Antikoagulan Endogen Vit K Dependent',
+    fn: 'Protein C (PC) adalah zimogen serin protease. Diaktivasi menjadi Activated Protein C (APC) oleh kompleks thrombin-thrombomodulin pada permukaan endotelium. APC + kofaktor Protein S → memecah dan menginaktivasi Va dan VIIIa secara proteolitik.',
+    targets: ['V', 'VIII'],
+    inhibitArrows: ['inhibit-pc-v', 'inhibit-pc-viii', 'activate-tm-pc'],
+    requires: 'Thrombomodulin · EPCR (Endothelial PC Receptor) · Protein S',
+    clin: 'Defisiensi PC/PS → trombofilia herediter (autosomal dominan). Defisiensi homozigot/compound heterozygous PC pada neonatus → PURPURA FULMINANS NEONATORUM (gawat darurat). FAKTOR V LEIDEN (G1691A → R506Q) menghilangkan lokus pemotongan APC → resistensi APC → trombofilia tersering. Pada inisiasi WARFARIN, PC turun lebih cepat dari II (half-life PC ~8 jam vs II ~60 jam) → status prokoagulan transien → warfarin-induced skin necrosis (bridging heparin wajib pada risiko tinggi).'
+  },
+  'tfpi': {
+    name: 'TFPI (Tissue Factor Pathway Inhibitor)',
+    type: 'Antikoagulan Endogen',
+    fn: 'Protein yang diproduksi terutama oleh endotelium mikrovaskular. Membentuk kompleks kuaterner TFPI·Xa·VIIa·TF yang menonaktifkan inisiator ekstrinsik. Mekanisme dua-tahap: TFPI mengikat Xa dulu, lalu kompleks ini menjebak TF·VIIa.',
+    targets: ['TF', 'VII', 'X'],
+    inhibitArrows: ['inhibit-tfpi-tf', 'inhibit-tfpi-x'],
+    clin: 'Mekanisme PEMBATASAN INISIASI — menjelaskan mengapa hemofilia (defisiensi VIII/IX di jalur intrinsik) tetap menyebabkan perdarahan: setelah TFPI memadamkan TF·VIIa·Xa, hemostasis lanjutan TOTAL bergantung pada jalur intrinsik (IXa·VIIIa tenase). Concizumab (anti-TFPI antibodi) sedang diuji sebagai terapi hemofilia non-faktor.'
+  },
+  'thrombomodulin': {
+    name: 'Thrombomodulin (TM)',
+    type: 'Reseptor Endotelium',
+    fn: 'Glikoprotein transmembran pada endotelium yang mengikat thrombin (IIa). Pengikatan ini mengubah SPESIFISITAS SUBSTRAT thrombin: dari prokoagulan (memecah fibrinogen, mengaktifkan V/VIII/XIII/platelet) menjadi ANTIKOAGULAN (memecah Protein C → APC).',
+    targets: ['II'],
+    inhibitArrows: ['inhibit-tm-ii', 'activate-tm-pc'],
+    clin: 'Konsep kunci: thrombin punya dua "wajah". Pada lokasi cedera (TM rendah) → prokoagulan; pada endotelium intak distal (TM tinggi) → antikoagulan via APC. Bentuk rekombinan (recomodulin/ART-123) diuji untuk DIC. Mutasi pada gen TM jarang, tapi dikaitkan dengan trombosis.'
+  }
+};
+
+// ============== FIBRINOLISIS DATA ==============
+const fibrinolysisData = {
+  'plasminogen': {
+    name: 'Plasminogen',
+    type: 'Zimogen Plasma',
+    fn: 'Glikoprotein 92 kDa, disintesis di hepar. Beredar dalam plasma dengan konsentrasi ~200 mg/L. Memiliki lima kringle domain yang mengandung lysine-binding sites — krusial untuk pengikatan ke fibrin.',
+    clin: 'Defisiensi (langka, autosomal resesif) → trombosis & konjungtivitis ligneous (membran pseudomembran pada konjungtiva). Konsentrat plasminogen tersedia.'
+  },
+  'tpa': {
+    name: 't-PA / u-PA (Plasminogen Activators)',
+    type: 'Aktivator Fibrinolitik',
+    fn: 'tissue-type Plasminogen Activator (tPA): dilepaskan dari endotelium teraktivasi, afinitas tinggi terhadap fibrin (bukan plasminogen bebas) — fibrin-selective. urokinase-type (uPA): aktivator non-spesifik, dari ginjal. Memecah plasminogen → plasmin pada ikatan Arg561-Val562.',
+    clin: 'Bentuk rekombinan: Alteplase (full-length tPA), Tenecteplase (mutasi → half-life lebih panjang, fibrin-selectivity 14×). Indikasi terapeutik: STEMI (<12 jam, jika PCI tidak tersedia), stroke iskemik (<4.5 jam), PE masif/hemodinamik tidak stabil. Streptokinase: dari Streptococcus, antigenik (jangan diulang dalam 6 bulan).'
+  },
+  'plasmin': {
+    name: 'Plasmin',
+    type: 'Serin Protease Aktif',
+    fn: 'Enzim fibrinolitik utama. Memecah fibrin (dan fibrinogen) pada residu Lys & Arg → fragmen X, Y, D, E. Pada bekuan cross-linked oleh XIIIa: produk akhir mengandung D-dimer (dua D-domain terikat kovalen).',
+    clin: 'Sirkulasi plasmin bebas berbahaya — dinetralisir oleh α2-antiplasmin dalam waktu <100 ms. Pelepasan plasmin sistemik berlebih → fibrinogenolysis → perdarahan (komplikasi terapi trombolitik).'
+  },
+  'fdp': {
+    name: 'FDP & D-dimer (Produk Degradasi Fibrin)',
+    type: 'Penanda Fibrinolisis',
+    fn: 'Fibrin Degradation Products: fragmen-fragmen dari pemecahan fibrin/fibrinogen. D-dimer adalah fragmen spesifik dari bekuan fibrin yang sudah CROSS-LINKED oleh XIIIa (dua D-domain ikatan isopeptida).',
+    clin: 'D-dimer ↑ : sangat sensitif (>95%), tapi tidak spesifik. Penggunaan klinis:\n• ekslusi VTE/PE pada pretest probability rendah (NPV tinggi)\n• marker DIC (bersama trombositopenia, ↓ fibrinogen, ↑ PT/aPTT)\n• malignansi, sepsis, kehamilan, post-op (semua ↑)\nMetode: ELISA, latex immunoassay, point-of-care. Cutoff age-adjusted pada lansia (umur×10 ng/mL).'
+  },
+  'txa': {
+    name: 'Antifibrinolitik (TXA · α2-Antiplasmin)',
+    type: 'Inhibitor Fibrinolisis',
+    fn: 'α2-Antiplasmin (endogen): serpin yang menonaktifkan plasmin bebas instan (rate constant tertinggi di antara semua serpin). Asam Traneksamat (TXA): analog lysine sintetik, kompetitif memblok lysine-binding sites pada plasminogen → mencegah pengikatan ke fibrin → menghambat aktivasi plasmin.',
+    clin: 'TXA: dosis 1g IV bolus + 1g infus 8 jam.\n• Trauma berat: CRASH-2 trial → mortality benefit jika diberi <3 jam pasca trauma\n• Perdarahan obstetri post-partum: WOMAN trial → ↓ kematian akibat perdarahan\n• Menorrhagia, epistaksis, profilaksis pre-operatif\n• Hati-hati: trombosis dengan high-risk patient; kontraindikasi pada SAH (vasospasme).'
+  },
+  'pai': {
+    name: 'PAI-1 / PAI-2 (Plasminogen Activator Inhibitors)',
+    type: 'Serpin Antifibrinolitik Endogen',
+    fn: 'PAI-1 disintesis oleh endotelium, hepatosit, adiposit. Inaktivator utama tPA & uPA (membentuk kompleks ireversibel 1:1). PAI-2 utamanya pada plasenta — meningkat 100× saat kehamilan.',
+    clin: 'PAI-1 ↑: obesitas, sindroma metabolik, DM tipe 2 (insulin meningkatkan ekspresi) → hipofibrinolisis → risiko VTE & MI. Polimorfisme 4G/5G pada promoter PAI-1: alel 4G → ekspresi lebih tinggi → trombofilia ringan. PAI-1 ↓: defisiensi langka → kecenderungan perdarahan (terutama setelah trauma).'
+  }
+};
+
+// ============== FIBRINOLYSIS SEQUENCE ==============
+const fibrinolysisSequence = [
+  { node: 'plasminogen', arrow: null, desc: 'Plasminogen beredar dalam plasma sebagai zimogen inaktif. Memiliki kringle domain dengan lysine-binding sites yang dapat menempel pada residu lysine di fibrin.' },
+  { node: 'tpa', arrow: 'fib-arrow-tpa', desc: 't-PA dilepaskan dari endotelium teraktivasi. Saat tPA dan plasminogen sama-sama terikat pada permukaan fibrin (bekuan yang baru terbentuk), efisiensi aktivasi meningkat ~500×. Inilah fibrin-selectivity.' },
+  { node: 'plasmin', arrow: 'fib-arrow-1', desc: 'tPA memotong plasminogen pada Arg561-Val562 → PLASMIN (enzim aktif). Plasmin lokal di permukaan bekuan terlindungi dari α2-antiplasmin (yang menetralisir plasmin bebas instan).' },
+  { node: null, arrow: 'fib-arrow-clot', desc: 'Plasmin bekerja pada substrat fibrin dalam bekuan stabil. Memecah ikatan Lys-X dan Arg-X menghasilkan fragmen X, Y, D, E.' },
+  { node: 'fdp', arrow: 'fib-arrow-2', desc: '✓ FIBRINOLISIS LENGKAP. Bekuan didegradasi menjadi FDPs (Fibrin Degradation Products). D-dimer adalah fragmen spesifik dari fibrin yang sudah di-cross-link oleh XIIIa — menjadi marker laboratorium spesifik untuk degradasi bekuan (bukan fibrinogen).' }
+];
+
+// ============== SEQUENCES ==============
+const cascadeSequences = {
+  intrinsic: [
+    { prelude: true, triggerNode: 'extrinsic',
+      multipleFactors: ['TF', 'VII', 'X', 'II'],
+      multipleArrows: ['trig-extrinsic', 'TF-VII', 'ext-X', 'X-II', 'V-prothrombinase'],
+      desc: '🔬 CELL-BASED MODEL — FASE INISIASI (Hoffman & Monroe, 2001): Meskipun Anda memilih jalur intrinsik, in vivo hemostasis SELALU dimulai dari Tissue Factor. TF·VIIa pada sel TF-bearing (fibroblas, otot polos subendotelium) menghasilkan jejak Xa, lalu jejak thrombin (~5% dari total). Visualisasi ditampilkan dengan warna gold-dim untuk menandakan "amount kecil".' },
+    { prelude: true, target: 'VIII', arrow: 'IIa-VIII',
+      desc: '🔬 FASE AMPLIFIKASI: Jejak thrombin (IIa) berdifusi ke permukaan platelet teraktivasi → mengaktifkan VIII menjadi VIIIa di permukaan platelet. Ini adalah JEMBATAN antara fase inisiasi (ekstrinsik) dan fase propagasi (intrinsik). VIIIa kini siap menjadi kofaktor IXa dalam tenase intrinsik. Sekarang jalur intrinsik akan menghasilkan thrombin BURST (95% sisanya).' },
+    { triggerNode: 'intrinsic', desc: '⚡ FASE PROPAGASI dimulai. Kontak permukaan bermuatan negatif (kolagen subendotelium) mengaktivasi jalur intrinsik. HMWK & prekallikrein memfasilitasi adsorpsi XII ke permukaan. CATATAN: jalur "kontak" lebih relevan in vitro (aPTT) — in vivo kontribusi mayor justru dari aktivasi XI oleh thrombin (loop amplifikasi).' },
+    { target: 'XII', arrow: 'trig-intrinsic', desc: 'Faktor XII (Hageman) mengalami autoaktivasi konformasional menjadi XIIa. Dipercepat oleh kallikrein (loop reciprocal activation).' },
+    { target: 'XI', arrow: 'XII-XI', desc: 'XIIa memotong Faktor XI → XIa. Secara in vivo, kontribusi utama justru berasal dari aktivasi XI oleh thrombin (amplifikasi).' },
+    { target: 'IX', arrow: 'XI-IX', desc: 'XIa mengaktivasi Faktor IX → IXa. Membutuhkan Ca²⁺. IX adalah serin protease dependen Vitamin K.' },
+    { target: 'VIII', desc: 'Faktor VIII dilepaskan dari kompleksnya dengan vWF dan diaktivasi → VIIIa. Pada fase inisiasi, jejak thrombin awal (dari kompleks prothrombinase ekstrinsik) cukup untuk memulai aktivasi VIII. VIIIa adalah KOFAKTOR untuk IXa (bukan enzim). Catatan: panah feedback IIa→VIII baru akan menyala penuh saat thrombin terbentuk (loop amplifikasi).' },
+    { complex: 'tenase', arrow: 'tenase-X', desc: '🔬 PEMBENTUKAN KOMPLEKS TENASE: IXa + VIIIa + Ca²⁺ + Phospholipid (membran trombosit teraktivasi). Efisiensi aktivasi X meningkat ~200.000× dibandingkan IXa sendirian.' },
+    { target: 'X', desc: 'Kompleks Tenase mengaktivasi Faktor X → Xa. TITIK KONVERGENSI — jalur intrinsik & ekstrinsik bertemu di sini.' },
+    { target: 'V', desc: 'Faktor V diaktivasi oleh thrombin (jejak awal) atau Xa → Va. Va menjadi kofaktor untuk Xa.' },
+    { complex: 'prothrombinase', arrow: 'V-prothrombinase', desc: '🔬 PEMBENTUKAN KOMPLEKS PROTHROMBINASE: Xa + Va + Ca²⁺ + Phospholipid. Efisiensi konversi prothrombin meningkat ~300.000×.' },
+    { target: 'II', arrow: 'X-II', amplify: ['V', 'VIII', 'XI', 'XIII'], feedback: ['IIa-V', 'IIa-VIII', 'IIa-XI', 'IIa-XIII'], desc: 'Prothrombin (II) → Thrombin (IIa). Thrombin = enzim SENTRAL hemostasis. 🔄 LOOP AMPLIFIKASI: thrombin mengaktivasi balik V, VIII, XI, XIII secara simultan — memperkuat kaskadenya sendiri 1000× lipat. Juga mengaktivasi PAR-1 platelet & Protein C (anti-koagulan via thrombomodulin).' },
+    { target: 'I', arrow: 'II-I', desc: 'Thrombin memecah fibrinopeptide A & B dari fibrinogen → monomer fibrin (Ia). Monomer spontan berpolimerisasi membentuk "soft clot" yang masih soluble dalam 5M urea.' },
+    { target: 'XIII', arrow: 'XIII-fibrin', desc: 'XIIIa (yang sudah aktif dari amplifikasi thrombin) sekarang bekerja pada monomer fibrin. Transglutaminase membutuhkan Ca²⁺.' },
+    { target: 'clot', arrow: 'I-clot', desc: '✓ BEKUAN FIBRIN STABIL terbentuk. XIIIa membentuk ikatan kovalen isopeptida (γ-glutamyl-ε-lysine) antar monomer fibrin → "hard clot" resistan terhadap fibrinolisis prematur. Hemostasis sekunder LENGKAP.' }
+  ],
+  extrinsic: [
+    { triggerNode: 'extrinsic', desc: '⚡ PEMICU: Cedera vaskular memaparkan Tissue Factor (TF/Faktor III) pada sel subendotelium (fibroblas, otot polos). Jalur DOMINAN in vivo — bertanggung jawab atas inisiasi hemostasis fisiologis.' },
+    { target: 'TF', arrow: 'trig-extrinsic', desc: 'Tissue Factor terekspos ke sirkulasi. TF satu-satunya faktor koagulasi berupa reseptor transmembran tipe-I dan diekspresikan konstitutif.' },
+    { target: 'VII', arrow: 'TF-VII', complex: 'tf-viia', desc: 'TF mengikat Faktor VII (atau ~1% VIIa yang sudah bersirkulasi) → membentuk kompleks TF·VIIa. Autoaktivasi VII pada kompleks ini terjadi cepat. Ca²⁺ & phospholipid dibutuhkan.' },
+    { target: 'X', arrow: 'ext-X', desc: 'Kompleks TF·VIIa mengaktivasi Faktor X → Xa SECARA LANGSUNG. Juga mengaktivasi IX → IXa (cross-talk ke jalur intrinsik) — menjelaskan mengapa Hemofilia A/B tetap berdarah meski jalur ekstrinsik intak.' },
+    { target: 'V', desc: 'Faktor V diaktivasi → Va sebagai kofaktor untuk Xa.' },
+    { complex: 'prothrombinase', arrow: 'V-prothrombinase', desc: '🔬 PEMBENTUKAN KOMPLEKS PROTHROMBINASE: Xa + Va + Ca²⁺ + Phospholipid. Tahap "initiation" menghasilkan jejak thrombin awal (~5% total).' },
+    { target: 'II', arrow: 'X-II', amplify: ['V', 'VIII', 'XI', 'XIII'], feedback: ['IIa-V', 'IIa-VIII', 'IIa-XI', 'IIa-XIII'], desc: 'Prothrombin (II) → Thrombin (IIa). Jejak thrombin awal meng-AMPLIFIKASI sinyal secara dramatis: mengaktifkan V, VIII, XI, XIII (cell-based model — fase amplifikasi & propagasi). Sebagian besar thrombin justru dihasilkan pada fase ini, BUKAN pada inisiasi.' },
+    { target: 'I', arrow: 'II-I', desc: 'Thrombin memecah fibrinogen → monomer fibrin (Ia). Polimerisasi spontan membentuk meshwork "soft clot".' },
+    { target: 'XIII', arrow: 'XIII-fibrin', desc: 'XIIIa (yang sudah aktif dari amplifikasi) sekarang bekerja pada monomer fibrin untuk cross-linking.' },
+    { target: 'clot', arrow: 'I-clot', desc: '✓ BEKUAN FIBRIN STABIL terbentuk. Pada jalur ekstrinsik in vivo, ini terjadi dalam hitungan detik setelah trauma vaskular.' }
+  ]
+};
+
+// ============== STATE ==============
+const activeLabels = {
+  'XII': 'XIIa', 'XI': 'XIa', 'IX': 'IXa', 'VIII': 'VIIIa',
+  'TF': 'TF', 'VII': 'VIIa',
+  'X': 'Xa', 'V': 'Va',
+  'II': 'IIa', 'I': 'Ia',
+  'XIII': 'XIIIa', 'clot': 'BEKUAN FIBRIN STABIL'
+};
+
+const inactiveLabels = {
+  'XII': 'XII', 'XI': 'XI', 'IX': 'IX', 'VIII': 'VIII',
+  'TF': 'TF (III)', 'VII': 'VII',
+  'X': 'X', 'V': 'V',
+  'II': 'II', 'I': 'I',
+  'XIII': 'XIII', 'clot': 'BEKUAN FIBRIN STABIL'
+};
+
+const state = {
+  activeFactors: new Set(),
+  activeArrows: new Set(),
+  currentTrigger: null,
+  simulationStep: -1,
+  isPlaying: false,
+  activeDrugs: new Set(),
+  activeRegulators: new Set(),
+  activeFibrinolytics: new Set(),
+  fibrinolysisStep: -1,
+  selectedFactor: null,
+  playInterval: null,
+  blocked: false
+};
+
+// ============== HELPERS ==============
+function $(id) { return document.getElementById(id); }
+function $$(sel) { return document.querySelectorAll(sel); }
+
+function setStatus(text, type = 'info') {
+  const bar = $('status-bar');
+  bar.classList.remove('status-info', 'status-warning', 'status-success', 'status-danger');
+  bar.classList.add('status-' + type);
+  bar.classList.remove('fade-in'); void bar.offsetWidth; bar.classList.add('fade-in');
+
+  const icons = { info: 'info', warning: 'alert-triangle', success: 'check-circle-2', danger: 'x-octagon' };
+  const labels = { info: 'Status', warning: 'Peringatan', success: 'Berhasil', danger: 'Terhambat' };
+  const colors = { info: 'var(--accent-gold)', warning: 'var(--status-warning)', success: 'var(--status-clot)', danger: 'var(--status-inhibited)' };
+
+  const icon = $('status-icon');
+  icon.setAttribute('data-lucide', icons[type]);
+  icon.style.color = colors[type];
+  $('status-label').textContent = labels[type];
+  $('status-label').style.color = colors[type];
+  $('status-text').textContent = text;
+  if (window.lucide) lucide.createIcons();
+}
+
+function isFactorInhibited(factor) {
+  for (const drug of state.activeDrugs) {
+    if (drugTargets[drug] && drugTargets[drug].includes(factor)) return true;
+  }
+  return false;
+}
+
+function updateFactorText(factor, activated) {
+  const node = $('factor-' + factor);
+  if (!node) return;
+  const textEl = node.querySelector('.factor-text');
+  if (textEl) {
+    textEl.textContent = activated ? activeLabels[factor] : inactiveLabels[factor];
+  }
+}
+
+// ============== SIMULATION ==============
+function executeStep(stepIdx) {
+  const sequence = cascadeSequences[state.currentTrigger];
+  if (!sequence || stepIdx >= sequence.length) return false;
+
+  const step = sequence[stepIdx];
+  const isPrelude = step.prelude === true;
+
+  // Check inhibition (only for main cascade, not prelude — prelude shows mechanism even if inhibited)
+  if (!isPrelude && step.target && isFactorInhibited(step.target)) {
+    const inhibitingDrugs = [...state.activeDrugs].filter(d => drugTargets[d].includes(step.target));
+    const drugNames = inhibitingDrugs.map(d => drugData[d].name.split(' ')[0]).join(', ');
+    setStatus(`⚠ KASKADE TERHAMBAT pada Faktor ${step.target} oleh: ${drugNames}. Pembekuan gagal terbentuk pada titik ini. Klik "Reset" lalu hapus inhibitor untuk mencoba lagi.`, 'danger');
+    state.blocked = true;
+    pauseSimulation();
+    return false;
+  }
+
+  // Helper: activate arrow
+  const activateArrow = (arrowId, prelude) => {
+    const arrow = $('arrow-' + arrowId);
+    if (!arrow) return;
+    if (prelude) {
+      arrow.classList.add('prelude');
+    } else {
+      arrow.classList.remove('prelude');
+      arrow.classList.add('active');
+      arrow.setAttribute('marker-end', 'url(#arrow-active)');
+    }
+  };
+
+  // Helper: activate factor
+  const activateFactor = (factor, prelude) => {
+    if (!prelude && isFactorInhibited(factor)) return;
+    const node = $('factor-' + factor);
+    if (!node) return;
+    if (prelude) {
+      node.classList.add('prelude');
+    } else {
+      node.classList.remove('prelude');
+      node.classList.add('active', 'activating');
+      setTimeout(() => node.classList.remove('activating'), 1200);
+      if (factor === 'clot') {
+        node.classList.add('clot');
+        // Enable fibrinolysis button
+        $('fib-play-btn').disabled = false;
+      }
+    }
+    state.activeFactors.add(factor);
+    updateFactorText(factor, true);
+  };
+
+  // Trigger node
+  if (step.triggerNode) {
+    const trigEl = $('trigger-' + step.triggerNode + '-svg');
+    if (trigEl) {
+      if (isPrelude) trigEl.classList.add('prelude');
+      else {
+        trigEl.classList.remove('prelude');
+        trigEl.classList.add('active');
+      }
+    }
+  }
+
+  // Single arrow
+  if (step.arrow) activateArrow(step.arrow, isPrelude);
+
+  // Multiple arrows (prelude initiation visualization)
+  if (step.multipleArrows) step.multipleArrows.forEach(a => activateArrow(a, isPrelude));
+
+  // Complex box
+  if (step.complex) {
+    $('complex-' + step.complex)?.classList.add('active');
+    $('complex-' + step.complex + '-label')?.classList.add('active');
+  }
+
+  // Feedback arrows (always main, not prelude — loop amplification is real)
+  if (step.feedback) {
+    step.feedback.forEach(f => {
+      const fa = $('arrow-' + f);
+      if (fa) {
+        fa.classList.remove('prelude');
+        fa.classList.add('active');
+      }
+    });
+  }
+
+  // Amplification: simultaneous factor activation
+  if (step.amplify) step.amplify.forEach(f => activateFactor(f, false));
+
+  // Multiple factors (prelude initiation)
+  if (step.multipleFactors) step.multipleFactors.forEach(f => activateFactor(f, isPrelude));
+
+  // Target factor
+  if (step.target) activateFactor(step.target, isPrelude);
+
+  // Update status
+  const isLast = stepIdx === sequence.length - 1;
+  setStatus(step.desc, isLast ? 'success' : 'info');
+
+  // Counter
+  $('step-num').textContent = stepIdx + 1;
+  $('step-total').textContent = sequence.length;
+
+  return true;
+}
+
+function nextStep() {
+  if (state.blocked) return;
+  state.simulationStep++;
+  const sequence = cascadeSequences[state.currentTrigger];
+  if (!sequence) return;
+
+  if (state.simulationStep >= sequence.length) {
+    pauseSimulation();
+    return;
+  }
+
+  const success = executeStep(state.simulationStep);
+  if (!success) return;
+
+  if (state.simulationStep === sequence.length - 1) {
+    pauseSimulation();
+  }
+}
+
+function playSimulation() {
+  if (!state.currentTrigger || state.blocked) return;
+  state.isPlaying = true;
+  $('play-btn-text').textContent = 'Jeda';
+  $('play-btn').querySelector('[data-lucide]').setAttribute('data-lucide', 'pause');
+  if (window.lucide) lucide.createIcons();
+
+  const speed = parseInt($('speed-select').value);
+  nextStep();
+  state.playInterval = setInterval(() => {
+    nextStep();
+    if (state.simulationStep >= cascadeSequences[state.currentTrigger].length - 1 || state.blocked) {
+      pauseSimulation();
+    }
+  }, speed);
+}
+
+function pauseSimulation() {
+  state.isPlaying = false;
+  if (state.playInterval) {
+    clearInterval(state.playInterval);
+    state.playInterval = null;
+  }
+  $('play-btn-text').textContent = 'Putar';
+  const icon = $('play-btn').querySelector('[data-lucide]');
+  if (icon) {
+    icon.setAttribute('data-lucide', 'play');
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function togglePlay() {
+  if (state.isPlaying) pauseSimulation();
+  else playSimulation();
+}
+
+function selectTrigger(trigger) {
+  resetCascade(false);
+  state.currentTrigger = trigger;
+  state.simulationStep = -1;
+  state.blocked = false;
+
+  $$('#trigger-intrinsic-btn, #trigger-extrinsic-btn').forEach(b => b.classList.remove('active'));
+  $('trigger-' + trigger + '-btn').classList.add('active');
+
+  $('play-btn').disabled = false;
+  $('step-btn').disabled = false;
+
+  $('step-total').textContent = cascadeSequences[trigger].length;
+  $('step-num').textContent = 0;
+
+  const label = trigger === 'intrinsic' ? 'INTRINSIK (aPTT)' : 'EKSTRINSIK (PT)';
+  setStatus(`Jalur ${label} dipilih. Klik "Putar" untuk simulasi otomatis atau "Langkah" untuk maju manual. Anda dapat mengaktifkan antikoagulan kapan saja untuk melihat efek inhibisi.`, 'info');
+}
+
+function resetCascade(clearDrugsToo = false) {
+  pauseSimulation();
+  state.activeFactors.clear();
+  state.activeArrows.clear();
+  state.simulationStep = -1;
+  state.blocked = false;
+  state.currentTrigger = null;
+  state.fibrinolysisStep = -1;
+
+  // Clear factor states (including prelude + restore clot opacity if dissolved)
+  $$('.factor-node').forEach(node => {
+    node.classList.remove('active', 'activating', 'clot', 'prelude');
+    node.style.opacity = '';
+    const factor = node.dataset.factor;
+    if (factor && inactiveLabels[factor]) {
+      updateFactorText(factor, false);
+    }
+  });
+
+  // Clear arrows (including prelude)
+  $$('.cascade-arrow, .feedback-arrow').forEach(arrow => {
+    arrow.classList.remove('active', 'activating', 'prelude');
+    arrow.setAttribute('marker-end', 'url(#arrow-inactive)');
+  });
+
+  // Clear complex
+  $$('.complex-box, .complex-label').forEach(c => c.classList.remove('active'));
+
+  // Clear triggers
+  $$('.trigger-node').forEach(t => t.classList.remove('active', 'prelude'));
+  $$('#trigger-intrinsic-btn, #trigger-extrinsic-btn').forEach(b => b.classList.remove('active'));
+
+  // Clear fibrinolysis visual
+  $$('.fibrinolysis-node').forEach(n => n.classList.remove('active'));
+  $$('.fibrinolysis-arrow').forEach(a => {
+    a.classList.remove('active');
+    a.setAttribute('marker-end', 'url(#arrow-fibrinolysis-marker)');
+  });
+
+  // Disable controls
+  $('play-btn').disabled = true;
+  $('step-btn').disabled = true;
+  $('fib-play-btn').disabled = true;
+
+  // Counter
+  $('step-num').textContent = 0;
+  $('step-total').textContent = '—';
+
+  if (clearDrugsToo) {
+    state.activeDrugs.clear();
+    updateDrugVisualization();
+  }
+
+  setStatus('Pilih jalur pemicu (Intrinsik atau Ekstrinsik) untuk memulai simulasi kaskade koagulasi. Anda juga dapat mengaktifkan antikoagulan, regulator fisiologis, atau fibrinolitik untuk eksplorasi lebih lanjut.', 'info');
+}
+
+// ============== DRUG OVERLAY ==============
+function toggleDrug(drug) {
+  if (state.activeDrugs.has(drug)) state.activeDrugs.delete(drug);
+  else state.activeDrugs.add(drug);
+  updateDrugVisualization();
+
+  // If we were blocked and the inhibiting drug is removed, unblock
+  if (state.blocked) {
+    const sequence = cascadeSequences[state.currentTrigger];
+    if (sequence) {
+      const step = sequence[state.simulationStep];
+      if (step && step.target && !isFactorInhibited(step.target)) {
+        state.blocked = false;
+        setStatus(`Inhibisi pada Faktor ${step.target} dihapus. Klik "Langkah" untuk melanjutkan kaskade.`, 'info');
+      }
+    }
+  }
+}
+
+function updateDrugVisualization() {
+  const inhibitedFactors = new Set();
+  state.activeDrugs.forEach(drug => {
+    drugTargets[drug].forEach(f => inhibitedFactors.add(f));
+  });
+
+  // Apply inhibited class to factors (but only override if NOT already active in this run)
+  $$('.factor-node').forEach(node => {
+    const factor = node.dataset.factor;
+    if (inhibitedFactors.has(factor)) {
+      node.classList.add('inhibited');
+      node.classList.remove('active');
+      updateFactorText(factor, false);
+    } else {
+      node.classList.remove('inhibited');
+      // Restore active state if it was active before drug toggle
+      if (state.activeFactors.has(factor)) {
+        node.classList.add('active');
+        updateFactorText(factor, true);
+      }
+    }
+  });
+
+  // Show/hide drug markers
+  $$('.inhibitor-mark').forEach(mark => {
+    const drug = mark.dataset.drug;
+    if (state.activeDrugs.has(drug)) mark.classList.add('show');
+    else mark.classList.remove('show');
+  });
+
+  // Update toggle button states
+  $$('.drug-toggle').forEach(btn => {
+    if (state.activeDrugs.has(btn.dataset.drug)) btn.classList.add('active');
+    else btn.classList.remove('active');
+  });
+
+  // Show drug info panel
+  updateDrugInfoPanel();
+}
+
+function updateDrugInfoPanel() {
+  const panel = $('drug-info');
+  const content = $('drug-info-content');
+
+  if (state.activeDrugs.size === 0) {
+    panel.classList.add('hidden');
+    return;
+  }
+
+  panel.classList.remove('hidden');
+  let html = '';
+  state.activeDrugs.forEach(drug => {
+    const d = drugData[drug];
+    html += `
+      <div class="mb-3 pb-3 border-b last:border-0 last:mb-0 last:pb-0" style="border-color: var(--border-subtle);">
+        <h4 class="font-display text-sm text-accent leading-tight mb-2">${d.name}</h4>
+        <div class="space-y-2 text-[12px] leading-relaxed text-secondary-c">
+          <div><span class="text-[10px] uppercase tracking-widest text-muted">Mekanisme · </span>${d.mech}</div>
+          <div><span class="text-[10px] uppercase tracking-widest text-muted">Monitoring · </span>${d.mon}</div>
+          <div><span class="text-[10px] uppercase tracking-widest text-muted">Reversal · </span>${d.rev}</div>
+          ${d.caveat ? `<div class="mt-2 p-2 rounded bg-[#0a0d12]" style="border-left: 2px solid var(--status-warning);"><span class="text-[10px] uppercase tracking-widest" style="color: var(--status-warning);">⚠ Catatan · </span>${d.caveat}</div>` : ''}
+        </div>
+      </div>
+    `;
+  });
+  content.innerHTML = html;
+}
+
+// ============== FACTOR INFO ==============
+function showFactorInfo(factor) {
+  state.selectedFactor = factor;
+  $$('.factor-node').forEach(n => n.classList.remove('selected'));
+  const node = $('factor-' + factor);
+  if (node) node.classList.add('selected');
+
+  const data = factorData[factor];
+  if (!data) return;
+
+  $('factor-info-empty').classList.add('hidden');
+  const content = $('factor-info-content');
+  content.classList.remove('hidden');
+
+  const pathwayTags = {
+    intrinsic: '<span class="tag tag-intrinsic">Intrinsik</span>',
+    extrinsic: '<span class="tag tag-extrinsic">Ekstrinsik</span>',
+    common: '<span class="tag tag-common">Bersama</span>'
+  };
+  const pathwayTag = pathwayTags[data.path] || '';
+  const vitKTag = data.vitK ? '<span class="tag tag-vitk">Vit K Dependent</span>' : '';
+
+  content.innerHTML = `
+    <div class="border-b pb-3 mb-3" style="border-color: var(--border-subtle);">
+      <div class="flex flex-wrap gap-1 mb-2">${pathwayTag}${vitKTag}</div>
+      <h4 class="font-display text-lg text-accent leading-tight">${data.name}</h4>
+    </div>
+    <div class="space-y-3 text-[13px]">
+      <div>
+        <div class="text-[10px] uppercase tracking-widest text-muted mb-1">Fungsi</div>
+        <p class="text-secondary-c leading-relaxed">${data.fn}</p>
+      </div>
+      <div>
+        <div class="text-[10px] uppercase tracking-widest text-muted mb-1">Kofaktor</div>
+        <p class="text-secondary-c font-mono text-[11px] leading-relaxed">${data.cof}</p>
+      </div>
+      <div>
+        <div class="text-[10px] uppercase tracking-widest text-muted mb-1">Aktivitas Hilir</div>
+        <p class="text-secondary-c leading-relaxed">${data.act}</p>
+      </div>
+      <div class="bg-deepest p-3 rounded" style="border-left: 2px solid #f87171;">
+        <div class="text-[10px] uppercase tracking-widest mb-1" style="color: #f87171;">Implikasi Klinis</div>
+        <p class="text-secondary-c leading-relaxed text-[12px]">${data.clin}</p>
+      </div>
+    </div>
+  `;
+
+  // Re-render lucide icons
+  if (window.lucide) lucide.createIcons();
+}
+
+// ============== REGULATOR PHYSIOLOGIS ==============
+function toggleRegulator(reg) {
+  if (state.activeRegulators.has(reg)) {
+    state.activeRegulators.delete(reg);
+  } else {
+    state.activeRegulators.add(reg);
+  }
+  updateRegulatorVisualization();
+}
+
+function updateRegulatorVisualization() {
+  // Update SVG regulator nodes
+  $$('.regulator-node').forEach(node => {
+    const reg = node.dataset.regulator;
+    if (state.activeRegulators.has(reg)) {
+      node.classList.add('active');
+    } else {
+      node.classList.remove('active');
+    }
+  });
+
+  // Update inhibition arrows
+  $$('.inhibit-arrow').forEach(arr => arr.classList.remove('show', 'active'));
+  state.activeRegulators.forEach(reg => {
+    const data = regulatorData[reg];
+    if (data && data.inhibitArrows) {
+      data.inhibitArrows.forEach(arrowId => {
+        const arr = $(arrowId);
+        if (arr) arr.classList.add('show', 'active');
+      });
+    }
+  });
+
+  // Update sidebar toggle states
+  $$('.reg-toggle').forEach(btn => {
+    if (state.activeRegulators.has(btn.dataset.regulator)) btn.classList.add('active');
+    else btn.classList.remove('active');
+  });
+}
+
+// ============== FIBRINOLYSIS ==============
+function runFibrinolysis() {
+  if (!state.activeFactors.has('clot')) {
+    setStatus('⚠ Bekuan fibrin belum terbentuk. Selesaikan dulu kaskade koagulasi (pilih pemicu lalu jalankan simulasi) sebelum fibrinolisis dapat dimulai.', 'warning');
+    return;
+  }
+
+  // Reset fibrinolysis state
+  $$('.fibrinolysis-node').forEach(n => n.classList.remove('active'));
+  $$('.fibrinolysis-arrow').forEach(a => {
+    a.classList.remove('active');
+    a.setAttribute('marker-end', 'url(#arrow-fibrinolysis-marker)');
+  });
+
+  // Check if blocked by TXA
+  if (state.activeFibrinolytics.has('txa-drug')) {
+    setStatus('⚠ FIBRINOLISIS TERHAMBAT oleh Asam Traneksamat. TXA mengikat lysine-binding sites pada plasminogen, mencegah aktivasi oleh tPA. Bekuan tetap stabil. Hapus TXA untuk menjalankan fibrinolisis.', 'danger');
+    return;
+  }
+
+  let step = 0;
+  const speed = parseInt($('speed-select').value) || 1500;
+
+  const runStep = () => {
+    if (step >= fibrinolysisSequence.length) return;
+    const s = fibrinolysisSequence[step];
+    if (s.node) {
+      const node = $('fib-' + s.node);
+      if (node) node.classList.add('active');
+    }
+    if (s.arrow) {
+      const arr = $(s.arrow);
+      if (arr) {
+        arr.classList.add('active');
+        arr.setAttribute('marker-end', 'url(#arrow-active)');
+      }
+    }
+    const isLast = step === fibrinolysisSequence.length - 1;
+    setStatus(s.desc, isLast ? 'success' : 'info');
+    step++;
+    if (step < fibrinolysisSequence.length) {
+      setTimeout(runStep, speed);
+    } else {
+      // Final: clot is dissolved → mark visually
+      const clotNode = $('factor-clot');
+      if (clotNode) {
+        clotNode.classList.remove('clot');
+        clotNode.style.opacity = '0.3';
+      }
+    }
+  };
+  runStep();
+}
+
+function toggleFibrinolytic(drug) {
+  if (state.activeFibrinolytics.has(drug)) {
+    state.activeFibrinolytics.delete(drug);
+  } else {
+    state.activeFibrinolytics.add(drug);
+  }
+  updateFibrinolyticVisualization();
+}
+
+function updateFibrinolyticVisualization() {
+  // Clear all
+  $$('.fibrinolysis-node').forEach(n => n.classList.remove('inhibited'));
+  const alteplaseMark = $$('.inhibitor-mark[data-drug="alteplase"]');
+  alteplaseMark.forEach(m => m.classList.remove('show'));
+
+  state.activeFibrinolytics.forEach(drug => {
+    if (drug === 'tpa-drug') {
+      alteplaseMark.forEach(m => m.classList.add('show'));
+    }
+    if (drug === 'txa-drug') {
+      // Mark plasminogen and plasmin as inhibited
+      ['plasminogen', 'plasmin'].forEach(t => {
+        const n = $('fib-' + t);
+        if (n) n.classList.add('inhibited');
+      });
+    }
+  });
+
+  // Update sidebar
+  $$('.fib-toggle').forEach(btn => {
+    if (state.activeFibrinolytics.has(btn.dataset.fibrinolysis)) btn.classList.add('active');
+    else btn.classList.remove('active');
+  });
+}
+
+// ============== EXTENDED INFO PANEL ==============
+function showRegulatorInfo(reg) {
+  const data = regulatorData[reg];
+  if (!data) return;
+  state.selectedFactor = null;
+  $$('.factor-node, .regulator-node, .fibrinolysis-node').forEach(n => n.classList.remove('selected'));
+
+  $('factor-info-empty').classList.add('hidden');
+  const content = $('factor-info-content');
+  content.classList.remove('hidden');
+  content.innerHTML = `
+    <div class="border-b pb-3 mb-3" style="border-color: var(--border-subtle);">
+      <div class="flex flex-wrap gap-1 mb-2"><span class="tag tag-physio">Regulator Fisiologis</span></div>
+      <h4 class="font-display text-lg text-accent leading-tight">${data.name}</h4>
+      <p class="text-[10px] text-muted font-mono mt-1">${data.type}</p>
+    </div>
+    <div class="space-y-3 text-[13px]">
+      <div><div class="text-[10px] uppercase tracking-widest text-muted mb-1">Mekanisme</div><p class="text-secondary-c leading-relaxed">${data.fn}</p></div>
+      ${data.potentiation ? `<div><div class="text-[10px] uppercase tracking-widest text-muted mb-1">Potensiasi Farmakologis</div><p class="text-secondary-c leading-relaxed">${data.potentiation}</p></div>` : ''}
+      ${data.requires ? `<div><div class="text-[10px] uppercase tracking-widest text-muted mb-1">Memerlukan</div><p class="text-secondary-c font-mono text-[11px] leading-relaxed">${data.requires}</p></div>` : ''}
+      <div class="bg-deepest p-3 rounded" style="border-left: 2px solid #6ee7b7;">
+        <div class="text-[10px] uppercase tracking-widest mb-1" style="color: #6ee7b7;">Implikasi Klinis</div>
+        <p class="text-secondary-c leading-relaxed text-[12px]" style="white-space: pre-line;">${data.clin}</p>
+      </div>
+    </div>
+  `;
+  if (window.lucide) lucide.createIcons();
+}
+
+function showFibrinolysisInfo(item) {
+  const data = fibrinolysisData[item];
+  if (!data) return;
+  state.selectedFactor = null;
+  $$('.factor-node, .regulator-node, .fibrinolysis-node').forEach(n => n.classList.remove('selected'));
+
+  $('factor-info-empty').classList.add('hidden');
+  const content = $('factor-info-content');
+  content.classList.remove('hidden');
+  content.innerHTML = `
+    <div class="border-b pb-3 mb-3" style="border-color: var(--border-subtle);">
+      <div class="flex flex-wrap gap-1 mb-2"><span class="tag tag-fibrinolytic">Sistem Fibrinolisis</span></div>
+      <h4 class="font-display text-lg text-accent leading-tight">${data.name}</h4>
+      <p class="text-[10px] text-muted font-mono mt-1">${data.type}</p>
+    </div>
+    <div class="space-y-3 text-[13px]">
+      <div><div class="text-[10px] uppercase tracking-widest text-muted mb-1">Fungsi / Mekanisme</div><p class="text-secondary-c leading-relaxed">${data.fn}</p></div>
+      <div class="bg-deepest p-3 rounded" style="border-left: 2px solid #a78bfa;">
+        <div class="text-[10px] uppercase tracking-widest mb-1" style="color: #a78bfa;">Implikasi Klinis</div>
+        <p class="text-secondary-c leading-relaxed text-[12px]" style="white-space: pre-line;">${data.clin}</p>
+      </div>
+    </div>
+  `;
+  if (window.lucide) lucide.createIcons();
+}
+
+// ============== INIT ==============
+function init() {
+  // Factor click handlers
+  $$('.factor-node').forEach(node => {
+    node.addEventListener('click', () => {
+      const factor = node.dataset.factor;
+      if (factor && factorData[factor]) showFactorInfo(factor);
+    });
+  });
+
+  // Regulator click handlers (SVG nodes)
+  $$('.regulator-node').forEach(node => {
+    node.addEventListener('click', () => {
+      const reg = node.dataset.regulator;
+      if (reg && regulatorData[reg]) showRegulatorInfo(reg);
+    });
+  });
+
+  // Fibrinolysis click handlers (SVG nodes)
+  $$('.fibrinolysis-node').forEach(node => {
+    node.addEventListener('click', () => {
+      const item = node.dataset.fibrinolysis;
+      // Map drug-id keys to data keys for txa/tpa-drug
+      const key = item === 'txa' ? 'txa' : item;
+      if (item && fibrinolysisData[item]) showFibrinolysisInfo(item);
+    });
+  });
+
+  // Trigger handlers (SVG and buttons)
+  ['intrinsic', 'extrinsic'].forEach(t => {
+    $('trigger-' + t + '-svg').addEventListener('click', () => selectTrigger(t));
+    $('trigger-' + t + '-btn').addEventListener('click', () => selectTrigger(t));
+  });
+
+  // Control buttons
+  $('play-btn').addEventListener('click', togglePlay);
+  $('step-btn').addEventListener('click', () => {
+    if (state.isPlaying) pauseSimulation();
+    nextStep();
+  });
+  $('reset-btn').addEventListener('click', () => resetCascade(false));
+
+  // Drug toggles — separate by data attribute (handler runs per element)
+  $$('.drug-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.drug) toggleDrug(btn.dataset.drug);
+      else if (btn.dataset.regulator) toggleRegulator(btn.dataset.regulator);
+      else if (btn.dataset.fibrinolysis) toggleFibrinolytic(btn.dataset.fibrinolysis);
+    });
+  });
+
+  $('clear-drugs-btn').addEventListener('click', () => {
+    state.activeDrugs.clear();
+    updateDrugVisualization();
+  });
+  $('clear-regs-btn').addEventListener('click', () => {
+    state.activeRegulators.clear();
+    updateRegulatorVisualization();
+  });
+  $('clear-fibs-btn').addEventListener('click', () => {
+    state.activeFibrinolytics.clear();
+    updateFibrinolyticVisualization();
+  });
+
+  // Fibrinolysis runner
+  $('fib-play-btn').addEventListener('click', runFibrinolysis);
+
+  // Init lucide
+  if (window.lucide) lucide.createIcons();
+}
+
+// Wait for DOM and lucide
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+
+
+</body>
+</html>
