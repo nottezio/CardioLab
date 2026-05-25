@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Wigger's Diagram — The Cardiac Cycle</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c1117; --bg-elev:#11171f; --bg-deep:#080b10;
+    --panel:#141b25; --panel-2:#0f151d;
+    --line:#1e2733; --line-soft:#19212b;
+    --ink:#e8eef5; --ink-dim:#94a3b8; --ink-faint:#475569;
+    --gold:#d4af6a; --gold-dim:#8a7140;
+    --crimson:#e94560; --amber:#f5a623; --azure:#5fa8e8;
+    --sage:#7fb069; --plum:#b07ec3; --rust:#d97757; --teal:#5fb6a6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:'Outfit',sans-serif;font-weight:300;overflow-x:hidden}
+  body{
+    background-image:
+      radial-gradient(ellipse 80% 50% at 20% 0%, rgba(212,175,106,0.04), transparent 60%),
+      radial-gradient(ellipse 70% 60% at 90% 100%, rgba(95,168,232,0.03), transparent 60%);
+    min-height:100vh;
+  }
+  .app{max-width:1520px;margin:0 auto;padding:24px}
+
+  header{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px;
+    flex-wrap:wrap;gap:14px;
+  }
+  .eyebrow{font-size:10px;letter-spacing:0.32em;text-transform:uppercase;color:var(--gold);font-weight:500;margin-bottom:4px}
+  h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:46px;letter-spacing:-0.01em;line-height:1;color:var(--ink)}
+  h1 em{font-style:italic;font-weight:400;color:var(--gold)}
+  .sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:15px;color:var(--ink-dim);margin-top:6px}
+
+  .vitals{display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+  .vital{text-align:right}
+  .vital .label{font-size:9px;letter-spacing:0.25em;text-transform:uppercase;color:var(--ink-faint);font-weight:400}
+  .vital .value{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:22px;color:var(--ink);line-height:1.1;margin-top:2px}
+  .vital .value b{color:var(--gold);font-weight:600}
+  .vital .unit{font-size:11px;color:var(--ink-dim);margin-left:3px}
+
+  .grid{display:grid;grid-template-columns:minmax(380px,1fr) 1.4fr;gap:22px}
+  @media(max-width:1100px){.grid{grid-template-columns:1fr}}
+
+  .panel{
+    background:linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+    border:1px solid var(--line);border-radius:4px;padding:18px;position:relative;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 24px rgba(0,0,0,0.3);
+  }
+  .panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line-soft)}
+  .panel-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;font-weight:500;color:var(--ink)}
+  .panel-tag{font-family:'JetBrains Mono';font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);padding:3px 9px;border:1px solid var(--gold-dim);border-radius:2px;background:rgba(212,175,106,0.05)}
+
+  #heart-svg{width:100%;height:auto;display:block;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.4))}
+  .ch-name{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;font-weight:500}
+  .ch-readout{font-family:'JetBrains Mono';font-size:10px;font-weight:400}
+  .vsl-name{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:11px;font-weight:500}
+  .valve-text{font-family:'JetBrains Mono';font-size:8px;letter-spacing:0.12em;font-weight:500;fill:var(--gold)}
+  .orient{font-family:'JetBrains Mono';font-size:8px;letter-spacing:0.2em;fill:#3a4654}
+
+  #plots{display:flex;flex-direction:column;gap:9px}
+  .plot{background:var(--bg-deep);border:1px solid var(--line);border-radius:3px;padding:8px 10px 4px;position:relative}
+  .plot canvas{display:block;width:100%}
+  .plot-label{position:absolute;top:7px;left:12px;font-family:'JetBrains Mono';font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);font-weight:500;z-index:2;pointer-events:none}
+  .plot-units{position:absolute;top:7px;right:12px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:11px;color:var(--ink-faint)}
+
+  .controls{display:flex;gap:14px;align-items:center;margin-top:18px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px 18px}
+  button{background:var(--bg-deep);color:var(--ink);border:1px solid var(--line);font-family:'Outfit',sans-serif;font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;padding:9px 16px;border-radius:2px;cursor:pointer;transition:all 0.2s ease}
+  button:hover{border-color:var(--gold);color:var(--gold)}
+  button.primary{background:var(--gold);color:var(--bg-deep);border-color:var(--gold);font-weight:600}
+  button.primary:hover{background:#e6c179}
+  .speed{display:flex;gap:8px;align-items:center;margin-left:auto}
+  .speed label,.scrubber-label{font-family:'JetBrains Mono';font-size:9px;color:var(--ink-faint);letter-spacing:0.18em;text-transform:uppercase}
+  .speed input,.scrubber input{accent-color:var(--gold)}
+  .speed input{width:120px}
+  .scrubber{flex:1;display:flex;align-items:center;gap:12px;min-width:240px}
+  .scrubber input{flex:1}
+  .time-readout{font-family:'JetBrains Mono';font-size:11px;color:var(--gold);min-width:55px;text-align:right;font-weight:600}
+  .speed-readout{font-family:'JetBrains Mono';font-size:10px;color:var(--gold);min-width:38px;font-weight:600}
+
+  .phase-info{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:20px 22px;position:relative;overflow:hidden}
+  .phase-info::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--gold)}
+  .phase-roman{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:var(--gold);font-weight:500;letter-spacing:0.15em}
+  .phase-name{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:32px;color:var(--ink);line-height:1.1;margin-top:2px;letter-spacing:-0.01em}
+  .phase-meta{font-family:'JetBrains Mono';font-size:10px;color:var(--ink-dim);letter-spacing:0.18em;text-transform:uppercase;margin-top:8px}
+  .phase-meta .sep{color:var(--ink-faint);margin:0 8px}
+  .phase-meta .type-systole{color:var(--crimson)}
+  .phase-meta .type-diastole{color:var(--azure)}
+  .phase-desc{font-family:'Cormorant Garamond',serif;font-size:16px;line-height:1.65;color:var(--ink-dim);margin-top:14px;font-weight:400}
+  .phase-desc b{color:var(--ink);font-weight:600;font-style:italic}
+
+  .phase-bar-wrap{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:16px}
+  .phase-bar-label{font-family:'JetBrains Mono';font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px;display:flex;justify-content:space-between}
+  .phase-bar-label .sd{display:flex;gap:14px}
+  .phase-bar-label .sd span::before{content:'';display:inline-block;width:8px;height:2px;margin-right:5px;vertical-align:middle}
+  .phase-bar-label .sd .sys::before{background:var(--crimson)}
+  .phase-bar-label .sd .dia::before{background:var(--azure)}
+  .phase-bar{display:flex;height:30px;border-radius:2px;overflow:hidden;border:1px solid var(--line);background:var(--bg-deep)}
+  .phase-seg{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-size:9px;letter-spacing:0.05em;color:var(--ink-faint);cursor:pointer;transition:all 0.25s ease;border-right:1px solid var(--line);position:relative;font-weight:500}
+  .phase-seg:last-child{border-right:none}
+  .phase-seg::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px}
+  .phase-seg.systole::before{background:var(--crimson)}
+  .phase-seg.diastole::before{background:var(--azure)}
+  .phase-seg:hover{background:rgba(212,175,106,0.08);color:var(--ink)}
+  .phase-seg.active{background:rgba(212,175,106,0.15);color:var(--gold);font-weight:600}
+
+  .valves-readout{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:16px}
+  .valve-item{text-align:center;padding:10px 6px;background:var(--bg-deep);border:1px solid var(--line-soft);border-radius:3px;transition:border-color 0.3s ease}
+  .valve-item.is-open{border-color:var(--sage)}
+  .valve-item.is-closed{border-color:var(--rust)}
+  .valve-name{font-family:'JetBrains Mono';font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--ink-faint)}
+  .valve-state{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;font-weight:600;margin-top:6px}
+  .valve-state.open{color:var(--sage)}
+  .valve-state.closed{color:var(--rust)}
+
+  .sound-pulse{position:absolute;top:14px;right:18px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:24px;font-weight:700;color:var(--amber);opacity:0;pointer-events:none}
+  .sound-pulse.active{animation:pulse 0.6s ease-out}
+  @keyframes pulse{0%{transform:scale(0.6);opacity:1}50%{transform:scale(1.2);opacity:1}100%{transform:scale(1.5);opacity:0}}
+
+  .footer{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);font-family:'JetBrains Mono';font-size:9px;color:var(--ink-faint);letter-spacing:0.15em;text-transform:uppercase;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .footer em{color:var(--gold);font-style:normal}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <div>
+    <div class="eyebrow">Cardiac Physiology · Reference Atlas</div>
+    <h1>Wigger's <em>Diagram</em></h1>
+    <div class="sub">Pressure · Volume · ECG · Phono · Jugular Venous Pulse — synchronized across the cardiac cycle</div>
+  </div>
+  <div class="vitals">
+    <div class="vital"><div class="label">Heart Rate</div><div class="value"><b>75</b><span class="unit">bpm</span></div></div>
+    <div class="vital"><div class="label">Cycle Length</div><div class="value"><b>0.80</b><span class="unit">s</span></div></div>
+    <div class="vital"><div class="label">Stroke Volume</div><div class="value"><b>~70</b><span class="unit">mL</span></div></div>
+    <div class="vital"><div class="label">Ejection Fraction</div><div class="value"><b>~58</b><span class="unit">%</span></div></div>
+  </div>
+</header>
+
+<div class="grid">
+
+  <div class="panel" id="heart-panel">
+    <div class="panel-header">
+      <div class="panel-title">Schematic Coronal Section</div>
+      <div class="panel-tag" id="phase-tag">PHASE I</div>
+    </div>
+    <div class="sound-pulse" id="sound-indicator">S₁</div>
+
+    <svg id="heart-svg" viewBox="0 0 540 720" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="oxy" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#dc2f3a"/><stop offset="100%" stop-color="#7a1419"/>
+        </linearGradient>
+        <linearGradient id="deoxy" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#3b6cb5"/><stop offset="100%" stop-color="#1a3258"/>
+        </linearGradient>
+        <linearGradient id="vsl-oxy" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#c0202c"/><stop offset="100%" stop-color="#7a1419"/>
+        </linearGradient>
+        <linearGradient id="vsl-deoxy" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#2c5697"/><stop offset="100%" stop-color="#15294a"/>
+        </linearGradient>
+      </defs>
+
+      <g opacity="0.5">
+        <text x="270" y="14" text-anchor="middle" class="orient">SUPERIOR</text>
+        <text x="270" y="710" text-anchor="middle" class="orient">INFERIOR</text>
+        <text x="14" y="380" class="orient" transform="rotate(-90 14 380)">DEXTER</text>
+        <text x="528" y="380" class="orient" transform="rotate(90 528 380)">SINISTER</text>
+      </g>
+
+      <!-- ============ GREAT VESSELS ============ -->
+      <rect x="65" y="40" width="48" height="160" rx="3" fill="url(#vsl-deoxy)" stroke="#0a1830" stroke-width="0.8"/>
+      <text x="89" y="32" text-anchor="middle" class="vsl-name" fill="#5fa8e8">VCS</text>
+
+      <path d="M 165 200 L 165 130 Q 165 95 195 80 Q 225 75 240 105 L 240 200 Z" fill="url(#vsl-deoxy)" stroke="#0a1830" stroke-width="0.8"/>
+      <text x="195" y="68" text-anchor="middle" class="vsl-name" fill="#5fa8e8">Truncus Pulm.</text>
+
+      <path d="M 280 200 L 280 130 Q 280 95 315 78 Q 365 70 395 100 Q 410 130 405 165 L 405 200 L 380 200 L 380 145 Q 378 122 360 118 Q 335 118 322 138 Q 315 158 315 200 Z" fill="url(#vsl-oxy)" stroke="#4a0c14" stroke-width="0.8"/>
+      <text x="355" y="92" text-anchor="middle" class="vsl-name" fill="#e94560">Aorta</text>
+
+      <rect x="465" y="225" width="60" height="32" rx="3" fill="url(#vsl-oxy)" stroke="#4a0c14" stroke-width="0.8"/>
+      <rect x="465" y="270" width="60" height="32" rx="3" fill="url(#vsl-oxy)" stroke="#4a0c14" stroke-width="0.8"/>
+      <text x="495" y="216" text-anchor="middle" class="vsl-name" fill="#e94560">Vv. Pulm.</text>
+
+      <!-- ============ ATRIA ============ -->
+      <path id="ra-lumen" d="M 60 200 L 260 200 L 260 340 Q 260 350 250 350 L 75 350 Q 60 350 60 335 Z" fill="url(#deoxy)" stroke="#0a1830" stroke-width="1.5"/>
+      <path id="la-lumen" d="M 280 200 L 480 200 L 480 250 L 460 260 L 480 280 L 480 340 Q 480 350 470 350 L 290 350 Q 280 350 280 340 Z" fill="url(#oxy)" stroke="#4a0c14" stroke-width="1.5"/>
+
+      <g style="pointer-events:none">
+        <text x="160" y="255" text-anchor="middle" class="ch-name" fill="#cfdce8">Atrium Dextrum</text>
+        <text x="160" y="280" text-anchor="middle" class="ch-readout" fill="#a8c0d8">P · <tspan id="ra-p" fill="#ffaaaa" font-weight="700">3</tspan> mmHg</text>
+        <text x="160" y="296" text-anchor="middle" class="ch-readout" fill="#a8c0d8">V · <tspan id="ra-v" fill="#bfe0a0" font-weight="700">35</tspan> mL</text>
+        <text x="380" y="255" text-anchor="middle" class="ch-name" fill="#f5dada">Atrium Sinistrum</text>
+        <text x="380" y="280" text-anchor="middle" class="ch-readout" fill="#e0b8b8">P · <tspan id="la-p" fill="#ffaaaa" font-weight="700">8</tspan> mmHg</text>
+        <text x="380" y="296" text-anchor="middle" class="ch-readout" fill="#e0b8b8">V · <tspan id="la-v" fill="#bfe0a0" font-weight="700">40</tspan> mL</text>
+      </g>
+
+      <g id="tv-group">
+        <line id="tv-l1" x1="80" y1="350" x2="120" y2="385" stroke="#d4af6a" stroke-width="2.5" stroke-linecap="round"/>
+        <line id="tv-l2" x1="160" y1="350" x2="160" y2="388" stroke="#d4af6a" stroke-width="2.5" stroke-linecap="round"/>
+        <line id="tv-l3" x1="245" y1="350" x2="205" y2="385" stroke="#d4af6a" stroke-width="2.5" stroke-linecap="round"/>
+      </g>
+      <text x="160" y="402" text-anchor="middle" class="valve-text">V. TRICUSPIDALIS</text>
+
+      <g id="mv-group">
+        <line id="mv-l1" x1="295" y1="350" x2="335" y2="390" stroke="#d4af6a" stroke-width="2.5" stroke-linecap="round"/>
+        <line id="mv-l2" x1="465" y1="350" x2="425" y2="390" stroke="#d4af6a" stroke-width="2.5" stroke-linecap="round"/>
+      </g>
+      <text x="380" y="402" text-anchor="middle" class="valve-text">V. MITRALIS</text>
+
+      <g id="pv-group">
+        <line id="pv-l1" x1="170" y1="200" x2="180" y2="178" stroke="#d4af6a" stroke-width="2.5" stroke-linecap="round"/>
+        <line id="pv-l2" x1="200" y1="200" x2="200" y2="176" stroke="#d4af6a" stroke-width="2.5" stroke-linecap="round"/>
+        <line id="pv-l3" x1="235" y1="200" x2="220" y2="178" stroke="#d4af6a" stroke-width="2.5" stroke-linecap="round"/>
+      </g>
+      <text x="200" y="218" text-anchor="middle" class="valve-text">V. PULMONALIS</text>
+
+      <g id="av-group">
+        <line id="av-l1" x1="290" y1="200" x2="300" y2="178" stroke="#d4af6a" stroke-width="2.5" stroke-linecap="round"/>
+        <line id="av-l2" x1="345" y1="200" x2="345" y2="176" stroke="#d4af6a" stroke-width="2.5" stroke-linecap="round"/>
+        <line id="av-l3" x1="400" y1="200" x2="385" y2="178" stroke="#d4af6a" stroke-width="2.5" stroke-linecap="round"/>
+      </g>
+      <text x="345" y="218" text-anchor="middle" class="valve-text">V. AORTAE</text>
+
+      <!-- LV thicker walls (drawn behind lumens) -->
+      <path d="M 280 360 L 480 360 L 500 410 Q 510 470 504 545 Q 492 615 450 660 Q 380 680 320 660 Q 280 625 270 580 L 270 360 Z" fill="#5a2a30" opacity="0.7"/>
+      <path d="M 60 360 L 260 360 L 260 580 Q 250 625 200 645 Q 125 655 80 615 Q 45 545 40 470 Q 40 400 50 360 Z" fill="#5a2a30" opacity="0.7"/>
+
+      <path id="rv-lumen" d="M 60 360 L 260 360 L 260 580 Q 250 620 200 638 Q 130 645 90 605 Q 55 540 50 470 Q 50 405 60 360 Z" fill="url(#deoxy)" stroke="#0a1830" stroke-width="1.5"/>
+      <path id="lv-lumen" d="M 280 360 L 480 360 L 490 405 Q 495 470 490 540 Q 480 605 440 645 Q 380 660 330 645 Q 290 615 280 580 Z" fill="url(#oxy)" stroke="#4a0c14" stroke-width="1.5"/>
+
+      <g style="pointer-events:none">
+        <text x="155" y="475" text-anchor="middle" class="ch-name" fill="#cfdce8">Ventriculus Dexter</text>
+        <text x="155" y="498" text-anchor="middle" class="ch-readout" fill="#a8c0d8">P · <tspan id="rv-p" fill="#ffaaaa" font-weight="700">5</tspan> mmHg</text>
+        <text x="155" y="514" text-anchor="middle" class="ch-readout" fill="#a8c0d8">V · <tspan id="rv-v" fill="#bfe0a0" font-weight="700">120</tspan> mL</text>
+        <text x="385" y="475" text-anchor="middle" class="ch-name" fill="#f5dada">Ventriculus Sinister</text>
+        <text x="385" y="498" text-anchor="middle" class="ch-readout" fill="#e0b8b8">P · <tspan id="lv-p" fill="#ffaaaa" font-weight="700">8</tspan> mmHg</text>
+        <text x="385" y="514" text-anchor="middle" class="ch-readout" fill="#e0b8b8">V · <tspan id="lv-v" fill="#bfe0a0" font-weight="700">120</tspan> mL</text>
+      </g>
+
+      <text x="528" y="490" class="vsl-name" style="font-size:9px;font-style:italic" fill="#5a6a7a" text-anchor="end">↔ 10–12 mm</text>
+      <text x="32" y="490" class="vsl-name" style="font-size:9px;font-style:italic" fill="#5a6a7a">↔ 3–5 mm</text>
+
+      <line x1="270" y1="360" x2="270" y2="635" stroke="#3a1f25" stroke-width="3"/>
+      <text x="270" y="615" text-anchor="middle" class="vsl-name" style="font-size:9px" fill="#5a6a7a">SEPTUM</text>
+
+      <rect x="70" y="650" width="40" height="60" rx="3" fill="url(#vsl-deoxy)" stroke="#0a1830" stroke-width="0.8"/>
+      <text x="90" y="700" text-anchor="middle" class="vsl-name" fill="#5fa8e8">VCI</text>
+
+      <text x="385" y="680" text-anchor="middle" class="vsl-name" style="font-size:10px" fill="#5a6a7a">Apex Cordis</text>
+    </svg>
+  </div>
+
+  <div id="plots">
+    <div class="plot"><div class="plot-label">Pressures</div><div class="plot-units">mmHg</div><canvas id="plot-pressure" width="900" height="220"></canvas></div>
+    <div class="plot"><div class="plot-label">Ventricular Volume</div><div class="plot-units">mL</div><canvas id="plot-volume" width="900" height="120"></canvas></div>
+    <div class="plot"><div class="plot-label">Jugular Venous Pulse · JVP</div><div class="plot-units">mmHg</div><canvas id="plot-jvp" width="900" height="120"></canvas></div>
+    <div class="plot"><div class="plot-label">Electrocardiogram · Lead II</div><div class="plot-units">mV</div><canvas id="plot-ecg" width="900" height="100"></canvas></div>
+    <div class="plot"><div class="plot-label">Phonocardiogram</div><div class="plot-units">heart sounds</div><canvas id="plot-phono" width="900" height="80"></canvas></div>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="play-btn" class="primary">▶ Play</button>
+  <button id="reset-btn">⟲ Reset</button>
+  <div class="scrubber">
+    <span class="scrubber-label">Scrub</span>
+    <input type="range" id="scrubber" min="0" max="1000" value="0">
+    <span class="time-readout" id="time-readout">0.000s</span>
+  </div>
+  <div class="speed">
+    <label>Speed</label>
+    <input type="range" id="speed" min="5" max="200" value="40">
+    <span class="speed-readout" id="speed-readout">0.40×</span>
+  </div>
+</div>
+
+<div class="phase-info">
+  <div class="phase-roman" id="phase-roman">PHASE I</div>
+  <div class="phase-name" id="phase-name">Atrial Systole</div>
+  <div class="phase-meta" id="phase-meta">
+    <span>0.00 – 0.10 s</span><span class="sep">·</span>
+    <span class="type-diastole">DIASTOLE</span><span class="sep">·</span>
+    <span>ATRIAL KICK</span>
+  </div>
+  <div class="phase-desc" id="phase-desc">
+    Atria berkontraksi setelah depolarisasi (<b>P wave</b>), mendorong ~20–30% sisa darah ke ventrikel. Katup AV terbuka, semilunar tertutup. Tekanan atrium menghasilkan <b>gelombang a</b> (juga di JVP). EDV ≈ 120 mL.
+  </div>
+</div>
+
+<div class="phase-bar-wrap">
+  <div class="phase-bar-label">
+    <span>Cycle Timeline · Click any segment to navigate</span>
+    <span class="sd"><span class="sys">Systole</span><span class="dia">Diastole</span></span>
+  </div>
+  <div class="phase-bar" id="phase-bar"></div>
+</div>
+
+<div class="valves-readout">
+  <div class="valve-item" id="mv-item"><div class="valve-name">Mitral · MV</div><div class="valve-state open" id="mv-state">Open</div></div>
+  <div class="valve-item" id="av-item"><div class="valve-name">Aortic · AV</div><div class="valve-state closed" id="av-state">Closed</div></div>
+  <div class="valve-item" id="tv-item"><div class="valve-name">Tricuspid · TV</div><div class="valve-state open" id="tv-state">Open</div></div>
+  <div class="valve-item" id="pv-item"><div class="valve-name">Pulmonary · PV</div><div class="valve-state closed" id="pv-state">Closed</div></div>
+</div>
+
+<div class="footer">
+  <span>Carl J. Wiggers · 1915 · <em>The Cardiac Cycle</em></span>
+  <span>Cubic Hermite interpolation · 7-phase model · HR 75 bpm</span>
+</div>
+
+</div>
+
+<script>
+const CYCLE = 0.80;
+
+const PHASES = [
+  {id:1, roman:'I',   name:'Atrial Systole', start:0.00, end:0.10, type:'diastole', short:'AS',
+   desc:'Atria berkontraksi setelah depolarisasi (<b>P wave</b>), mendorong ~20–30% sisa darah ke ventrikel. Katup AV (mitral & trikuspid) <b>terbuka</b>, katup semilunar <b>tertutup</b>. Tekanan atrium menghasilkan <b>gelombang a</b> (juga terlihat di JVP). Ventrikel mencapai <b>End-Diastolic Volume</b> (EDV) ≈ 120 mL — preload maksimal.'},
+  {id:2, roman:'II',  name:'Isovolumetric Contraction', start:0.10, end:0.15, type:'systole', short:'IVC',
+   desc:'<b>QRS complex</b> memicu depolarisasi ventrikel → kontraksi dimulai. Tekanan LV naik sangat cepat (peak <b>dP/dt</b> ~1500 mmHg/s pada saat ini). Saat P<sub>LV</sub> > P<sub>LA</sub>, <b>katup mitral menutup</b> (M₁); saat P<sub>RV</sub> > P<sub>RA</sub>, <b>trikuspid menutup</b> (T₁) — bersama menghasilkan <b>S₁</b>. Semua katup tertutup → volume tetap. Tekanan atrium menunjukkan <b>gelombang c</b> (bulging katup AV ke atrium).'},
+  {id:3, roman:'III', name:'Rapid Ejection', start:0.15, end:0.24, type:'systole', short:'RE',
+   desc:'P<sub>LV</sub> melampaui P<sub>aorta</sub> (~80 mmHg) → <b>katup aorta membuka</b>; P<sub>RV</sub> > P<sub>pulm</sub> → <b>katup pulmonal membuka</b>. Darah diejeksi cepat — ~70% stroke volume keluar di fase ini. Tekanan LV & aorta naik bersama mencapai <b>peak systolic pressure</b> ~120 mmHg pada t≈0.20s. Volume ventrikel turun curam.'},
+  {id:4, roman:'IV',  name:'Reduced Ejection', start:0.24, end:0.37, type:'systole', short:'rE',
+   desc:'Repolarisasi ventrikel dimulai (<b>T wave</b>). Kontraksi melemah, ejeksi melambat. P<sub>LV</sub> mulai turun di bawah aorta — aliran berlanjut karena <b>inersia</b> darah. Atrium terus terisi pasif → <b>gelombang v</b> meningkat (di JVP juga). Tersisa <b>End-Systolic Volume</b> (ESV) ≈ 50 mL.'},
+  {id:5, roman:'V',   name:'Isovolumetric Relaxation', start:0.37, end:0.43, type:'diastole', short:'IVR',
+   desc:'P<sub>LV</sub> turun di bawah aorta → backflow minimal menutup <b>katup aorta</b> (A₂); P<sub>RV</sub> < P<sub>pulm</sub> → <b>pulmonal menutup</b> (P₂) — <b>S₂</b> terdengar. <b>Dicrotic notch</b> (incisura) muncul pada kurva aorta. Semua katup tertutup, ventrikel relaksasi tapi volume tetap. Atrium mencapai <b>peak gelombang v</b>.'},
+  {id:6, roman:'VI',  name:'Rapid Filling', start:0.43, end:0.54, type:'diastole', short:'RF',
+   desc:'P<sub>LV</sub> turun di bawah P<sub>LA</sub> → <b>katup mitral & trikuspid membuka</b> → <b>y descent</b> di JVP/atrial pressure. Darah yang menumpuk di atrium mengalir cepat ke ventrikel — <b>passive filling</b>. ~70–80% pengisian terjadi di fase ini. Pada gagal jantung, getaran dinding ventrikel saat fase ini menghasilkan <b>S₃</b> (ventricular gallop).'},
+  {id:7, roman:'VII', name:'Diastasis', start:0.54, end:0.80, type:'diastole', short:'D',
+   desc:'Pengisian melambat saat tekanan atrium ≈ ventrikel — <b>fase istirahat terpanjang</b>. Pada takikardia, fase ini paling banyak terpotong → <b>cardiac output</b> menurun karena waktu pengisian berkurang. Pada akhir diastasis, depolarisasi nodus SA memicu <b>P wave</b> baru → siklus berulang.'}
+];
+
+// =====================================================================
+// CUBIC HERMITE INTERPOLATION — produces smooth C¹ curves
+// kp = array of {t, v, m} where m = dv/dt slope at that point
+// =====================================================================
+function hermiteInterp(t, kp){
+  for(let i = 0; i < kp.length - 1; i++){
+    if(t >= kp[i].t && t <= kp[i+1].t){
+      const t0 = kp[i].t, t1 = kp[i+1].t;
+      const p0 = kp[i].v, p1 = kp[i+1].v;
+      const m0 = kp[i].m, m1 = kp[i+1].m;
+      const h = t1 - t0;
+      const x = (t - t0) / h;
+      const h00 = 2*x*x*x - 3*x*x + 1;
+      const h10 = x*x*x - 2*x*x + x;
+      const h01 = -2*x*x*x + 3*x*x;
+      const h11 = x*x*x - x*x;
+      return h00*p0 + h10*h*m0 + h01*p1 + h11*h*m1;
+    }
+  }
+  if(t < kp[0].t) return kp[0].v;
+  return kp[kp.length-1].v;
+}
+
+// LV PRESSURE — control points based on canonical physiology
+const LV_KP = [
+  {t: 0.000, v: 5,    m: 30},
+  {t: 0.050, v: 11,   m: 0},
+  {t: 0.100, v: 11,   m: 200},
+  {t: 0.130, v: 50,   m: 1800},   // peak dP/dt during IVC
+  {t: 0.150, v: 80,   m: 1200},   // AV opens
+  {t: 0.200, v: 120,  m: 0},      // peak systolic
+  {t: 0.240, v: 118,  m: -120},
+  {t: 0.320, v: 100,  m: -300},
+  {t: 0.370, v: 80,   m: -800},   // AV closes
+  {t: 0.395, v: 30,   m: -2200},  // peak negative dP/dt
+  {t: 0.430, v: 6,    m: -50},
+  {t: 0.460, v: 4,    m: 0},
+  {t: 0.540, v: 4,    m: 5},
+  {t: 0.700, v: 5,    m: 15},
+  {t: 0.800, v: 5,    m: 30}
+];
+function lvPressure(t){return hermiteInterp(t, LV_KP);}
+
+// AORTIC PRESSURE
+const AO_KP = [
+  {t: 0.000, v: 80,   m: -25},
+  {t: 0.100, v: 76,   m: -20},
+  {t: 0.150, v: 80,   m: 800},
+  {t: 0.200, v: 120,  m: 0},
+  {t: 0.240, v: 118,  m: -100},
+  {t: 0.320, v: 105,  m: -200},
+  {t: 0.370, v: 95,   m: -400},
+  {t: 0.385, v: 88,   m: -200},   // dicrotic notch start
+  {t: 0.395, v: 87,   m: 100},    // notch bottom
+  {t: 0.420, v: 91,   m: -30},    // dicrotic wave peak
+  {t: 0.500, v: 86,   m: -40},
+  {t: 0.700, v: 81,   m: -25},
+  {t: 0.800, v: 80,   m: -25}
+];
+function aoPressure(t){return hermiteInterp(t, AO_KP);}
+
+// LA PRESSURE — a, c, v waves with x and y descents
+const LA_KP = [
+  {t: 0.000, v: 6,    m: 100},
+  {t: 0.045, v: 13,   m: 0},      // a wave peak
+  {t: 0.080, v: 7,    m: -120},
+  {t: 0.105, v: 6,    m: 50},
+  {t: 0.130, v: 10,   m: 0},      // c wave peak
+  {t: 0.180, v: 6,    m: -50},    // x descent
+  {t: 0.250, v: 4,    m: 30},
+  {t: 0.320, v: 9,    m: 80},
+  {t: 0.370, v: 14,   m: 0},      // v wave peak
+  {t: 0.430, v: 9,    m: -100},   // y descent (MV opens)
+  {t: 0.500, v: 4,    m: 0},
+  {t: 0.700, v: 5,    m: 10},
+  {t: 0.800, v: 6,    m: 100}
+];
+function laPressure(t){return hermiteInterp(t, LA_KP);}
+
+// LV VOLUME — flat during isovolumetric phases
+const LV_VOL_KP = [
+  {t: 0.000, v: 95,   m: 200},
+  {t: 0.050, v: 110,  m: 350},
+  {t: 0.100, v: 120,  m: 0},      // EDV
+  {t: 0.150, v: 120,  m: 0},      // FLAT during IVC
+  {t: 0.200, v: 90,   m: -800},
+  {t: 0.240, v: 70,   m: -350},
+  {t: 0.320, v: 56,   m: -120},
+  {t: 0.370, v: 50,   m: 0},      // ESV
+  {t: 0.430, v: 50,   m: 0},      // FLAT during IVR
+  {t: 0.480, v: 80,   m: 700},
+  {t: 0.540, v: 95,   m: 100},
+  {t: 0.700, v: 96,   m: 5},
+  {t: 0.800, v: 95,   m: 200}
+];
+function lvVolume(t){return hermiteInterp(t, LV_VOL_KP);}
+
+// JVP — closely tracks RA pressure with slight delay
+const JVP_KP = [
+  {t: 0.000, v: 4,    m: 60},
+  {t: 0.050, v: 9,    m: 0},      // 'a' wave peak
+  {t: 0.090, v: 5,    m: -80},    // x descent begins
+  {t: 0.130, v: 7,    m: 0},      // 'c' wave peak (TV bulge)
+  {t: 0.170, v: 4,    m: -50},    // x' descent
+  {t: 0.270, v: 2,    m: 20},
+  {t: 0.330, v: 6,    m: 50},
+  {t: 0.395, v: 9,    m: 0},      // 'v' wave peak
+  {t: 0.460, v: 4,    m: -90},    // y descent (TV opens)
+  {t: 0.540, v: 2,    m: 0},
+  {t: 0.700, v: 3,    m: 5},
+  {t: 0.800, v: 4,    m: 60}
+];
+function jvp(t){return hermiteInterp(t, JVP_KP);}
+
+function rvPressure(t){return Math.max(lvPressure(t)*0.21+1.5, 2);}
+function raPressure(t){return jvp(t) * 0.55;}
+function rvVolume(t){return lvVolume(t);}
+
+function ecg(t){
+  let v = 0;
+  v += 0.16 * Math.exp(-Math.pow((t - 0.04) / 0.020, 2));
+  v -= 0.10 * Math.exp(-Math.pow((t - 0.085) / 0.005, 2));
+  v += 1.0  * Math.exp(-Math.pow((t - 0.105) / 0.006, 2));
+  v -= 0.22 * Math.exp(-Math.pow((t - 0.125) / 0.006, 2));
+  v += 0.32 * Math.exp(-Math.pow((t - 0.30) / 0.040, 2));
+  return v;
+}
+
+function phono(t){
+  let v = 0;
+  if(t > 0.10 && t < 0.17){
+    const env = Math.exp(-Math.pow((t - 0.13) / 0.014, 2));
+    v += env * Math.sin(2 * Math.PI * 50 * t) * 0.75;
+  }
+  if(t > 0.36 && t < 0.42){
+    const env = Math.exp(-Math.pow((t - 0.385) / 0.011, 2));
+    v += env * Math.sin(2 * Math.PI * 70 * t) * 0.55;
+  }
+  return v;
+}
+
+function getValveStates(t){
+  return {
+    mv: !(t >= 0.10 && t < 0.43),
+    av: (t >= 0.15 && t < 0.37),
+    tv: !(t >= 0.10 && t < 0.43),
+    pv: (t >= 0.15 && t < 0.37)
+  };
+}
+
+function getCurrentPhase(t){
+  for(const p of PHASES){if(t >= p.start && t < p.end) return p;}
+  return PHASES[PHASES.length-1];
+}
+
+function setupCanvas(canvas){
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return {ctx, w: rect.width, h: rect.height};
+}
+
+function drawPhaseBackground(ctx, padL, padT, plotH, xToPx){
+  for(const p of PHASES){
+    ctx.fillStyle = p.type === 'systole' ? 'rgba(233,69,96,0.04)' : 'rgba(95,168,232,0.025)';
+    ctx.fillRect(xToPx(p.start), padT, xToPx(p.end)-xToPx(p.start), plotH);
+  }
+  ctx.strokeStyle = 'rgba(74,93,124,0.4)';
+  ctx.setLineDash([2,4]);
+  ctx.lineWidth = 0.6;
+  for(const p of PHASES){
+    ctx.beginPath();
+    ctx.moveTo(xToPx(p.end), padT);
+    ctx.lineTo(xToPx(p.end), padT+plotH);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+}
+
+function drawCursor(ctx, x, padT, plotH){
+  ctx.strokeStyle = 'rgba(212,175,106,0.95)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();ctx.moveTo(x, padT);ctx.lineTo(x, padT+plotH);ctx.stroke();
+  ctx.fillStyle = '#d4af6a';
+  ctx.beginPath();ctx.arc(x, padT, 2.5, 0, 2*Math.PI);ctx.fill();
+}
+
+function drawCurve(ctx, fn, xToPx, yToPx, color, width, samples = 800){
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  for(let i = 0; i <= samples; i++){
+    const t = (i/samples) * CYCLE;
+    const v = fn(t);
+    const x = xToPx(t), y = yToPx(v);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+}
+
+function drawGrid(ctx, padL, plotW, padT, plotH, yToPx, yMin, yMax, step){
+  ctx.strokeStyle = 'rgba(30,39,51,0.7)';
+  ctx.lineWidth = 0.5;
+  for(let v = yMin; v <= yMax; v += step){
+    ctx.beginPath();
+    ctx.moveTo(padL, yToPx(v));
+    ctx.lineTo(padL+plotW, yToPx(v));
+    ctx.stroke();
+    ctx.fillStyle = '#475569';
+    ctx.font = '9px JetBrains Mono';
+    ctx.textAlign = 'right';
+    ctx.fillText(v, padL-5, yToPx(v)+3);
+  }
+}
+
+function drawPressurePlot(canvas, currentT){
+  const {ctx, w, h} = setupCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const padL=42, padR=12, padT=22, padB=22;
+  const plotW = w-padL-padR, plotH = h-padT-padB;
+  const xToPx = t => padL + (t/CYCLE)*plotW;
+  const yToPx = v => padT + plotH - ((v-0)/(140-0))*plotH;
+
+  drawGrid(ctx, padL, plotW, padT, plotH, yToPx, 0, 140, 20);
+  drawPhaseBackground(ctx, padL, padT, plotH, xToPx);
+
+  drawCurve(ctx, laPressure, xToPx, yToPx, '#5fa8e8', 1.5);
+  drawCurve(ctx, aoPressure, xToPx, yToPx, '#f5a623', 1.8);
+  drawCurve(ctx, lvPressure, xToPx, yToPx, '#e94560', 2);
+
+  const ann = [
+    {t:0.045, v:laPressure(0.045), label:'a'},
+    {t:0.130, v:laPressure(0.130), label:'c'},
+    {t:0.370, v:laPressure(0.370), label:'v'}
+  ];
+  ctx.font = 'italic 600 11px Cormorant Garamond';
+  ctx.fillStyle = '#5fa8e8';
+  ctx.textAlign = 'center';
+  for(const a of ann){
+    ctx.fillText(a.label, xToPx(a.t), yToPx(a.v)-7);
+    ctx.beginPath();ctx.arc(xToPx(a.t), yToPx(a.v), 2, 0, 2*Math.PI);ctx.fill();
+  }
+
+  ctx.fillStyle = '#f5a623';
+  ctx.font = 'italic 9px Cormorant Garamond';
+  ctx.textAlign = 'left';
+  ctx.fillText('dicrotic notch', xToPx(0.395)+4, yToPx(aoPressure(0.395))+4);
+  ctx.beginPath();ctx.arc(xToPx(0.395), yToPx(aoPressure(0.395)), 2.5, 0, 2*Math.PI);ctx.fill();
+
+  ctx.font = '500 9px JetBrains Mono';
+  ctx.textAlign = 'left';
+  const legend = [['LV','#e94560'],['Ao','#f5a623'],['LA','#5fa8e8']];
+  let lx = padL + 10;
+  legend.forEach(l => {
+    ctx.fillStyle = l[1];
+    ctx.fillRect(lx, padT+2, 10, 2);
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText(l[0], lx+14, padT+5);
+    lx += 42;
+  });
+
+  drawCursor(ctx, xToPx(currentT), padT, plotH);
+}
+
+function drawVolumePlot(canvas, currentT){
+  const {ctx, w, h} = setupCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const padL=42, padR=12, padT=22, padB=16;
+  const plotW = w-padL-padR, plotH = h-padT-padB;
+  const xToPx = t => padL + (t/CYCLE)*plotW;
+  const yToPx = v => padT + plotH - ((v-40)/(130-40))*plotH;
+
+  drawGrid(ctx, padL, plotW, padT, plotH, yToPx, 50, 120, 20);
+  drawPhaseBackground(ctx, padL, padT, plotH, xToPx);
+
+  ctx.fillStyle = 'rgba(127,176,105,0.06)';
+  ctx.beginPath();
+  ctx.moveTo(xToPx(0), yToPx(50));
+  for(let i = 0; i <= 600; i++){
+    const t = (i/600)*CYCLE;
+    ctx.lineTo(xToPx(t), yToPx(lvVolume(t)));
+  }
+  ctx.lineTo(xToPx(CYCLE), yToPx(50));
+  ctx.closePath();
+  ctx.fill();
+
+  drawCurve(ctx, lvVolume, xToPx, yToPx, '#7fb069', 2);
+
+  ctx.fillStyle = '#7fb069';
+  ctx.font = 'italic 600 10px Cormorant Garamond';
+  ctx.textAlign = 'left';
+  ctx.fillText('EDV ≈ 120 mL', xToPx(0.105)+4, yToPx(120)-5);
+  ctx.fillText('ESV ≈ 50 mL', xToPx(0.40)+4, yToPx(50)-5);
+
+  ctx.strokeStyle = 'rgba(212,175,106,0.5)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(xToPx(0.30), yToPx(120));ctx.lineTo(xToPx(0.30), yToPx(50));ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#d4af6a';
+  ctx.font = 'italic 600 10px Cormorant Garamond';
+  ctx.fillText('SV ≈ 70', xToPx(0.30)+4, yToPx(85));
+
+  drawCursor(ctx, xToPx(currentT), padT, plotH);
+}
+
+function drawJVP(canvas, currentT){
+  const {ctx, w, h} = setupCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const padL=42, padR=12, padT=22, padB=16;
+  const plotW = w-padL-padR, plotH = h-padT-padB;
+  const xToPx = t => padL + (t/CYCLE)*plotW;
+  const yToPx = v => padT + plotH - ((v-0)/(12-0))*plotH;
+
+  drawGrid(ctx, padL, plotW, padT, plotH, yToPx, 0, 12, 4);
+  drawPhaseBackground(ctx, padL, padT, plotH, xToPx);
+
+  drawCurve(ctx, jvp, xToPx, yToPx, '#5fb6a6', 2);
+
+  // Wave peaks
+  const peaks = [
+    {t:0.050, v:jvp(0.050), label:'a'},
+    {t:0.130, v:jvp(0.130), label:'c'},
+    {t:0.395, v:jvp(0.395), label:'v'}
+  ];
+  ctx.font = 'italic 600 12px Cormorant Garamond';
+  ctx.fillStyle = '#5fb6a6';
+  ctx.textAlign = 'center';
+  for(const p of peaks){
+    ctx.fillText(p.label, xToPx(p.t), yToPx(p.v)-7);
+    ctx.beginPath();ctx.arc(xToPx(p.t), yToPx(p.v), 2.5, 0, 2*Math.PI);ctx.fill();
+  }
+
+  // Descent labels
+  ctx.font = 'italic 9px Cormorant Garamond';
+  ctx.fillStyle = '#94a3b8';
+  ctx.textAlign = 'center';
+  ctx.fillText("x descent", xToPx(0.22), yToPx(jvp(0.22))+15);
+  ctx.fillText("y descent", xToPx(0.50), yToPx(jvp(0.50))+15);
+
+  drawCursor(ctx, xToPx(currentT), padT, plotH);
+}
+
+function drawECG(canvas, currentT){
+  const {ctx, w, h} = setupCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const padL=42, padR=12, padT=18, padB=12;
+  const plotW = w-padL-padR, plotH = h-padT-padB;
+  const xToPx = t => padL + (t/CYCLE)*plotW;
+  const yToPx = v => padT + plotH - ((v-(-0.4))/(1.2-(-0.4)))*plotH;
+
+  ctx.strokeStyle = 'rgba(30,39,51,0.7)';
+  ctx.lineWidth = 0.5;
+  ctx.beginPath();ctx.moveTo(padL, yToPx(0));ctx.lineTo(padL+plotW, yToPx(0));ctx.stroke();
+  drawPhaseBackground(ctx, padL, padT, plotH, xToPx);
+
+  drawCurve(ctx, ecg, xToPx, yToPx, '#b07ec3', 1.6, 1000);
+
+  ctx.fillStyle = '#b07ec3';
+  ctx.font = 'italic 600 11px Cormorant Garamond';
+  ctx.textAlign = 'center';
+  ctx.fillText('P', xToPx(0.04), yToPx(ecg(0.04))-6);
+  ctx.fillText('QRS', xToPx(0.105), yToPx(ecg(0.105))-8);
+  ctx.fillText('T', xToPx(0.30), yToPx(ecg(0.30))-6);
+
+  drawCursor(ctx, xToPx(currentT), padT, plotH);
+}
+
+function drawPhono(canvas, currentT){
+  const {ctx, w, h} = setupCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const padL=42, padR=12, padT=14, padB=12;
+  const plotW = w-padL-padR, plotH = h-padT-padB;
+  const xToPx = t => padL + (t/CYCLE)*plotW;
+  const yToPx = v => padT + plotH - ((v-(-1))/(1-(-1)))*plotH;
+
+  drawPhaseBackground(ctx, padL, padT, plotH, xToPx);
+  ctx.strokeStyle = 'rgba(30,39,51,0.7)';
+  ctx.lineWidth = 0.5;
+  ctx.beginPath();ctx.moveTo(padL, yToPx(0));ctx.lineTo(padL+plotW, yToPx(0));ctx.stroke();
+
+  drawCurve(ctx, phono, xToPx, yToPx, '#f5a623', 1.1, 1500);
+
+  ctx.fillStyle = '#f5a623';
+  ctx.font = 'italic 600 13px Cormorant Garamond';
+  ctx.textAlign = 'center';
+  ctx.fillText('S₁', xToPx(0.13), padT+12);
+  ctx.fillText('S₂', xToPx(0.385), padT+12);
+  ctx.font = '500 8px JetBrains Mono';
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillText('M₁+T₁', xToPx(0.13), yToPx(-0.78));
+  ctx.fillText('A₂+P₂', xToPx(0.385), yToPx(-0.78));
+
+  drawCursor(ctx, xToPx(currentT), padT, plotH);
+}
+
+function updateHeart(t){
+  const lvP = lvPressure(t), rvP = rvPressure(t);
+  const laP = laPressure(t), raP = raPressure(t);
+  const lvV = lvVolume(t), rvV = rvVolume(t);
+  const laV = 55 - (lvV - 70) * 0.3;
+  const raV = laV;
+
+  document.getElementById('lv-p').textContent = Math.round(lvP);
+  document.getElementById('rv-p').textContent = Math.round(rvP);
+  document.getElementById('la-p').textContent = Math.round(laP);
+  document.getElementById('ra-p').textContent = Math.max(0, Math.round(raP));
+  document.getElementById('lv-v').textContent = Math.round(lvV);
+  document.getElementById('rv-v').textContent = Math.round(rvV);
+  document.getElementById('la-v').textContent = Math.round(Math.abs(laV));
+  document.getElementById('ra-v').textContent = Math.round(Math.abs(raV));
+
+  const lvScale = 0.84 + ((lvV - 50)/70) * 0.16;
+  const rvScale = 0.84 + ((rvV - 50)/70) * 0.16;
+  const atrialScale = 0.90 + ((Math.abs(laV) - 30)/40) * 0.10;
+
+  document.getElementById('lv-lumen').style.transformOrigin = '385px 510px';
+  document.getElementById('lv-lumen').style.transform = `scale(${lvScale})`;
+  document.getElementById('rv-lumen').style.transformOrigin = '155px 500px';
+  document.getElementById('rv-lumen').style.transform = `scale(${rvScale})`;
+  document.getElementById('la-lumen').style.transformOrigin = '380px 280px';
+  document.getElementById('la-lumen').style.transform = `scale(${atrialScale})`;
+  document.getElementById('ra-lumen').style.transformOrigin = '160px 280px';
+  document.getElementById('ra-lumen').style.transform = `scale(${atrialScale})`;
+
+  const valves = getValveStates(t);
+
+  if(valves.tv){
+    document.getElementById('tv-l1').setAttribute('x2','120');
+    document.getElementById('tv-l1').setAttribute('y2','385');
+    document.getElementById('tv-l2').setAttribute('y2','388');
+    document.getElementById('tv-l3').setAttribute('x2','205');
+    document.getElementById('tv-l3').setAttribute('y2','385');
+    setValveColor(['tv-l1','tv-l2','tv-l3'], '#7fb069');
+  } else {
+    document.getElementById('tv-l1').setAttribute('x2','155');
+    document.getElementById('tv-l1').setAttribute('y2','365');
+    document.getElementById('tv-l2').setAttribute('y2','365');
+    document.getElementById('tv-l3').setAttribute('x2','170');
+    document.getElementById('tv-l3').setAttribute('y2','365');
+    setValveColor(['tv-l1','tv-l2','tv-l3'], '#d97757');
+  }
+
+  if(valves.mv){
+    document.getElementById('mv-l1').setAttribute('x2','335');
+    document.getElementById('mv-l1').setAttribute('y2','390');
+    document.getElementById('mv-l2').setAttribute('x2','425');
+    document.getElementById('mv-l2').setAttribute('y2','390');
+    setValveColor(['mv-l1','mv-l2'], '#7fb069');
+  } else {
+    document.getElementById('mv-l1').setAttribute('x2','375');
+    document.getElementById('mv-l1').setAttribute('y2','365');
+    document.getElementById('mv-l2').setAttribute('x2','385');
+    document.getElementById('mv-l2').setAttribute('y2','365');
+    setValveColor(['mv-l1','mv-l2'], '#d97757');
+  }
+
+  if(valves.av){
+    document.getElementById('av-l1').setAttribute('y2','178');
+    document.getElementById('av-l2').setAttribute('y2','176');
+    document.getElementById('av-l3').setAttribute('y2','178');
+    setValveColor(['av-l1','av-l2','av-l3'], '#7fb069');
+  } else {
+    document.getElementById('av-l1').setAttribute('y2','190');
+    document.getElementById('av-l2').setAttribute('y2','190');
+    document.getElementById('av-l3').setAttribute('y2','190');
+    setValveColor(['av-l1','av-l2','av-l3'], '#d97757');
+  }
+
+  if(valves.pv){
+    document.getElementById('pv-l1').setAttribute('y2','178');
+    document.getElementById('pv-l2').setAttribute('y2','176');
+    document.getElementById('pv-l3').setAttribute('y2','178');
+    setValveColor(['pv-l1','pv-l2','pv-l3'], '#7fb069');
+  } else {
+    document.getElementById('pv-l1').setAttribute('y2','190');
+    document.getElementById('pv-l2').setAttribute('y2','190');
+    document.getElementById('pv-l3').setAttribute('y2','190');
+    setValveColor(['pv-l1','pv-l2','pv-l3'], '#d97757');
+  }
+
+  setValveUI('mv', valves.mv);
+  setValveUI('av', valves.av);
+  setValveUI('tv', valves.tv);
+  setValveUI('pv', valves.pv);
+}
+
+function setValveColor(ids, color){
+  ids.forEach(id => {document.getElementById(id).style.stroke = color;});
+}
+
+function setValveUI(prefix, isOpen){
+  const stateEl = document.getElementById(prefix+'-state');
+  const itemEl = document.getElementById(prefix+'-item');
+  stateEl.textContent = isOpen ? 'Open' : 'Closed';
+  stateEl.className = 'valve-state ' + (isOpen ? 'open' : 'closed');
+  itemEl.classList.toggle('is-open', isOpen);
+  itemEl.classList.toggle('is-closed', !isOpen);
+}
+
+let lastPhaseId = -1;
+let lastSoundT = -1;
+
+function updatePhaseInfo(t){
+  const phase = getCurrentPhase(t);
+  if(phase.id !== lastPhaseId){
+    lastPhaseId = phase.id;
+    document.getElementById('phase-roman').textContent = `PHASE ${phase.roman}`;
+    document.getElementById('phase-name').textContent = phase.name;
+    document.getElementById('phase-meta').innerHTML =
+      `<span>${phase.start.toFixed(2)} – ${phase.end.toFixed(2)} s</span>` +
+      `<span class="sep">·</span>` +
+      `<span class="type-${phase.type}">${phase.type.toUpperCase()}</span>` +
+      `<span class="sep">·</span>` +
+      `<span>${phase.short}</span>`;
+    document.getElementById('phase-desc').innerHTML = phase.desc;
+    document.getElementById('phase-tag').textContent = `PHASE ${phase.roman}`;
+    document.querySelectorAll('.phase-seg').forEach((seg,i)=>{
+      seg.classList.toggle('active', i+1 === phase.id);
+    });
+  }
+
+  const sndIndicator = document.getElementById('sound-indicator');
+  if(t > 0.12 && t < 0.16 && (lastSoundT < 0.12 || lastSoundT > 0.16)){
+    sndIndicator.textContent = 'S₁';
+    sndIndicator.classList.remove('active');
+    void sndIndicator.offsetWidth;
+    sndIndicator.classList.add('active');
+  }
+  if(t > 0.37 && t < 0.40 && (lastSoundT < 0.37 || lastSoundT > 0.40)){
+    sndIndicator.textContent = 'S₂';
+    sndIndicator.classList.remove('active');
+    void sndIndicator.offsetWidth;
+    sndIndicator.classList.add('active');
+  }
+  lastSoundT = t;
+  if(t < 0.05) lastSoundT = -1;
+}
+
+let currentT = 0, playing = false, lastFrame = 0, speedMult = 0.40;
+
+const canvases = {
+  pressure: document.getElementById('plot-pressure'),
+  volume: document.getElementById('plot-volume'),
+  jvp: document.getElementById('plot-jvp'),
+  ecg: document.getElementById('plot-ecg'),
+  phono: document.getElementById('plot-phono')
+};
+
+function render(){
+  drawPressurePlot(canvases.pressure, currentT);
+  drawVolumePlot(canvases.volume, currentT);
+  drawJVP(canvases.jvp, currentT);
+  drawECG(canvases.ecg, currentT);
+  drawPhono(canvases.phono, currentT);
+  updateHeart(currentT);
+  updatePhaseInfo(currentT);
+  document.getElementById('time-readout').textContent = currentT.toFixed(3) + 's';
+  document.getElementById('scrubber').value = Math.round((currentT/CYCLE)*1000);
+}
+
+function loop(ts){
+  if(!lastFrame) lastFrame = ts;
+  const dt = (ts - lastFrame)/1000;
+  lastFrame = ts;
+  if(playing){
+    currentT += dt * speedMult;
+    if(currentT >= CYCLE){currentT = currentT % CYCLE; lastSoundT = -1;}
+    render();
+  }
+  requestAnimationFrame(loop);
+}
+
+const playBtn = document.getElementById('play-btn');
+playBtn.addEventListener('click', ()=>{
+  playing = !playing;
+  playBtn.textContent = playing ? '❚❚ Pause' : '▶ Play';
+  lastFrame = 0;
+});
+document.getElementById('reset-btn').addEventListener('click', ()=>{
+  currentT = 0; lastSoundT = -1; render();
+});
+document.getElementById('scrubber').addEventListener('input', e => {
+  currentT = (parseInt(e.target.value)/1000) * CYCLE;
+  render();
+});
+document.getElementById('speed').addEventListener('input', e => {
+  speedMult = parseInt(e.target.value)/100;
+  document.getElementById('speed-readout').textContent = speedMult.toFixed(2)+'×';
+});
+
+const phaseBar = document.getElementById('phase-bar');
+PHASES.forEach((p,i)=>{
+  const seg = document.createElement('div');
+  seg.className = 'phase-seg ' + p.type;
+  seg.style.flex = (p.end - p.start);
+  seg.textContent = p.roman + ' · ' + p.short;
+  seg.title = `${p.name} (${p.start.toFixed(2)}–${p.end.toFixed(2)}s)`;
+  seg.addEventListener('click', ()=>{
+    currentT = p.start + 0.005;
+    render();
+  });
+  phaseBar.appendChild(seg);
+});
+
+window.addEventListener('resize', render);
+render();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
