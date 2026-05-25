@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EKG Visualizations — Defleksi & Cardiac Axis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAF6EF;
+  --bg-elevated: #FFFFFF;
+  --bg-subtle: #F2EBDD;
+  --ink: #1A2238;
+  --ink-soft: #4A5568;
+  --ink-faint: #7A8295;
+  --line: #E8DFCB;
+  --cardiac: #B23A3A;
+  --positive: #2A5F5F;
+  --warning: #B5841C;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
+.widget {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(26,34,56,0.04);
+}
+
+.widget-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 20px;
+  color: var(--ink);
+  margin-bottom: 4px;
+  font-variation-settings: "opsz" 30;
+}
+
+.widget-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cardiac);
+  margin-bottom: 18px;
+}
+
+.btn-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.btn {
+  flex: 1;
+  min-width: 130px;
+  padding: 9px 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.btn:hover { background: var(--bg-elevated); border-color: var(--ink-faint); }
+.btn.active { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+
+canvas { width: 100%; border-radius: 8px; display: block; }
+svg { width: 100%; display: block; }
+
+.info-box {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: var(--bg-subtle);
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.info-box strong {
+  color: var(--ink);
+  display: block;
+  margin-bottom: 3px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.replay-btn {
+  margin-top: 10px;
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.replay-btn:hover { background: var(--bg-subtle); }
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.slider-row span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-faint);
+  min-width: 36px;
+}
+
+input[type=range] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--line);
+  border-radius: 4px;
+  outline: none;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--cardiac);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid var(--bg-elevated);
+  box-shadow: 0 1px 3px rgba(178,58,58,0.3);
+}
+
+input[type=range]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--cardiac);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid var(--bg-elevated);
+}
+
+.axis-display {
+  text-align: center;
+  margin-top: 12px;
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 16px;
+  font-variation-settings: "opsz" 30;
+}
+
+.vector-arrow {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: 0 0;
+}
+
+.lead-bar {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ============ WIDGET 1: ECG Deflection Mechanism ============ -->
+<div class="widget">
+  <div class="widget-sub">§ 01 · Mekanisme Defleksi</div>
+  <div class="widget-title">Bagaimana wavefront depolarisasi menghasilkan defleksi EKG</div>
+
+  <div class="btn-group" style="margin-top: 16px;">
+    <button class="btn active" id="b0" onclick="goDef(0)">↑ Menuju elektroda</button>
+    <button class="btn" id="b1" onclick="goDef(1)">↓ Menjauhi elektroda</button>
+    <button class="btn" id="b2" onclick="goDef(2)">± Tegak lurus</button>
+  </div>
+
+  <canvas id="cv" width="640" height="360"></canvas>
+
+  <div class="info-box">
+    <strong id="it"></strong>
+    <span id="id2"></span>
+  </div>
+
+  <button class="replay-btn" onclick="restartDef()">▶ Putar ulang animasi</button>
+</div>
+
+<!-- ============ WIDGET 2: Cardiac Axis ============ -->
+<div class="widget">
+  <div class="widget-sub">§ 02 · Hexaxial Reference</div>
+  <div class="widget-title">Cardiac axis & proyeksi QRS per lead</div>
+
+  <div class="btn-group" style="margin-top: 16px;">
+    <button class="btn active" id="ab0" onclick="setAxis(60)">Normal (+60°)</button>
+    <button class="btn" id="ab1" onclick="setAxis(-45)">LAD (−45°)</button>
+    <button class="btn" id="ab2" onclick="setAxis(120)">RAD (+120°)</button>
+    <button class="btn" id="ab3" onclick="setAxis(-135)">Extreme (−135°)</button>
+  </div>
+
+  <svg viewBox="0 0 680 380">
+    <g transform="translate(170, 190)">
+      <!-- Quadrant fills -->
+      <path d="M 0 0 L 138.6 -80 A 160 160 0 0 1 0 160 Z" fill="rgba(42,95,95,0.08)"/>
+      <path d="M 0 0 L 138.6 -80 A 160 160 0 0 0 0 -160 Z" fill="rgba(181,132,28,0.09)"/>
+      <path d="M 0 0 L 0 -160 A 160 160 0 0 0 -160 0 Z" fill="rgba(178,58,58,0.09)"/>
+      <path d="M 0 0 L 0 160 A 160 160 0 0 0 -160 0 Z" fill="rgba(181,132,28,0.09)"/>
+      <!-- Outer circle -->
+      <circle cx="0" cy="0" r="160" fill="none" stroke="#E8DFCB" stroke-width="1"/>
+      <circle cx="0" cy="0" r="80" fill="none" stroke="#F0E8D5" stroke-width="0.5" stroke-dasharray="2,3"/>
+      <!-- Lead axes -->
+      <line x1="-160" y1="0" x2="160" y2="0" stroke="#C9BFA8" stroke-width="0.6"/>
+      <line x1="-80" y1="-138.6" x2="80" y2="138.6" stroke="#C9BFA8" stroke-width="0.6"/>
+      <line x1="80" y1="-138.6" x2="-80" y2="138.6" stroke="#C9BFA8" stroke-width="0.6"/>
+      <line x1="138.6" y1="80" x2="-138.6" y2="-80" stroke="#C9BFA8" stroke-width="0.6"/>
+      <line x1="-138.6" y1="80" x2="138.6" y2="-80" stroke="#C9BFA8" stroke-width="0.6"/>
+      <line x1="0" y1="-160" x2="0" y2="160" stroke="#C9BFA8" stroke-width="0.6"/>
+      <!-- Lead labels -->
+      <text x="172" y="5" font-size="13" fill="#1A2238" text-anchor="start" font-weight="600" font-family="Manrope">I</text>
+      <text x="170" y="-4" font-size="9" fill="#7A8295" text-anchor="start" font-family="JetBrains Mono">0°</text>
+      <text x="86" y="155" font-size="13" fill="#1A2238" text-anchor="start" font-weight="600" font-family="Manrope">II</text>
+      <text x="86" y="168" font-size="9" fill="#7A8295" text-anchor="start" font-family="JetBrains Mono">+60°</text>
+      <text x="-86" y="155" font-size="13" fill="#1A2238" text-anchor="end" font-weight="600" font-family="Manrope">III</text>
+      <text x="-86" y="168" font-size="9" fill="#7A8295" text-anchor="end" font-family="JetBrains Mono">+120°</text>
+      <text x="-148" y="-82" font-size="13" fill="#1A2238" text-anchor="end" font-weight="600" font-family="Manrope">aVR</text>
+      <text x="-148" y="-70" font-size="9" fill="#7A8295" text-anchor="end" font-family="JetBrains Mono">−150°</text>
+      <text x="148" y="-82" font-size="13" fill="#1A2238" text-anchor="start" font-weight="600" font-family="Manrope">aVL</text>
+      <text x="148" y="-70" font-size="9" fill="#7A8295" text-anchor="start" font-family="JetBrains Mono">−30°</text>
+      <text x="0" y="183" font-size="13" fill="#1A2238" text-anchor="middle" font-weight="600" font-family="Manrope">aVF</text>
+      <text x="0" y="195" font-size="9" fill="#7A8295" text-anchor="middle" font-family="JetBrains Mono">+90°</text>
+      <!-- Quadrant labels -->
+      <text x="80" y="68" font-size="10" fill="rgba(42,95,95,0.85)" text-anchor="middle" font-weight="600" font-family="Manrope" letter-spacing="1">NORMAL</text>
+      <text x="72" y="-58" font-size="10" fill="rgba(181,132,28,0.9)" text-anchor="middle" font-weight="600" font-family="Manrope" letter-spacing="1">LAD</text>
+      <text x="-72" y="-58" font-size="10" fill="rgba(178,58,58,0.9)" text-anchor="middle" font-weight="600" font-family="Manrope" letter-spacing="1">EXTREME</text>
+      <text x="-72" y="68" font-size="10" fill="rgba(181,132,28,0.9)" text-anchor="middle" font-weight="600" font-family="Manrope" letter-spacing="1">RAD</text>
+      <!-- Vector -->
+      <g id="vecGrp" class="vector-arrow" transform="rotate(60)">
+        <line x1="0" y1="0" x2="135" y2="0" stroke="#B23A3A" stroke-width="3.5" stroke-linecap="round"/>
+        <polygon points="135,0 120,-7 120,7" fill="#B23A3A"/>
+      </g>
+      <circle cx="0" cy="0" r="4.5" fill="#B23A3A"/>
+    </g>
+    <!-- Lead amplitude bars -->
+    <g transform="translate(370, 40)">
+      <text x="155" y="14" font-size="11" fill="#7A8295" text-anchor="middle" font-weight="600" font-family="Manrope" letter-spacing="0.5">PROYEKSI QRS PER LEAD</text>
+      <line x1="155" y1="30" x2="155" y2="290" stroke="#E8DFCB" stroke-width="0.8"/>
+      <text x="100" y="26" font-size="9" fill="#7A8295" text-anchor="middle" font-family="JetBrains Mono">−</text>
+      <text x="210" y="26" font-size="9" fill="#7A8295" text-anchor="middle" font-family="JetBrains Mono">+</text>
+      <g id="leadRows"></g>
+    </g>
+  </svg>
+
+  <div class="slider-row">
+    <span style="text-align:right;">−180°</span>
+    <input type="range" id="axisSlider" min="-180" max="180" value="60">
+    <span>+180°</span>
+  </div>
+
+  <div class="axis-display" id="axisDisplay"></div>
+  <div class="info-box" id="axisInfo" style="margin-top: 10px;"></div>
+</div>
+
+</div>
+
+<!-- ============ SCRIPT 1: Deflection Widget ============ -->
+<script>
+(function() {
+  var cn = document.getElementById('cv');
+  var cx = cn.getContext('2d');
+  var N = 10, CW = 42, CH = 48, X0 = 80, Y0 = 88, TW = 420;
+  var OY = 77, IY = 148;
+  var EY0 = 206, EH = 108, EBL = 260, EW = 420;
+
+  var SC = [
+    {dir: 1, el: 'right',
+     title: 'Defleksi POSITIF ↑ — wavefront menuju elektroda (+)',
+     info: 'Wavefront bergerak MENUJU elektroda (+). Elektroda melihat muatan positif (permukaan sel istirahat) yang semakin mendekat → potensial naik → defleksi ke ATAS.'},
+    {dir: -1, el: 'left',
+     title: 'Defleksi NEGATIF ↓ — wavefront menjauhi elektroda (+)',
+     info: 'Wavefront bergerak MENJAUHI elektroda (+). Elektroda menghadap muatan negatif (permukaan sel terdepolarisasi) → potensial turun → defleksi ke BAWAH.'},
+    {dir: 0, el: 'top',
+     title: 'Isoelektrik / Bifasik ± — wavefront tegak lurus',
+     info: 'Wavefront bergerak TEGAK LURUS terhadap elektroda. Muatan + dan − saling mengimbangi → defleksi mendekati nol atau bifasik kecil.'}
+  ];
+
+  var sc = 0, prog = 0, pts = [], raf = null;
+
+  function V(p) {
+    return SC[sc].dir === 0 ? Math.sin(2 * Math.PI * p) * 0.28 : SC[sc].dir * Math.sin(Math.PI * p);
+  }
+
+  function draw() {
+    cx.clearRect(0, 0, 640, 360);
+    var s = SC[sc], wfX = X0 + prog * TW, eMY = Y0 + CH / 2;
+
+    // Legend
+    cx.lineWidth = 0.8;
+    cx.font = '10px Manrope, sans-serif';
+    cx.fillStyle = 'rgba(178,58,58,0.18)';
+    cx.fillRect(X0, 8, 11, 11);
+    cx.strokeStyle = '#B23A3A';
+    cx.strokeRect(X0, 8, 11, 11);
+    cx.fillStyle = '#4A5568';
+    cx.textAlign = 'left';
+    cx.fillText('Terdepolarisasi (luar -)', X0 + 14, 17);
+
+    cx.fillStyle = 'rgba(42,95,95,0.15)';
+    cx.fillRect(X0 + 164, 8, 11, 11);
+    cx.strokeStyle = '#2A5F5F';
+    cx.strokeRect(X0 + 164, 8, 11, 11);
+    cx.fillStyle = '#4A5568';
+    cx.fillText('Istirahat (luar +)', X0 + 178, 17);
+
+    cx.strokeStyle = '#B5841C';
+    cx.lineWidth = 2;
+    cx.setLineDash([4, 3]);
+    cx.beginPath();
+    cx.moveTo(X0 + 303, 13);
+    cx.lineTo(X0 + 317, 13);
+    cx.stroke();
+    cx.setLineDash([]);
+    cx.fillStyle = '#4A5568';
+    cx.fillText('Wavefront', X0 + 321, 17);
+
+    // Cells
+    for (var i = 0; i < N; i++) {
+      var cx0 = X0 + i * CW, mid = cx0 + CW / 2, dep = mid < wfX;
+      cx.fillStyle = dep ? 'rgba(178,58,58,0.16)' : 'rgba(42,95,95,0.13)';
+      cx.strokeStyle = dep ? '#B23A3A' : '#2A5F5F';
+      cx.lineWidth = 0.8;
+      cx.beginPath();
+      cx.roundRect(cx0 + 2, Y0, CW - 4, CH, 4);
+      cx.fill();
+      cx.stroke();
+
+      cx.font = '13px Manrope, sans-serif';
+      cx.textAlign = 'center';
+      cx.fillStyle = dep ? '#B23A3A' : '#2A5F5F';
+      cx.fillText(dep ? '-' : '+', mid, OY);
+      cx.fillStyle = dep ? '#2A5F5F' : '#B23A3A';
+      cx.fillText(dep ? '+' : '-', mid, IY);
+    }
+
+    // Wavefront line
+    if (prog > 0.01 && prog < 0.99) {
+      cx.strokeStyle = '#B5841C';
+      cx.lineWidth = 2.2;
+      cx.setLineDash([5, 4]);
+      cx.beginPath();
+      cx.moveTo(wfX, Y0 - 15);
+      cx.lineTo(wfX, Y0 + CH + 15);
+      cx.stroke();
+      cx.setLineDash([]);
+      cx.fillStyle = '#B5841C';
+      cx.beginPath();
+      cx.moveTo(wfX + 5, eMY - 5);
+      cx.lineTo(wfX + 14, eMY);
+      cx.lineTo(wfX + 5, eMY + 5);
+      cx.fill();
+    }
+
+    // Labels
+    cx.font = '10px Manrope, sans-serif';
+    cx.textAlign = 'center';
+    if (prog > 0.08) {
+      cx.fillStyle = 'rgba(178,58,58,0.85)';
+      cx.fillText('Terdepolarisasi', X0 + prog * TW / 2, Y0 + CH + 24);
+    }
+    if (prog < 0.92) {
+      cx.fillStyle = 'rgba(42,95,95,0.85)';
+      cx.fillText('Istirahat', wfX + (1 - prog) * TW / 2, Y0 + CH + 24);
+    }
+
+    // Vector arrow
+    if (prog > 0.06 && prog < 0.94) {
+      var aY = Y0 + CH + 42, ae = Math.min(wfX - 3, X0 + TW);
+      cx.strokeStyle = '#524099';
+      cx.lineWidth = 1.8;
+      cx.beginPath();
+      cx.moveTo(X0 + 2, aY);
+      cx.lineTo(ae, aY);
+      cx.stroke();
+      cx.fillStyle = '#524099';
+      cx.beginPath();
+      cx.moveTo(ae, aY - 5);
+      cx.lineTo(ae + 9, aY);
+      cx.lineTo(ae, aY + 5);
+      cx.fill();
+      cx.fillStyle = '#524099';
+      cx.font = '9px Manrope, sans-serif';
+      cx.textAlign = 'center';
+      cx.fillText('Vektor depolarisasi', X0 + prog * TW / 2, aY - 7);
+    }
+
+    // Electrode
+    var ex, ey;
+    if (s.el === 'right') { ex = X0 + TW + 32; ey = eMY; }
+    else if (s.el === 'left') { ex = X0 - 32; ey = eMY; }
+    else { ex = X0 + TW / 2; ey = Y0 - 45; }
+    cx.fillStyle = '#27500A';
+    cx.beginPath();
+    cx.arc(ex, ey, 15, 0, 2 * Math.PI);
+    cx.fill();
+    cx.fillStyle = '#C0DD97';
+    cx.font = 'bold 17px Manrope, sans-serif';
+    cx.textAlign = 'center';
+    cx.textBaseline = 'middle';
+    cx.fillText('+', ex, ey);
+    cx.textBaseline = 'alphabetic';
+
+    // EKG box
+    cx.fillStyle = 'rgba(232,223,203,0.25)';
+    cx.beginPath();
+    cx.roundRect(X0 - 8, EY0 - 8, EW + 16, EH + 16, 8);
+    cx.fill();
+    cx.strokeStyle = 'rgba(232,223,203,0.6)';
+    cx.lineWidth = 0.5;
+    [0, 0.25, 0.5, 0.75, 1].forEach(function(f) {
+      cx.beginPath();
+      cx.moveTo(X0, EY0 + f * EH);
+      cx.lineTo(X0 + EW, EY0 + f * EH);
+      cx.stroke();
+    });
+    cx.strokeStyle = 'rgba(122,130,149,0.4)';
+    cx.lineWidth = 1;
+    cx.beginPath();
+    cx.moveTo(X0, EBL);
+    cx.lineTo(X0 + EW, EBL);
+    cx.stroke();
+
+    cx.fillStyle = '#7A8295';
+    cx.font = '9px JetBrains Mono, monospace';
+    cx.textAlign = 'right';
+    cx.fillText('+V', X0 - 3, EY0 + 5);
+    cx.fillText('0', X0 - 3, EBL + 3);
+    cx.fillText('-V', X0 - 3, EY0 + EH + 2);
+    cx.textAlign = 'center';
+    cx.fillText('Waktu', X0 + EW / 2, EY0 + EH + 13);
+    cx.textAlign = 'left';
+    cx.fillStyle = '#1A2238';
+    cx.font = '10px Manrope, sans-serif';
+    cx.fillText('EKG', X0, EY0 - 3);
+
+    if (prog > 0.1) {
+      var dl = s.dir === 1 ? 'Defleksi positif' : (s.dir === -1 ? 'Defleksi negatif' : 'Bifasik');
+      cx.fillStyle = s.dir === 1 ? '#2A5F5F' : (s.dir === -1 ? '#B23A3A' : '#7A8295');
+      cx.font = 'bold 10px Manrope, sans-serif';
+      cx.textAlign = 'right';
+      cx.fillText(dl, X0 + EW, EY0 - 3);
+    }
+
+    // Trace
+    if (pts.length > 1) {
+      cx.strokeStyle = s.dir === 1 ? '#2A5F5F' : (s.dir === -1 ? '#B23A3A' : '#7A8295');
+      cx.lineWidth = 2.4;
+      cx.beginPath();
+      cx.moveTo(pts[0].x, pts[0].y);
+      for (var j = 1; j < pts.length; j++) cx.lineTo(pts[j].x, pts[j].y);
+      cx.stroke();
+    }
+  }
+
+  function frame() {
+    prog = Math.min(prog + 0.006, 1);
+    pts.push({x: X0 + prog * EW, y: EBL - V(prog) * EH * 0.44});
+    draw();
+    if (prog < 1) raf = requestAnimationFrame(frame);
+  }
+
+  window.restartDef = function() {
+    cancelAnimationFrame(raf);
+    prog = 0;
+    pts = [];
+    frame();
+  };
+
+  window.goDef = function(i) {
+    sc = i;
+    [0, 1, 2].forEach(function(j) {
+      document.getElementById('b' + j).classList.toggle('active', j === i);
+    });
+    document.getElementById('it').textContent = SC[i].title;
+    document.getElementById('id2').textContent = SC[i].info;
+    window.restartDef();
+  };
+
+  window.goDef(0);
+})();
+</script>
+
+<!-- ============ SCRIPT 2: Cardiac Axis Widget ============ -->
+<script>
+(function() {
+  var LEADS = [
+    {n: 'I',   a: 0},
+    {n: 'II',  a: 60},
+    {n: 'III', a: 120},
+    {n: 'aVR', a: -150},
+    {n: 'aVL', a: -30},
+    {n: 'aVF', a: 90}
+  ];
+
+  var INFO_MAP = {
+    '60':   {label: 'Normal Axis (+60°)', desc: 'Axis fisiologis pada dewasa sehat. Vektor mengarah ke inferior-kiri. Lead II punya R wave tertinggi karena paling paralel dengan vektor net.'},
+    '-45':  {label: 'Left Axis Deviation (−45°)', desc: 'Pikirkan LAFB, LVH, atau inferior MI lama. Lead I & aVL positif tinggi; Lead II, III, aVF negatif (S wave dominan).'},
+    '120':  {label: 'Right Axis Deviation (+120°)', desc: 'Curigai RVH, cor pulmonale, atau PE akut. Lead I negatif, aVF positif. Pada anak/atlet muda bisa fisiologis.'},
+    '-135': {label: 'Extreme Axis / Northwest (−135°)', desc: '"No-man\'s land". Pikirkan VT, ventricular pacing, hyperkalemia berat, atau lead misplacement.'}
+  };
+
+  var curAxis = 60;
+  var TARGETS = [60, -45, 120, -135];
+
+  function categoryOf(a) {
+    var x = ((a + 180) % 360 + 360) % 360 - 180;
+    if (x >= -30 && x <= 90) return {n: 'Normal', c: '#2A5F5F'};
+    if (x > -90 && x < -30) return {n: 'Left Axis Deviation', c: '#B5841C'};
+    if (x > 90 && x <= 180) return {n: 'Right Axis Deviation', c: '#B23A3A'};
+    return {n: 'Extreme Axis (Northwest)', c: '#7A1F1F'};
+  }
+
+  function projection(axisAng, leadAng) {
+    return Math.cos((axisAng - leadAng) * Math.PI / 180);
+  }
+
+  var NS = 'http://www.w3.org/2000/svg';
+  var lr = document.getElementById('leadRows');
+
+  LEADS.forEach(function(l, i) {
+    var y = 50 + i * 40;
+    function mk(t, attrs, txt) {
+      var e = document.createElementNS(NS, t);
+      for (var k in attrs) e.setAttribute(k, attrs[k]);
+      if (txt) e.textContent = txt;
+      lr.appendChild(e);
+      return e;
+    }
+    mk('text', {x: 30, y: y + 4, 'font-size': 13, 'font-weight': 600, fill: '#1A2238', 'text-anchor': 'end', 'font-family': 'Manrope'}, l.n);
+    mk('text', {x: 30, y: y + 18, 'font-size': 9, fill: '#7A8295', 'text-anchor': 'end', 'font-family': 'JetBrains Mono'}, (l.a > 0 ? '+' : '') + l.a + '°');
+    mk('line', {x1: 50, x2: 260, y1: y, y2: y, stroke: '#F0E8D5', 'stroke-width': 0.6});
+    mk('rect', {id: 'bar-' + i, class: 'lead-bar', x: 155, y: y - 9, width: 0, height: 18, rx: 3, fill: '#2A5F5F'});
+    mk('text', {id: 'amp-' + i, x: 295, y: y + 4, 'font-size': 12, 'font-weight': 600, fill: '#1A2238', 'text-anchor': 'end', 'font-family': 'JetBrains Mono'});
+  });
+
+  function update() {
+    document.getElementById('vecGrp').setAttribute('transform', 'rotate(' + curAxis + ')');
+    var cat = categoryOf(curAxis);
+    var s = (curAxis > 0 ? '+' : '') + Math.round(curAxis) + '°';
+    document.getElementById('axisDisplay').innerHTML =
+      '<span style="color:' + cat.c + ';">Axis: ' + s + ' &middot; ' + cat.n + '</span>';
+
+    LEADS.forEach(function(l, i) {
+      var p = projection(curAxis, l.a);
+      var len = Math.abs(p) * 95;
+      var bar = document.getElementById('bar-' + i);
+      if (p >= 0) {
+        bar.setAttribute('x', 155);
+        bar.setAttribute('width', len);
+        bar.setAttribute('fill', '#2A5F5F');
+      } else {
+        bar.setAttribute('x', 155 - len);
+        bar.setAttribute('width', len);
+        bar.setAttribute('fill', '#B23A3A');
+      }
+      var amp = document.getElementById('amp-' + i);
+      var pct = Math.round(p * 100);
+      amp.textContent = (pct >= 0 ? '+' : '') + pct + '%';
+      amp.setAttribute('fill', p >= 0 ? '#2A5F5F' : '#B23A3A');
+    });
+
+    var infoBox = document.getElementById('axisInfo');
+    var key = String(curAxis);
+    if (INFO_MAP[key]) {
+      infoBox.innerHTML = '<strong>' + INFO_MAP[key].label + '</strong>' + INFO_MAP[key].desc;
+    } else {
+      infoBox.innerHTML = '<strong>' + cat.n + ' (' + s + ')</strong>Geser ke preset utama untuk melihat penjelasan klinis.';
+    }
+  }
+
+  window.setAxis = function(angle) {
+    curAxis = parseFloat(angle);
+    document.getElementById('axisSlider').value = curAxis;
+    [0, 1, 2, 3].forEach(function(j) {
+      var b = document.getElementById('ab' + j);
+      var act = Math.abs(curAxis - TARGETS[j]) < 0.5;
+      b.classList.toggle('active', act);
+    });
+    update();
+  };
+
+  document.getElementById('axisSlider').addEventListener('input', function(e) {
+    window.setAxis(parseFloat(e.target.value));
+  });
+
+  window.setAxis(60);
+})();
+</script>
+</body>
+</html>
