@@ -1,0 +1,2099 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HemoAtlas — Parameter Normal Jantung</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-base: #0c1117;
+    --bg-surface: #131920;
+    --bg-elevated: #1a2330;
+    --border: #1e2a35;
+    --gold: #d4af6a;
+    --gold-dim: #a07840;
+    --text-primary: #e8e0d0;
+    --text-muted: #7a8a96;
+    --green: #2ecc71;
+    --yellow: #f39c12;
+    --red: #e74c3c;
+    --blue: #3498db;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  /* ── NAVBAR ── */
+  #navbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .nav-brand { flex: 0 0 auto; }
+
+  .nav-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+
+  .nav-subtitle {
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+
+  .search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  #search-input {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    padding: 7px 32px 7px 12px;
+    border-radius: 6px;
+    width: 220px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  #search-input:focus { border-color: var(--gold-dim); }
+  #search-input::placeholder { color: var(--text-muted); }
+
+  #search-clear {
+    position: absolute;
+    right: 8px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0;
+    display: none;
+  }
+
+  #search-clear:hover { color: var(--text-primary); }
+
+  #toggle-all-btn {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  #toggle-all-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+  /* ── MAIN ── */
+  #main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ── SECTION ── */
+  .section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--bg-elevated);
+    transition: background 0.2s;
+  }
+
+  .section-header:hover { background: #1f2e3d; }
+
+  .section-icon {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    opacity: 0.85;
+  }
+
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--gold);
+    flex: 1;
+  }
+
+  .section-badge {
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 99px;
+    white-space: nowrap;
+  }
+
+  .chevron {
+    color: var(--text-muted);
+    font-size: 12px;
+    transition: transform 0.3s ease;
+    margin-left: 4px;
+  }
+
+  .section.collapsed .chevron { transform: rotate(-90deg); }
+
+  .section-body {
+    overflow: hidden;
+    max-height: 9999px;
+    transition: max-height 0.4s ease;
+  }
+
+  .section.collapsed .section-body { max-height: 0; }
+
+  /* ── TABLE ── */
+  .param-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .param-table thead tr {
+    background: var(--bg-base);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .param-table thead th {
+    font-family: 'Outfit', sans-serif;
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 7px 12px;
+    text-align: left;
+  }
+
+  .param-table thead th:nth-child(2),
+  .param-table thead th:nth-child(3) { text-align: center; }
+
+  .param-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  .param-table tbody tr:last-child { border-bottom: none; }
+  .param-table tbody tr:hover { background: rgba(212,175,106,0.04); }
+
+  .param-table tbody tr.highlight-match {
+    border-left: 3px solid var(--gold);
+    animation: pulse-gold 0.6s ease;
+  }
+
+  @keyframes pulse-gold {
+    0%   { background: rgba(212,175,106,0.15); }
+    100% { background: transparent; }
+  }
+
+  .param-table td {
+    padding: 10px 12px;
+    vertical-align: middle;
+  }
+
+  /* Col 1: Parameter */
+  .param-name {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .param-abbr {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--gold);
+    background: rgba(212,175,106,0.1);
+    border: 1px solid rgba(212,175,106,0.25);
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-top: 3px;
+  }
+
+  .param-formula {
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px;
+    font-style: italic;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .param-sub {
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* Col 2: Nilai */
+  .nilai-cell { text-align: center; min-width: 100px; }
+
+  .nilai-range {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--green);
+    line-height: 1.4;
+  }
+
+  .nilai-unit {
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .nilai-sex {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--green);
+    line-height: 1.6;
+  }
+
+  .sex-label { color: var(--text-muted); font-size: 10px; }
+
+  /* Col 3: Range Bar */
+  .bar-cell { min-width: 160px; padding: 10px 14px; }
+
+  .range-bar-wrap { width: 100%; }
+
+  .range-bar {
+    display: flex;
+    height: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+    gap: 1px;
+  }
+
+  .bar-seg {
+    flex: 1;
+    position: relative;
+    border-radius: 2px;
+    transition: opacity 0.2s;
+  }
+
+  .bar-seg.seg-red    { background: linear-gradient(90deg, #c0392b, #e74c3c); opacity: 0.6; }
+  .bar-seg.seg-yellow { background: linear-gradient(90deg, #e67e22, #f39c12); opacity: 0.7; }
+  .bar-seg.seg-green  { background: linear-gradient(90deg, #27ae60, #2ecc71); opacity: 1; height: 14px; margin-top: -1px; border-radius: 3px; }
+
+  .range-ticks {
+    position: relative;
+    height: 12px;
+    margin-top: 4px;
+    width: 100%;
+  }
+
+  .range-ticks span {
+    position: absolute;
+    top: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    line-height: 1;
+  }
+
+  /* Col 4: Interpretasi */
+  .interp-cell { max-width: 240px; }
+
+  .interp-text {
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .interp-text .lbl {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .lbl.low  { color: var(--red); }
+  .lbl.high { color: var(--yellow); }
+
+  /* Col 5: Metode */
+  .metode-cell { text-align: center; min-width: 50px; }
+
+  .metode-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 5px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+  }
+
+  .metode-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+  .metode-dropdown {
+    display: none;
+    position: fixed;
+    z-index: 200;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    max-width: 280px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    color: var(--text-primary);
+    line-height: 1.6;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+
+  .metode-dropdown.active { display: block; }
+
+  .metode-dropdown .metode-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    padding: 24px;
+    text-align: center;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    color: var(--text-muted);
+    display: none;
+  }
+
+  /* ── FOOTER ── */
+  #footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    padding: 8px 20px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    color: var(--text-muted);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #footer span.warn-icon { color: var(--gold); font-size: 13px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    .param-table thead .hide-mobile { display: none; }
+    .param-table td.hide-mobile { display: none; }
+    #search-input { width: 160px; }
+    .nav-controls { width: 100%; }
+    .section-title { font-size: 16px; }
+  }
+
+  @media (max-width: 480px) {
+    .param-table thead .hide-tablet { display: none; }
+    .param-table td.hide-tablet { display: none; }
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    #navbar { position: static; }
+    .nav-controls { display: none; }
+    #footer { display: none; }
+    body { padding-bottom: 0; background: white; color: black; }
+    .section { border: 1px solid #ccc; break-inside: avoid; }
+    .section.collapsed .section-body { max-height: none !important; }
+    .section-header { background: #f5f5f5; }
+    .section-title { color: #333; }
+    .param-abbr { color: #555; background: #eee; border-color: #ccc; }
+    .nilai-range { color: #1a7a3c; }
+    .bar-seg.seg-green { background: #2ecc71; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+  <div class="nav-brand">
+    <div class="nav-title">HemoAtlas</div>
+    <div class="nav-subtitle">Parameter Normal Jantung — Dewasa Sehat</div>
+  </div>
+  <div class="nav-controls">
+    <div class="search-wrap">
+      <input type="text" id="search-input" placeholder="Cari parameter…" autocomplete="off" spellcheck="false">
+      <button id="search-clear" title="Hapus">×</button>
+    </div>
+    <button id="toggle-all-btn">Tutup Semua</button>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div id="main"></div>
+
+<!-- METODE POPUP -->
+<div class="metode-dropdown" id="metode-popup">
+  <div class="metode-title">Metode Pengukuran</div>
+  <div id="metode-content"></div>
+</div>
+
+<!-- FOOTER -->
+<div id="footer">
+  <span class="warn-icon">⚠️</span>
+  <span>WORK IN PROGRESS — Konten belum diverifikasi. Tidak untuk keputusan klinis.</span>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// PARAMETER DATA
+// ══════════════════════════════════════════════════════
+const CATEGORIES = [
+  {
+    id: "hemodynamik",
+    name: "Hemodinamik",
+    icon: `<svg class="section-icon" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 14 Q7 6 14 6 Q21 6 24 14 Q21 22 14 22 Q7 22 4 14Z" stroke="#d4af6a" stroke-width="1.5" fill="none"/>
+      <path d="M2 14 L6 14 L8 10 L11 18 L14 12 L17 16 L19 14 L26 14" stroke="#d4af6a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>`
+  },
+  {
+    id: "tekanan",
+    name: "Tekanan Ruang Jantung",
+    icon: `<svg class="section-icon" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="8" width="8" height="12" rx="2" stroke="#d4af6a" stroke-width="1.5" fill="none"/>
+      <rect x="16" y="5" width="8" height="15" rx="2" stroke="#d4af6a" stroke-width="1.5" fill="none"/>
+      <line x1="8" y1="20" x2="8" y2="24" stroke="#d4af6a" stroke-width="1.5"/>
+      <line x1="20" y1="20" x2="20" y2="24" stroke="#d4af6a" stroke-width="1.5"/>
+    </svg>`
+  },
+  {
+    id: "volume",
+    name: "Volume & Fungsi",
+    icon: `<svg class="section-icon" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 4 L14 24 M4 14 L24 14" stroke="#d4af6a" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="14" cy="14" r="8" stroke="#d4af6a" stroke-width="1.5" fill="none" stroke-dasharray="3 2"/>
+      <circle cx="14" cy="14" r="4" stroke="#d4af6a" stroke-width="1.5" fill="rgba(212,175,106,0.1)"/>
+    </svg>`
+  },
+  {
+    id: "katup",
+    name: "Katup Jantung",
+    icon: `<svg class="section-icon" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 4 C8 4 4 8 4 14 C4 20 8 24 14 24 C20 24 24 20 24 14 C24 8 20 4 14 4Z" stroke="#d4af6a" stroke-width="1.5" fill="none"/>
+      <path d="M10 14 L13 17 L18 11" stroke="#d4af6a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`
+  },
+  {
+    id: "oksigenasi",
+    name: "Oksigenasi & Metabolik",
+    icon: `<svg class="section-icon" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="14" cy="14" r="6" stroke="#d4af6a" stroke-width="1.5" fill="none"/>
+      <path d="M14 8 L14 4 M14 24 L14 20 M8 14 L4 14 M24 14 L20 14" stroke="#d4af6a" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="14" cy="14" r="2.5" fill="#d4af6a" opacity="0.5"/>
+    </svg>`
+  },
+  {
+    id: "ekokardiografi",
+    name: "Ekokardiografi",
+    icon: `<svg class="section-icon" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 20 Q8 8 14 8 Q20 8 24 20" stroke="#d4af6a" stroke-width="1.5" fill="none"/>
+      <path d="M7 20 Q10 12 14 12 Q18 12 21 20" stroke="#d4af6a" stroke-width="1" fill="rgba(212,175,106,0.08)"/>
+      <circle cx="14" cy="20" r="2" fill="#d4af6a" opacity="0.7"/>
+    </svg>`
+  }
+];
+
+const PARAMS = [
+  // ── KATEGORI 1: HEMODINAMIK ──
+  {
+    id:"hr", name:"Heart Rate", abbr:"HR", category:"hemodynamik",
+    formula:null,
+    normalDisplay:"60–100", normalMin:60, normalMax:100, unit:"bpm",
+    rangeLow:20, rangeHigh:180,
+    segments:[
+      {label:"Rendah",min:20,max:50,color:"red"},
+      {label:"Normal Rendah",min:50,max:60,color:"yellow"},
+      {label:"Normal",min:60,max:100,color:"green"},
+      {label:"Normal Tinggi",min:100,max:120,color:"yellow"},
+      {label:"Tinggi",min:120,max:180,color:"red"}
+    ],
+    interpretation:{
+      low:"Bradikardia (<60 bpm): dapat disebabkan oleh blok AV, disfungsi nodus sinus, atau efek obat (beta-blocker, CCB).",
+      high:"Takikardia (>100 bpm): pertimbangkan hipovolemia, demam, aritmia, atau gagal jantung kompensatorik."
+    },
+    measurement:"EKG, pulse oximetry, monitoring telemetri",
+    sexSpecific:false
+  },
+  {
+    id:"sv", name:"Stroke Volume", abbr:"SV", category:"hemodynamik",
+    formula:"CO / HR",
+    normalDisplay:"60–100", normalMin:60, normalMax:100, unit:"mL/beat",
+    rangeLow:20, rangeHigh:160,
+    segments:[
+      {label:"Rendah",min:20,max:50,color:"red"},
+      {label:"Normal Rendah",min:50,max:60,color:"yellow"},
+      {label:"Normal",min:60,max:100,color:"green"},
+      {label:"Normal Tinggi",min:100,max:130,color:"yellow"},
+      {label:"Tinggi",min:130,max:160,color:"red"}
+    ],
+    interpretation:{
+      low:"SV rendah menandakan preload tidak adekuat, peningkatan afterload, atau disfungsi miokard.",
+      high:"SV tinggi dapat ditemukan pada regurgitasi katup, atau kondisi hiperdinamik."
+    },
+    measurement:"Ekokardiografi Doppler (LVOT VTI × area), PAC thermodilution, PiCCO",
+    sexSpecific:false
+  },
+  {
+    id:"co", name:"Cardiac Output", abbr:"CO", category:"hemodynamik",
+    formula:"SV × HR",
+    normalDisplay:"4–8", normalMin:4, normalMax:8, unit:"L/min",
+    rangeLow:1, rangeHigh:15,
+    segments:[
+      {label:"Rendah",min:1,max:3,color:"red"},
+      {label:"Normal Rendah",min:3,max:4,color:"yellow"},
+      {label:"Normal",min:4,max:8,color:"green"},
+      {label:"Normal Tinggi",min:8,max:11,color:"yellow"},
+      {label:"Tinggi",min:11,max:15,color:"red"}
+    ],
+    interpretation:{
+      low:"CO rendah dapat menandakan gagal jantung, hipovolemia, atau disfungsi sistolik berat.",
+      high:"CO tinggi ditemukan pada sepsis, anemia berat, hipertiroidisme, atau kehamilan."
+    },
+    measurement:"Thermodilusion (PAC), metode Fick, ekokardiografi Doppler (SV × HR)",
+    sexSpecific:false
+  },
+  {
+    id:"ci", name:"Cardiac Index", abbr:"CI", category:"hemodynamik",
+    formula:"CO / BSA",
+    normalDisplay:"2.5–4.0", normalMin:2.5, normalMax:4.0, unit:"L/min/m²",
+    rangeLow:0.5, rangeHigh:7,
+    segments:[
+      {label:"Rendah",min:0.5,max:2.2,color:"red"},
+      {label:"Normal Rendah",min:2.2,max:2.5,color:"yellow"},
+      {label:"Normal",min:2.5,max:4.0,color:"green"},
+      {label:"Normal Tinggi",min:4.0,max:5.5,color:"yellow"},
+      {label:"Tinggi",min:5.5,max:7,color:"red"}
+    ],
+    interpretation:{
+      low:"CI <2.2 L/min/m²: low cardiac output state — pertimbangkan syok kardiogenik (Forrester zone III/IV).",
+      high:"CI >4.0: kondisi hiperdinamik, evaluasi sepsis atau shunting."
+    },
+    measurement:"Sama dengan CO, dibagi BSA. BSA oleh formula DuBois atau Mosteller.",
+    sexSpecific:false
+  },
+  {
+    id:"map", name:"Mean Arterial Pressure", abbr:"MAP", category:"hemodynamik",
+    formula:"DBP + ⅓(SBP – DBP)",
+    normalDisplay:"70–105", normalMin:70, normalMax:105, unit:"mmHg",
+    rangeLow:40, rangeHigh:160,
+    segments:[
+      {label:"Rendah",min:40,max:65,color:"red"},
+      {label:"Normal Rendah",min:65,max:70,color:"yellow"},
+      {label:"Normal",min:70,max:105,color:"green"},
+      {label:"Normal Tinggi",min:105,max:130,color:"yellow"},
+      {label:"Tinggi",min:130,max:160,color:"red"}
+    ],
+    interpretation:{
+      low:"MAP <65 mmHg: target minimum pada syok — perfusi organ berisiko tidak adekuat.",
+      high:"MAP >105 mmHg: hipertensi. Pertimbangkan evaluasi target organ."
+    },
+    measurement:"Sphygmomanometer (non-invasif), arterial line (invasif, gold standard ICU)",
+    sexSpecific:false
+  },
+  {
+    id:"svr", name:"Systemic Vascular Resistance", abbr:"SVR", category:"hemodynamik",
+    formula:"(MAP – CVP) / CO × 80",
+    normalDisplay:"800–1200", normalMin:800, normalMax:1200, unit:"dyn·s·cm⁻⁵",
+    rangeLow:200, rangeHigh:2400,
+    segments:[
+      {label:"Rendah",min:200,max:600,color:"red"},
+      {label:"Normal Rendah",min:600,max:800,color:"yellow"},
+      {label:"Normal",min:800,max:1200,color:"green"},
+      {label:"Normal Tinggi",min:1200,max:1800,color:"yellow"},
+      {label:"Tinggi",min:1800,max:2400,color:"red"}
+    ],
+    interpretation:{
+      low:"SVR rendah: vasodilatasi (sepsis, anafilaksis, sirosis, hipertiroid).",
+      high:"SVR tinggi: vasokonstriksi (syok kardiogenik, hipotermia, hipertensi)."
+    },
+    measurement:"Dihitung dari MAP, CVP, dan CO (invasif via PAC atau cardiac output monitoring)",
+    sexSpecific:false
+  },
+  {
+    id:"pvr", name:"Pulmonary Vascular Resistance", abbr:"PVR", category:"hemodynamik",
+    formula:"(mPAP – PCWP) / CO × 80",
+    normalDisplay:"20–130", normalMin:20, normalMax:130, unit:"dyn·s·cm⁻⁵",
+    rangeLow:0, rangeHigh:500,
+    segments:[
+      {label:"Normal (≤2 WU)",min:0,max:160,color:"green"},
+      {label:"Elevasi Ringan",min:160,max:320,color:"yellow"},
+      {label:"Tinggi",min:320,max:500,color:"red"}
+    ],
+    interpretation:{
+      low:"PVR sangat rendah jarang bermakna klinis tersendiri.",
+      high:"PVR >2 WU (>160 dyn·s·cm⁻⁵): kriteria diagnostik hipertensi pulmoner pre-kapiler (ESC/ERS 2022 — sebelumnya >3 WU). PVR >5 WU: HTP berat dengan risiko gagal RV."
+    },
+    measurement:"Kateterisasi jantung kanan (PAC), dihitung dari mPAP, PCWP, dan CO. Konversi: 1 Wood Unit = 80 dyn·s·cm⁻⁵.",
+    sexSpecific:false
+  },
+  {
+    id:"cvp", name:"Central Venous Pressure", abbr:"CVP / RAP", category:"hemodynamik",
+    formula:null,
+    normalDisplay:"2–8", normalMin:2, normalMax:8, unit:"mmHg",
+    rangeLow:0, rangeHigh:25,
+    segments:[
+      {label:"Rendah",min:0,max:2,color:"red"},
+      {label:"Normal",min:2,max:8,color:"green"},
+      {label:"Normal Tinggi",min:8,max:12,color:"yellow"},
+      {label:"Tinggi",min:12,max:25,color:"red"}
+    ],
+    interpretation:{
+      low:"CVP rendah menandakan hipovolemia atau venodilatasI.",
+      high:"CVP tinggi: gagal jantung kanan, tamponade, tension pneumothorax, PEEP tinggi."
+    },
+    measurement:"Kateter vena sentral (CVC) di vena jugular interna, subklavia, atau femoral",
+    sexSpecific:false
+  },
+  {
+    id:"svi", name:"Stroke Volume Index", abbr:"SVI", category:"hemodynamik",
+    formula:"SV / BSA",
+    normalDisplay:"33–47", normalMin:33, normalMax:47, unit:"mL/beat/m²",
+    rangeLow:10, rangeHigh:80,
+    segments:[
+      {label:"Rendah",min:10,max:30,color:"red"},
+      {label:"Normal Rendah",min:30,max:33,color:"yellow"},
+      {label:"Normal",min:33,max:47,color:"green"},
+      {label:"Normal Tinggi",min:47,max:60,color:"yellow"},
+      {label:"Tinggi",min:60,max:80,color:"red"}
+    ],
+    interpretation:{
+      low:"SVI rendah: preload kurang, disfungsi ventrikel, atau afterload berlebih.",
+      high:"SVI tinggi: kondisi hiperdinamik atau regurgitasi katup berat."
+    },
+    measurement:"Dihitung dari SV dibagi BSA; SV dari Doppler atau invasif",
+    sexSpecific:false
+  },
+  {
+    id:"svv", name:"Stroke Volume Variation", abbr:"SVV", category:"hemodynamik",
+    formula:"(SVmax – SVmin) / SVmean × 100",
+    normalDisplay:"<13%", normalMin:0, normalMax:13, unit:"%",
+    rangeLow:0, rangeHigh:30,
+    segments:[
+      {label:"Responsif",min:0,max:13,color:"green"},
+      {label:"Borderline",min:13,max:18,color:"yellow"},
+      {label:"Tidak Responsif",min:18,max:30,color:"red"}
+    ],
+    interpretation:{
+      low:"SVV <13%: tidak akan responsif terhadap cairan (normovolemia relatif).",
+      high:"SVV ≥13%: kemungkinan responsif cairan pada pasien ventilasi mekanik."
+    },
+    measurement:"Monitoring invasif arterial kontinyu (PiCCO, FloTrac/Vigileo). Hanya valid pada ventilasi mekanik terkontrol, sinus rhythm.",
+    sexSpecific:false
+  },
+  {
+    id:"ppv", name:"Pulse Pressure Variation", abbr:"PPV", category:"hemodynamik",
+    formula:"(PPmax – PPmin) / PPmean × 100",
+    normalDisplay:"<13%", normalMin:0, normalMax:13, unit:"%",
+    rangeLow:0, rangeHigh:30,
+    segments:[
+      {label:"Responsif",min:0,max:13,color:"green"},
+      {label:"Borderline",min:13,max:18,color:"yellow"},
+      {label:"Tidak Responsif",min:18,max:30,color:"red"}
+    ],
+    interpretation:{
+      low:"PPV <13%: tidak responsif cairan.",
+      high:"PPV ≥13%: prediksi fluid responsiveness — pertimbangkan fluid challenge. Hanya valid pada ventilasi mekanik."
+    },
+    measurement:"Arterial line waveform analysis; dapat dihitung dari pulse pressure siklus napas",
+    sexSpecific:false
+  },
+  {
+    id:"rpp", name:"Rate Pressure Product", abbr:"RPP", category:"hemodynamik",
+    formula:"HR × SBP",
+    normalDisplay:"<12,000", normalMin:0, normalMax:12000, unit:"mmHg·bpm",
+    rangeLow:0, rangeHigh:25000,
+    segments:[
+      {label:"Normal",min:0,max:12000,color:"green"},
+      {label:"Batas",min:12000,max:18000,color:"yellow"},
+      {label:"Tinggi",min:18000,max:25000,color:"red"}
+    ],
+    interpretation:{
+      low:"RPP istirahat normal: 6,000–10,000 (mis. HR 70 × SBP 120 = 8,400). Konsumsi O₂ miokard rendah.",
+      high:"RPP >12,000: beban kerja jantung meningkat. Pada PJK, ambang iskemia tercapai di ~12,000–15,000 saat stress test. Bukan parameter rutin di luar konteks stress testing."
+    },
+    measurement:"Dihitung dari HR × SBP, tidak memerlukan alat khusus",
+    sexSpecific:false
+  },
+
+  // ── KATEGORI 2: TEKANAN RUANG JANTUNG ──
+  {
+    id:"ra", name:"Right Atrium Pressure", abbr:"RAP", category:"tekanan",
+    formula:null,
+    normalDisplay:"2–8 (mean)", normalMin:2, normalMax:8, unit:"mmHg",
+    rangeLow:0, rangeHigh:25,
+    segments:[
+      {label:"Rendah",min:0,max:2,color:"red"},
+      {label:"Normal",min:2,max:8,color:"green"},
+      {label:"Elevasi",min:8,max:25,color:"red"}
+    ],
+    interpretation:{
+      low:"RAP rendah: hipovolemia.",
+      high:"RAP tinggi: gagal jantung kanan, tamponade, penyakit katup trikuspid, PHTN."
+    },
+    measurement:"Kateterisasi jantung kanan (PAC); estimasi dari IVC echo (collapsibility index)",
+    sexSpecific:false
+  },
+  {
+    id:"rv", name:"Right Ventricle Pressure", abbr:"RVP", category:"tekanan",
+    formula:null,
+    normalDisplay:"Sis 15–30 / Dias 0–8", normalMin:15, normalMax:30, unit:"mmHg",
+    rangeLow:0, rangeHigh:80,
+    segments:[
+      {label:"Normal Sis",min:0,max:30,color:"green"},
+      {label:"Elevasi Ringan",min:30,max:50,color:"yellow"},
+      {label:"Elevasi Berat",min:50,max:80,color:"red"}
+    ],
+    interpretation:{
+      low:"RV sistol rendah: beban afterload pulmoner rendah.",
+      high:"RV sistol >35 mmHg: curiga hipertensi pulmoner atau stenosis pulmoner."
+    },
+    measurement:"Kateterisasi jantung kanan langsung; estimasi dari TR jet velocity pada ekokardiografi",
+    sexSpecific:false
+  },
+  {
+    id:"pa", name:"Pulmonary Artery Pressure", abbr:"PAP", category:"tekanan",
+    formula:null,
+    normalDisplay:"Sis 15–30 / Dias 4–12 / Mean 9–18", normalMin:9, normalMax:18, unit:"mmHg",
+    rangeLow:0, rangeHigh:80,
+    segments:[
+      {label:"Normal",min:0,max:25,color:"green"},
+      {label:"Borderline",min:25,max:30,color:"yellow"},
+      {label:"HTN Pulmoner",min:30,max:80,color:"red"}
+    ],
+    interpretation:{
+      low:"mPAP rendah: aliran pulmoner rendah; pertimbangkan low CO state, shunt, atau stenosis berat.",
+      high:"mPAP >20 mmHg (ESC/ERS 2022, sebelumnya ≥25): hipertensi pulmoner. Klasifikasi: Pre-kapiler = PCWP ≤15 + PVR >2 WU. Iso-post-kapiler = PCWP >15 + PVR ≤2 WU. Combined = PCWP >15 + PVR >2 WU."
+    },
+    measurement:"PAC (gold standard); estimasi mPAP dari TR jet (ekokardiografi: mPAP = 4×TRV² + RAP)",
+    sexSpecific:false
+  },
+  {
+    id:"pcwp", name:"Pulmonary Capillary Wedge Pressure", abbr:"PCWP", category:"tekanan",
+    formula:null,
+    normalDisplay:"4–12", normalMin:4, normalMax:12, unit:"mmHg",
+    rangeLow:0, rangeHigh:35,
+    segments:[
+      {label:"Rendah",min:0,max:4,color:"red"},
+      {label:"Normal",min:4,max:12,color:"green"},
+      {label:"Kongesti",min:12,max:20,color:"yellow"},
+      {label:"Edema Paru",min:20,max:35,color:"red"}
+    ],
+    interpretation:{
+      low:"PCWP <4: hipovolemia atau preload LV tidak adekuat.",
+      high:"PCWP >18: kongesti pulmoner. >25 mmHg: edema paru."
+    },
+    measurement:"PAC balloon inflation di posisi wedge. Surrogate: E/e' pada ekokardiografi.",
+    sexSpecific:false
+  },
+  {
+    id:"la", name:"Left Atrium Pressure", abbr:"LAP", category:"tekanan",
+    formula:null,
+    normalDisplay:"6–12 (mean)", normalMin:6, normalMax:12, unit:"mmHg",
+    rangeLow:0, rangeHigh:35,
+    segments:[
+      {label:"Rendah",min:0,max:6,color:"red"},
+      {label:"Normal",min:6,max:12,color:"green"},
+      {label:"Elevasi",min:12,max:25,color:"yellow"},
+      {label:"Berat",min:25,max:35,color:"red"}
+    ],
+    interpretation:{
+      low:"LAP rendah: hipovolemia.",
+      high:"LAP tinggi: stenosis mitral, disfungsi diastolik LV, gagal jantung kiri."
+    },
+    measurement:"Pengukuran langsung jarang; umumnya diestimasi dari PCWP (pada kondisi tidak ada oklusi pulmoner). LA pressure line pada post-bedah jantung.",
+    sexSpecific:false
+  },
+  {
+    id:"lv", name:"Left Ventricle Pressure", abbr:"LVP", category:"tekanan",
+    formula:null,
+    normalDisplay:"Sis 90–140 / Dias 5–12", normalMin:90, normalMax:140, unit:"mmHg",
+    rangeLow:0, rangeHigh:220,
+    segments:[
+      {label:"Hipoten",min:0,max:80,color:"red"},
+      {label:"Normal",min:80,max:140,color:"green"},
+      {label:"Elevasi",min:140,max:180,color:"yellow"},
+      {label:"Berat",min:180,max:220,color:"red"}
+    ],
+    interpretation:{
+      low:"LV sistol rendah: disfungsi sistolik berat atau obstruksi outflow.",
+      high:"LV sistol tinggi: hipertensi, atau stenosis aorta (LV >Ao)."
+    },
+    measurement:"Kateterisasi LV langsung (ventrikulografi); estimasi dari tekanan darah sistolik pada katup aorta kompeten.",
+    sexSpecific:false
+  },
+  {
+    id:"ao", name:"Aortic Pressure", abbr:"Ao", category:"tekanan",
+    formula:null,
+    normalDisplay:"Sis 90–140 / Dias 60–90 / Mean 70–105", normalMin:70, normalMax:105, unit:"mmHg",
+    rangeLow:50, rangeHigh:200,
+    segments:[
+      {label:"Hipoten",min:50,max:80,color:"red"},
+      {label:"Normal",min:80,max:130,color:"green"},
+      {label:"Elevasi",min:130,max:170,color:"yellow"},
+      {label:"Berat",min:170,max:200,color:"red"}
+    ],
+    interpretation:{
+      low:"Hipotensi: evaluasi syok, dehidrasi, atau disfungsi kardiak.",
+      high:"Hipertensi: evaluasi kerusakan organ target (ginjal, mata, otak)."
+    },
+    measurement:"Sphygmomanometer (non-invasif), arterial line radialis/femoralis (invasif)",
+    sexSpecific:false
+  },
+  {
+    id:"tpg", name:"Transpulmonary Gradient", abbr:"TPG", category:"tekanan",
+    formula:"mPAP – PCWP",
+    normalDisplay:"<12", normalMin:0, normalMax:12, unit:"mmHg",
+    rangeLow:0, rangeHigh:30,
+    segments:[
+      {label:"Normal",min:0,max:12,color:"green"},
+      {label:"Borderline",min:12,max:16,color:"yellow"},
+      {label:"Tinggi",min:16,max:30,color:"red"}
+    ],
+    interpretation:{
+      low:"TPG normal: tekanan pulmoner umumnya akibat transmisi tekanan LA (post-kapiler).",
+      high:"TPG >12 mmHg: ada komponen pre-kapiler. CATATAN: ESC/ERS 2022 lebih mengutamakan PVR daripada TPG untuk klasifikasi HTP."
+    },
+    measurement:"Dihitung dari nilai kateterisasi jantung kanan (PAC)",
+    sexSpecific:false
+  },
+  {
+    id:"dpg", name:"Diastolic Pressure Gradient", abbr:"DPG", category:"tekanan",
+    formula:"PADP – PCWP",
+    normalDisplay:"<7", normalMin:0, normalMax:7, unit:"mmHg",
+    rangeLow:0, rangeHigh:20,
+    segments:[
+      {label:"Normal",min:0,max:7,color:"green"},
+      {label:"Borderline",min:7,max:10,color:"yellow"},
+      {label:"Tinggi",min:10,max:20,color:"red"}
+    ],
+    interpretation:{
+      low:"DPG normal: HTP kemungkinan post-kapiler.",
+      high:"DPG ≥7 mmHg: dahulu dianggap lebih spesifik dari TPG untuk HTP pre-kapiler. CATATAN: ESC/ERS 2022 mengeluarkan DPG dari klasifikasi resmi karena reliabilitas terbatas — gunakan PVR sebagai patokan utama."
+    },
+    measurement:"Dihitung dari PADP dan PCWP pada kateterisasi jantung kanan",
+    sexSpecific:false
+  },
+
+  // ── KATEGORI 3: VOLUME & FUNGSI ──
+  {
+    id:"lvedv", name:"LV End-Diastolic Volume", abbr:"LVEDV", category:"volume",
+    formula:null,
+    normalDisplay:"♂ 100–160 / ♀ 80–130", normalMin:80, normalMax:160, unit:"mL",
+    rangeLow:30, rangeHigh:280,
+    segments:[
+      {label:"Rendah",min:30,max:70,color:"red"},
+      {label:"Normal",min:70,max:160,color:"green"},
+      {label:"Dilatasi",min:160,max:280,color:"red"}
+    ],
+    interpretation:{
+      low:"LVEDV rendah: hipovolemia, tamponade.",
+      high:"LVEDV tinggi: kardiomiopati dilatasi, regurgitasi kronik (MR/AR berat)."
+    },
+    measurement:"Ekokardiografi (metode biplane Simpson), MRI jantung (gold standard), ventrikulografi kontras",
+    sexSpecific:true,
+    maleRange:"100–160 mL",
+    femaleRange:"80–130 mL"
+  },
+  {
+    id:"lvesv", name:"LV End-Systolic Volume", abbr:"LVESV", category:"volume",
+    formula:null,
+    normalDisplay:"♂ 40–70 / ♀ 30–60", normalMin:30, normalMax:70, unit:"mL",
+    rangeLow:10, rangeHigh:200,
+    segments:[
+      {label:"Normal",min:10,max:70,color:"green"},
+      {label:"Mildly ↑",min:70,max:120,color:"yellow"},
+      {label:"Signifikan",min:120,max:200,color:"red"}
+    ],
+    interpretation:{
+      low:"LVESV sangat kecil: kontraksi sangat kuat atau hiperdinamik.",
+      high:"LVESV tinggi: disfungsi sistolik LV, EF rendah. Prediktor prognosis pada gagal jantung."
+    },
+    measurement:"Ekokardiografi (biplane Simpson), MRI jantung",
+    sexSpecific:true,
+    maleRange:"40–70 mL",
+    femaleRange:"30–60 mL"
+  },
+  {
+    id:"lvef", name:"LV Ejection Fraction", abbr:"LVEF", category:"volume",
+    formula:"(LVEDV – LVESV) / LVEDV × 100",
+    normalDisplay:"≥55%", normalMin:55, normalMax:75, unit:"%",
+    rangeLow:0, rangeHigh:85,
+    segments:[
+      {label:"HFrEF (≤40)",min:0,max:40,color:"red"},
+      {label:"HFmrEF (41–49)",min:40,max:50,color:"yellow"},
+      {label:"HFpEF (≥50)",min:50,max:55,color:"yellow"},
+      {label:"Normal (≥55)",min:55,max:85,color:"green"}
+    ],
+    interpretation:{
+      low:"Klasifikasi ESC 2021 Universal Definition: HFrEF LVEF ≤40% (indikasi GDMT lengkap — ARNI/ACEi/ARB, BB, MRA, SGLT2i); HFmrEF LVEF 41–49% (terapi mirip HFrEF, evidence kelas IIb); HFpEF LVEF ≥50% (bila ada gejala HF + bukti disfungsi diastolik atau elevasi NT-proBNP).",
+      high:"EF >75%: kondisi hiperdinamik (sepsis, tirotoksikosis), obstruksi LVOT (HCM), atau LV cavity kecil. Pada HFpEF, EF dapat preserved namun SV rendah karena LVEDV kecil."
+    },
+    measurement:"Ekokardiografi (biplane Simpson's MOD, 3D), MRI jantung (gold standard untuk volume dan EF), radionuklir MUGA, ventrikulografi kontras",
+    sexSpecific:false
+  },
+  {
+    id:"rvef", name:"RV Ejection Fraction", abbr:"RVEF", category:"volume",
+    formula:null,
+    normalDisplay:"≥45%", normalMin:45, normalMax:75, unit:"%",
+    rangeLow:0, rangeHigh:80,
+    segments:[
+      {label:"Rendah",min:0,max:35,color:"red"},
+      {label:"Borderline",min:35,max:45,color:"yellow"},
+      {label:"Normal",min:45,max:80,color:"green"}
+    ],
+    interpretation:{
+      low:"RVEF <45%: disfungsi sistolik RV. Kaitan dengan prognosis pada HTP dan ADHF.",
+      high:"RVEF sangat tinggi jarang bermakna patologis."
+    },
+    measurement:"MRI jantung (terbaik untuk RV), ekokardiografi 3D, radionuklir",
+    sexSpecific:false
+  },
+  {
+    id:"lvedvi", name:"LV End-Diastolic Volume Index", abbr:"LVEDVI", category:"volume",
+    formula:"LVEDV / BSA",
+    normalDisplay:"50–90", normalMin:50, normalMax:90, unit:"mL/m²",
+    rangeLow:20, rangeHigh:160,
+    segments:[
+      {label:"Rendah",min:20,max:50,color:"red"},
+      {label:"Normal",min:50,max:90,color:"green"},
+      {label:"Dilatasi",min:90,max:160,color:"red"}
+    ],
+    interpretation:{
+      low:"LVEDVI rendah: hipovolemia atau ventrikel kecil.",
+      high:"LVEDVI >97 mL/m² (♂) / >89 mL/m² (♀): dilatasi LV — evaluasi penyebab volume overload."
+    },
+    measurement:"Derivat LVEDV dibagi BSA",
+    sexSpecific:false
+  },
+  {
+    id:"lvesvi", name:"LV End-Systolic Volume Index", abbr:"LVESVI", category:"volume",
+    formula:"LVESV / BSA",
+    normalDisplay:"20–40", normalMin:20, normalMax:40, unit:"mL/m²",
+    rangeLow:5, rangeHigh:100,
+    segments:[
+      {label:"Normal",min:5,max:40,color:"green"},
+      {label:"Elevasi",min:40,max:65,color:"yellow"},
+      {label:"Berat",min:65,max:100,color:"red"}
+    ],
+    interpretation:{
+      low:"LVESVI rendah: fungsi sistolik sangat baik.",
+      high:"LVESVI tinggi: disfungsi sistolik signifikan, prediktor prognosis buruk pada regurgitasi katup dan kardiomiopati."
+    },
+    measurement:"Derivat LVESV dibagi BSA",
+    sexSpecific:false
+  },
+  {
+    id:"fs", name:"Fractional Shortening", abbr:"FS", category:"volume",
+    formula:"(LVIDd – LVIDs) / LVIDd × 100",
+    normalDisplay:"25–45%", normalMin:25, normalMax:45, unit:"%",
+    rangeLow:0, rangeHigh:70,
+    segments:[
+      {label:"Rendah",min:0,max:25,color:"red"},
+      {label:"Normal",min:25,max:45,color:"green"},
+      {label:"Hiperdinamik",min:45,max:70,color:"yellow"}
+    ],
+    interpretation:{
+      low:"FS <25%: disfungsi sistolik LV. Berkorelasi dengan EF rendah.",
+      high:"FS >45%: kontraksi hiperdinamik (sepsis, tirotoksikosis)."
+    },
+    measurement:"Ekokardiografi M-mode dari parasternal long axis",
+    sexSpecific:false
+  },
+  {
+    id:"dpdt", name:"LV dP/dt max", abbr:"dP/dt", category:"volume",
+    formula:"ΔP / Δt (dari kurva MR jet)",
+    normalDisplay:">1200", normalMin:1200, normalMax:2200, unit:"mmHg/s",
+    rangeLow:400, rangeHigh:3000,
+    segments:[
+      {label:"Rendah (<800)",min:400,max:800,color:"red"},
+      {label:"Borderline",min:800,max:1200,color:"yellow"},
+      {label:"Normal (>1200)",min:1200,max:3000,color:"green"}
+    ],
+    interpretation:{
+      low:"dP/dt <800 mmHg/s: disfungsi sistolik berat. Prediksi prognosis buruk pada ADHF.",
+      high:"dP/dt sangat tinggi ditemukan pada kondisi hiperdinamik atau inotropik."
+    },
+    measurement:"Ekokardiografi Doppler dari MR jet: dP/dt = 32 mmHg / waktu untuk mencapai 3 m/s pada CW Doppler",
+    sexSpecific:false
+  },
+  {
+    id:"tau", name:"Tau — Relaxation Time Constant", abbr:"τ (Tau)", category:"volume",
+    formula:"LV pressure decay: P(t) = P₀ × e^(–t/τ)",
+    normalDisplay:"35–50 ms", normalMin:35, normalMax:50, unit:"ms",
+    rangeLow:20, rangeHigh:100,
+    segments:[
+      {label:"Normal",min:20,max:50,color:"green"},
+      {label:"Relaksasi Terganggu",min:50,max:75,color:"yellow"},
+      {label:"Berat",min:75,max:100,color:"red"}
+    ],
+    interpretation:{
+      low:"Tau rendah: relaksasi sangat cepat, jarang bermakna klinis.",
+      high:"Tau >50 ms: relaksasi LV terganggu — karakteristik disfungsi diastolik (HFpEF, hipertrofi, iskemia)."
+    },
+    measurement:"Kateterisasi LV dengan pressure-wire (Millar catheter); tidak tersedia secara rutin klinis",
+    sexSpecific:false
+  },
+
+  // ── KATEGORI 4: KATUP JANTUNG ──
+  {
+    id:"mv_area", name:"Mitral Valve Area", abbr:"MVA", category:"katup",
+    formula:"Planimetri / PHT method: 220/PHT",
+    normalDisplay:"4–6", normalMin:4, normalMax:6, unit:"cm²",
+    rangeLow:0.5, rangeHigh:7,
+    segments:[
+      {label:"Berat (<1.0)",min:0.5,max:1.0,color:"red"},
+      {label:"Sedang (1.0–1.5)",min:1.0,max:1.5,color:"yellow"},
+      {label:"Ringan (>1.5)",min:1.5,max:4,color:"yellow"},
+      {label:"Normal (4–6)",min:4,max:7,color:"green"}
+    ],
+    interpretation:{
+      low:"AHA/ACC 2020 & ESC 2021: MS bermakna jika MVA ≤1.5 cm² (stage C/D). MS sangat berat jika MVA ≤1.0 cm². Indikasi PMV/MVR tergantung gejala dan anatomi (skor Wilkins).",
+      high:"MVA normal (4–6 cm²): tidak ada hambatan aliran mitral yang bermakna."
+    },
+    measurement:"Ekokardiografi 2D planimetri, pressure half-time (PHT), Gorlin formula (kateterisasi)",
+    sexSpecific:false
+  },
+  {
+    id:"mv_grad", name:"Mitral Valve Mean Gradient", abbr:"MV ΔP mean", category:"katup",
+    formula:null,
+    normalDisplay:"<5", normalMin:0, normalMax:5, unit:"mmHg",
+    rangeLow:0, rangeHigh:20,
+    segments:[
+      {label:"Normal (<5)",min:0,max:5,color:"green"},
+      {label:"Ringan (5–10)",min:5,max:10,color:"yellow"},
+      {label:"Berat (>10)",min:10,max:20,color:"red"}
+    ],
+    interpretation:{
+      low:"Gradien MV normal: tidak ada stenosis bermakna.",
+      high:"Mean gradient >10 mmHg: MS berat (AHA/ACC). Tergantung HR — takikardia meningkatkan gradien."
+    },
+    measurement:"Ekokardiografi Doppler kontinyu / pulsed (CW/PW Doppler) dari posisi apikal",
+    sexSpecific:false
+  },
+  {
+    id:"av_area", name:"Aortic Valve Area", abbr:"AVA", category:"katup",
+    formula:"Continuity equation: (LVOT area × LVOT VTI) / AV VTI",
+    normalDisplay:"3–4", normalMin:3, normalMax:4, unit:"cm²",
+    rangeLow:0.5, rangeHigh:5,
+    segments:[
+      {label:"Berat (<1.0)",min:0.5,max:1.0,color:"red"},
+      {label:"Sedang (1.0–1.5)",min:1.0,max:1.5,color:"yellow"},
+      {label:"Ringan (>1.5)",min:1.5,max:3,color:"yellow"},
+      {label:"Normal (3–4)",min:3,max:5,color:"green"}
+    ],
+    interpretation:{
+      low:"AVA <1.0 cm² (atau AVAI <0.6 cm²/m²): AS berat — evaluasi AVR/TAVR.",
+      high:"AVA normal: tidak ada hambatan outflow aorta yang bermakna."
+    },
+    measurement:"Continuity equation (ekokardiografi), planimetri 3D/TEE, kateterisasi Gorlin",
+    sexSpecific:false
+  },
+  {
+    id:"av_vel", name:"Aortic Valve Peak Velocity", abbr:"Vmax Ao", category:"katup",
+    formula:null,
+    normalDisplay:"<2.0", normalMin:0, normalMax:2.0, unit:"m/s",
+    rangeLow:0, rangeHigh:6,
+    segments:[
+      {label:"Normal (<2.0)",min:0,max:2.0,color:"green"},
+      {label:"Sklerosis (2.0–2.5)",min:2.0,max:2.5,color:"yellow"},
+      {label:"AS Ringan (2.6–2.9)",min:2.5,max:3.0,color:"yellow"},
+      {label:"AS Sedang (3.0–4.0)",min:3.0,max:4.0,color:"yellow"},
+      {label:"AS Berat (>4.0)",min:4.0,max:6,color:"red"}
+    ],
+    interpretation:{
+      low:"Vmax rendah: low flow — perhatian jika AVA kecil (low-flow low-gradient AS).",
+      high:"Vmax >4.0 m/s: AS berat. Setiap peningkatan 0.3 m/s/tahun → percepatan progresivitas."
+    },
+    measurement:"CW Doppler dari multiple windows (apikal, suprasternal, parasternal) — gunakan nilai tertinggi",
+    sexSpecific:false
+  },
+  {
+    id:"av_grad", name:"Aortic Valve Mean Gradient", abbr:"AV ΔP mean", category:"katup",
+    formula:"4 × Vmean²",
+    normalDisplay:"<20", normalMin:0, normalMax:20, unit:"mmHg",
+    rangeLow:0, rangeHigh:70,
+    segments:[
+      {label:"Normal (<20)",min:0,max:20,color:"green"},
+      {label:"Sedang (20–40)",min:20,max:40,color:"yellow"},
+      {label:"Berat (>40)",min:40,max:70,color:"red"}
+    ],
+    interpretation:{
+      low:"Gradien rendah pada AVA kecil: pertimbangkan low-flow state (EF rendah atau paradoxical low-flow).",
+      high:"Mean gradient >40 mmHg dengan AVA <1.0 cm²: AS berat — indikasi intervensi (AHA/ACC 2021)."
+    },
+    measurement:"CW Doppler ekokardiografi; konfirmasi kateterisasi jika diskordansi",
+    sexSpecific:false
+  },
+  {
+    id:"tv_area", name:"Tricuspid Valve Area", abbr:"TVA", category:"katup",
+    formula:null,
+    normalDisplay:"7–9", normalMin:7, normalMax:9, unit:"cm²",
+    rangeLow:0.5, rangeHigh:10,
+    segments:[
+      {label:"Berat (<1.0)",min:0.5,max:1.0,color:"red"},
+      {label:"Sedang (1.0–2.0)",min:1.0,max:2.0,color:"yellow"},
+      {label:"Normal (>7)",min:7,max:10,color:"green"}
+    ],
+    interpretation:{
+      low:"TS berat (TVA <1.0 cm²): kongesti vena sistemik bermakna.",
+      high:"TVA normal: tidak ada hambatan aliran trikuspid."
+    },
+    measurement:"Ekokardiografi (PHT method, planimetri); kurang validasi dibanding MVA",
+    sexSpecific:false
+  },
+  {
+    id:"tv_grad", name:"Tricuspid Valve Mean Gradient", abbr:"TV ΔP mean", category:"katup",
+    formula:null,
+    normalDisplay:"<5", normalMin:0, normalMax:5, unit:"mmHg",
+    rangeLow:0, rangeHigh:15,
+    segments:[
+      {label:"Normal (<5)",min:0,max:5,color:"green"},
+      {label:"Elevasi",min:5,max:15,color:"red"}
+    ],
+    interpretation:{
+      low:"Gradien normal: tidak ada stenosis trikuspid bermakna.",
+      high:"Mean gradient >5 mmHg: stenosis trikuspid. Biasanya akibat penyakit reumatik atau karsinoid."
+    },
+    measurement:"Doppler ekokardiografi dari posisi apikal 4-chamber atau parasternal",
+    sexSpecific:false
+  },
+  {
+    id:"pv_vel", name:"Pulmonary Valve Peak Velocity", abbr:"Vmax PV", category:"katup",
+    formula:null,
+    normalDisplay:"0.6–0.9", normalMin:0.6, normalMax:0.9, unit:"m/s",
+    rangeLow:0, rangeHigh:5,
+    segments:[
+      {label:"Normal (0.6–0.9)",min:0,max:0.9,color:"green"},
+      {label:"Ringan (1.0–2.0)",min:0.9,max:2.0,color:"yellow"},
+      {label:"Sedang (2.0–3.0)",min:2.0,max:3.0,color:"yellow"},
+      {label:"Berat (>3.0)",min:3.0,max:5,color:"red"}
+    ],
+    interpretation:{
+      low:"Vmax PV rendah: flow rendah atau stenosis tidak ada.",
+      high:"Vmax >3.0 m/s (gradient >36 mmHg): stenosis pulmoner berat — pertimbangkan balloon valvuloplasty."
+    },
+    measurement:"CW Doppler dari parasternal short axis atau subkostal (pulsed untuk posisi tepat)",
+    sexSpecific:false
+  },
+  {
+    id:"pv_grad", name:"Pulmonary Valve Peak Gradient", abbr:"PV ΔP peak", category:"katup",
+    formula:"4 × Vpeak²",
+    normalDisplay:"<10", normalMin:0, normalMax:10, unit:"mmHg",
+    rangeLow:0, rangeHigh:70,
+    segments:[
+      {label:"Normal (<10)",min:0,max:10,color:"green"},
+      {label:"Ringan (10–36)",min:10,max:36,color:"yellow"},
+      {label:"Berat (>36)",min:36,max:70,color:"red"}
+    ],
+    interpretation:{
+      low:"Gradien normal: tidak ada stenosis pulmoner.",
+      high:"Peak gradient >36 mmHg (Vmax >3 m/s): stenosis pulmoner signifikan. >64 mmHg: berat."
+    },
+    measurement:"CW Doppler ekokardiografi dari RVOT/PV jet",
+    sexSpecific:false
+  },
+  {
+    id:"ao_annulus", name:"Aortic Annulus Diameter", abbr:"Ao Annulus", category:"katup",
+    formula:null,
+    normalDisplay:"20–27", normalMin:20, normalMax:27, unit:"mm",
+    rangeLow:14, rangeHigh:40,
+    segments:[
+      {label:"Kecil",min:14,max:20,color:"yellow"},
+      {label:"Normal",min:20,max:27,color:"green"},
+      {label:"Besar",min:27,max:40,color:"yellow"}
+    ],
+    interpretation:{
+      low:"Annulus kecil: penting dalam sizing prosthetic valve dan TAVR.",
+      high:"Annulus besar: pilih prosthesis yang sesuai. Kritis untuk perancangan TAVR."
+    },
+    measurement:"Ekokardiografi parasternal long axis (PLAX), CT angiografi (paling akurat untuk TAVR)",
+    sexSpecific:false
+  },
+  {
+    id:"mv_annulus", name:"Mitral Annulus Diameter", abbr:"MV Annulus", category:"katup",
+    formula:null,
+    normalDisplay:"28–35", normalMin:28, normalMax:35, unit:"mm",
+    rangeLow:18, rangeHigh:50,
+    segments:[
+      {label:"Kecil",min:18,max:28,color:"yellow"},
+      {label:"Normal",min:28,max:35,color:"green"},
+      {label:"Dilatasi",min:35,max:50,color:"red"}
+    ],
+    interpretation:{
+      low:"Annulus kecil: annular calcification atau stenosis.",
+      high:"Annulus dilatasi (>40 mm): regurgitasi mitral fungsional — pertimbangkan annuloplasty."
+    },
+    measurement:"Ekokardiografi 2D (PLAX, apikal 4C), 3D ekokardiografi (TEE) untuk intervensi",
+    sexSpecific:false
+  },
+  {
+    id:"lvot_d", name:"LVOT Diameter", abbr:"LVOT", category:"katup",
+    formula:"Untuk AVA: continuity equation",
+    normalDisplay:"18–25", normalMin:18, normalMax:25, unit:"mm",
+    rangeLow:12, rangeHigh:32,
+    segments:[
+      {label:"Kecil",min:12,max:18,color:"yellow"},
+      {label:"Normal",min:18,max:25,color:"green"},
+      {label:"Besar",min:25,max:32,color:"yellow"}
+    ],
+    interpretation:{
+      low:"LVOT sempit: LVOT obstruction (HCM). Underestimasi AVA jika LVOT diukur salah.",
+      high:"LVOT luas: kondisi dilatasi atau aortic annulus besar."
+    },
+    measurement:"Ekokardiografi PLAX zoom — diukur 0.5–1 cm proksimal dari katup aorta, inner edge to inner edge",
+    sexSpecific:false
+  },
+
+  // ── KATEGORI 5: OKSIGENASI & METABOLIK ──
+  {
+    id:"svo2", name:"Mixed Venous O₂ Saturation", abbr:"SvO₂", category:"oksigenasi",
+    formula:null,
+    normalDisplay:"60–80%", normalMin:60, normalMax:80, unit:"%",
+    rangeLow:20, rangeHigh:100,
+    segments:[
+      {label:"Kritis (<50)",min:20,max:50,color:"red"},
+      {label:"Rendah (50–60)",min:50,max:60,color:"yellow"},
+      {label:"Normal (60–80)",min:60,max:80,color:"green"},
+      {label:"Tinggi (>80)",min:80,max:100,color:"yellow"}
+    ],
+    interpretation:{
+      low:"SvO₂ <60%: ekstraksi O₂ meningkat — CO rendah, anemia, hipoksia, atau peningkatan konsumsi O₂.",
+      high:"SvO₂ >80%: distribusi O₂ tidak merata (sepsis, shunting), atau konsumsi O₂ sangat rendah."
+    },
+    measurement:"Sampel darah dari tip PAC di arteri pulmonalis (true mixed). Analisa gas darah atau co-oximetry.",
+    sexSpecific:false
+  },
+  {
+    id:"scvo2", name:"Central Venous O₂ Saturation", abbr:"ScvO₂", category:"oksigenasi",
+    formula:null,
+    normalDisplay:"65–75%", normalMin:65, normalMax:75, unit:"%",
+    rangeLow:30, rangeHigh:100,
+    segments:[
+      {label:"Kritis (<50)",min:30,max:50,color:"red"},
+      {label:"Rendah (50–65)",min:50,max:65,color:"yellow"},
+      {label:"Normal (65–75)",min:65,max:75,color:"green"},
+      {label:"Tinggi (>80)",min:80,max:100,color:"yellow"}
+    ],
+    interpretation:{
+      low:"ScvO₂ <65%: low CO state, anemia, hipoksia, atau syok. Target surviving sepsis ≥70%.",
+      high:"ScvO₂ tinggi pada sepsis awal (distributive shock): ekstraksi berkurang."
+    },
+    measurement:"Sampel darah atau oksimetri dari CVC (SVC / vena jugularis interna). Surrogat SvO₂.",
+    sexSpecific:false
+  },
+  {
+    id:"avdo2", name:"Arteriovenous O₂ Difference", abbr:"a-vDO₂", category:"oksigenasi",
+    formula:"CaO₂ – CvO₂",
+    normalDisplay:"3–5", normalMin:3, normalMax:5, unit:"mL/dL",
+    rangeLow:0, rangeHigh:15,
+    segments:[
+      {label:"Sempit (<3)",min:0,max:3,color:"yellow"},
+      {label:"Normal (3–5)",min:3,max:5,color:"green"},
+      {label:"Lebar (>5)",min:5,max:15,color:"red"}
+    ],
+    interpretation:{
+      low:"a-vDO₂ sempit: perfusi tinggi/hiperdinamik atau oksigenasi tidak efisien (sepsis).",
+      high:"a-vDO₂ lebar (>5): CO rendah, ekstraksi O₂ kompensatorik meningkat — syok kardiogenik."
+    },
+    measurement:"Dihitung dari CaO₂ dan CvO₂: CaO₂ = (Hb × 1.34 × SaO₂/100) + (PaO₂ × 0.0031)",
+    sexSpecific:false
+  },
+  {
+    id:"do2", name:"Oxygen Delivery", abbr:"DO₂", category:"oksigenasi",
+    formula:"CO × CaO₂ × 10",
+    normalDisplay:"950–1150", normalMin:950, normalMax:1150, unit:"mL/min",
+    rangeLow:200, rangeHigh:1600,
+    segments:[
+      {label:"Rendah",min:200,max:700,color:"red"},
+      {label:"Borderline",min:700,max:950,color:"yellow"},
+      {label:"Normal",min:950,max:1150,color:"green"},
+      {label:"Tinggi",min:1150,max:1600,color:"yellow"}
+    ],
+    interpretation:{
+      low:"DO₂ rendah: supply-demand O₂ terganggu. Evaluasi CO, Hb, dan SaO₂.",
+      high:"DO₂ tinggi: kondisi hiperdinamik. Bukan selalu buruk, tergantung konsumsi (VO₂)."
+    },
+    measurement:"Dihitung dari CO dan CaO₂; tidak diukur langsung",
+    sexSpecific:false
+  },
+  {
+    id:"do2i", name:"Oxygen Delivery Index", abbr:"DO₂I", category:"oksigenasi",
+    formula:"DO₂ / BSA",
+    normalDisplay:"500–600", normalMin:500, normalMax:600, unit:"mL/min/m²",
+    rangeLow:100, rangeHigh:900,
+    segments:[
+      {label:"Rendah",min:100,max:400,color:"red"},
+      {label:"Borderline",min:400,max:500,color:"yellow"},
+      {label:"Normal",min:500,max:600,color:"green"},
+      {label:"Tinggi",min:600,max:900,color:"yellow"}
+    ],
+    interpretation:{
+      low:"DO₂I rendah: risiko hipoksia jaringan. Critical DO₂ ~330 mL/min/m².",
+      high:"DO₂I tinggi: hiperdinamik. Monitorisasi VO₂I untuk keseimbangan supply-demand."
+    },
+    measurement:"Derivat DO₂ dibagi BSA",
+    sexSpecific:false
+  },
+  {
+    id:"vo2", name:"Oxygen Consumption", abbr:"VO₂", category:"oksigenasi",
+    formula:"CO × (CaO₂ – CvO₂) × 10",
+    normalDisplay:"200–270", normalMin:200, normalMax:270, unit:"mL/min",
+    rangeLow:80, rangeHigh:600,
+    segments:[
+      {label:"Rendah",min:80,max:180,color:"yellow"},
+      {label:"Normal",min:180,max:270,color:"green"},
+      {label:"Tinggi",min:270,max:600,color:"yellow"}
+    ],
+    interpretation:{
+      low:"VO₂ rendah: sedasi dalam, hipotermia, atau supply-demand terganggu.",
+      high:"VO₂ tinggi: demam, agitasi, sepsis hipermetabolik, latihan."
+    },
+    measurement:"Metode Fick (gold standard): VO₂ = CO × a-vDO₂; atau indirect calorimetry (metabolic cart)",
+    sexSpecific:false
+  },
+  {
+    id:"vo2i", name:"Oxygen Consumption Index", abbr:"VO₂I", category:"oksigenasi",
+    formula:"VO₂ / BSA",
+    normalDisplay:"115–165", normalMin:115, normalMax:165, unit:"mL/min/m²",
+    rangeLow:40, rangeHigh:350,
+    segments:[
+      {label:"Rendah",min:40,max:100,color:"yellow"},
+      {label:"Normal",min:100,max:165,color:"green"},
+      {label:"Tinggi",min:165,max:350,color:"yellow"}
+    ],
+    interpretation:{
+      low:"VO₂I rendah: metabolisme rendah (sedasi, hipotermia).",
+      high:"VO₂I tinggi: kondisi hipermetabolik, sepsis, luka bakar luas."
+    },
+    measurement:"Derivat VO₂ dibagi BSA; indirect calorimetry lebih akurat dari kalkulasi Fick",
+    sexSpecific:false
+  },
+  {
+    id:"o2er", name:"Oxygen Extraction Ratio", abbr:"O₂ER", category:"oksigenasi",
+    formula:"VO₂ / DO₂ × 100",
+    normalDisplay:"22–30%", normalMin:22, normalMax:30, unit:"%",
+    rangeLow:5, rangeHigh:70,
+    segments:[
+      {label:"Rendah",min:5,max:22,color:"yellow"},
+      {label:"Normal",min:22,max:30,color:"green"},
+      {label:"Tinggi",min:30,max:70,color:"red"}
+    ],
+    interpretation:{
+      low:"O₂ER rendah: supply berlebih atau distribusi tidak merata (sepsis).",
+      high:"O₂ER >30%: kompensasi terhadap DO₂ rendah. >50%: kritis, batas ekstraksi tercapai."
+    },
+    measurement:"Dihitung dari VO₂/DO₂ atau (CaO₂–CvO₂)/CaO₂",
+    sexSpecific:false
+  },
+  {
+    id:"lactate", name:"Laktat Serum", abbr:"Laktat", category:"oksigenasi",
+    formula:null,
+    normalDisplay:"<2.0", normalMin:0, normalMax:2.0, unit:"mmol/L",
+    rangeLow:0, rangeHigh:12,
+    segments:[
+      {label:"Normal (<2.0)",min:0,max:2.0,color:"green"},
+      {label:"Ringan (2–4)",min:2.0,max:4.0,color:"yellow"},
+      {label:"Berat (>4.0)",min:4.0,max:12,color:"red"}
+    ],
+    interpretation:{
+      low:"Laktat normal: perfusi jaringan adekuat.",
+      high:"Laktat >2.0 mmol/L: hipoperfusi jaringan atau gangguan metabolisme. Syok septik (Sepsis-3 2016): laktat >2 mmol/L meskipun resusitasi cairan + butuh vasopressor untuk MAP ≥65. Laktat >4 mmol/L: prognosis buruk."
+    },
+    measurement:"Sampel darah vena atau arteri (ABG/VBG). Sentrifugasi segera atau diproses dalam es untuk mencegah metabolisme ex vivo.",
+    sexSpecific:false
+  },
+
+  // ── KATEGORI 6: EKOKARDIOGRAFI ──
+  {
+    id:"lvmi", name:"LV Mass Index", abbr:"LVMI", category:"ekokardiografi",
+    formula:"LV mass / BSA",
+    normalDisplay:"♂ <115 / ♀ <95 g/m²", normalMin:70, normalMax:115, unit:"g/m²",
+    rangeLow:40, rangeHigh:200,
+    segments:[
+      {label:"Normal",min:40,max:115,color:"green"},
+      {label:"LVH Ringan",min:115,max:150,color:"yellow"},
+      {label:"LVH Berat",min:150,max:200,color:"red"}
+    ],
+    interpretation:{
+      low:"LVMI rendah: tidak ada hipertrofi, namun perhatikan jika ventrikel kecil.",
+      high:"LVMI ≥115 g/m² (♂) / ≥95 g/m² (♀): LVH (ASE 2015). Prediktor MACE independen."
+    },
+    measurement:"Ekokardiografi M-mode (ASE/Devereux formula), 2D, atau MRI jantung",
+    sexSpecific:true,
+    maleRange:"<115 g/m²",
+    femaleRange:"<95 g/m²"
+  },
+  {
+    id:"rwt", name:"Relative Wall Thickness", abbr:"RWT", category:"ekokardiografi",
+    formula:"2 × LVPWd / LVIDd",
+    normalDisplay:"0.32–0.42", normalMin:0.32, normalMax:0.42, unit:"(ratio)",
+    rangeLow:0.1, rangeHigh:0.8,
+    segments:[
+      {label:"Tipis (<0.32)",min:0.1,max:0.32,color:"yellow"},
+      {label:"Normal",min:0.32,max:0.42,color:"green"},
+      {label:"Tebal (>0.42)",min:0.42,max:0.8,color:"red"}
+    ],
+    interpretation:{
+      low:"RWT <0.32: geometri eksentrik. Dikombinasikan dengan LVMI untuk klasifikasi geometri LV.",
+      high:"RWT >0.42: geometri konsentrik (HCM, hipertensi kronis)."
+    },
+    measurement:"M-mode ekokardiografi dari PLAX; LVPWd dan LVIDd diukur pada end-diastole",
+    sexSpecific:false
+  },
+  {
+    id:"ivsd", name:"IVS Thickness (Diastole)", abbr:"IVSd", category:"ekokardiografi",
+    formula:null,
+    normalDisplay:"6–10", normalMin:6, normalMax:10, unit:"mm",
+    rangeLow:3, rangeHigh:25,
+    segments:[
+      {label:"Tipis",min:3,max:6,color:"yellow"},
+      {label:"Normal",min:6,max:10,color:"green"},
+      {label:"Hipertrofi Ringan",min:10,max:13,color:"yellow"},
+      {label:"Hipertrofi Berat",min:13,max:25,color:"red"}
+    ],
+    interpretation:{
+      low:"IVSd tipis: RV overload, kardiomiopati non-kompaksi.",
+      high:"IVSd >13 mm: hipertrofi bermakna. Jika ≥15 mm asimetris: evaluasi HCM."
+    },
+    measurement:"M-mode dari PLAX, end-diastole (onset R wave EKG). Leading edge method (ASE).",
+    sexSpecific:false
+  },
+  {
+    id:"lvpwd", name:"LV Posterior Wall (Diastole)", abbr:"LVPWd", category:"ekokardiografi",
+    formula:null,
+    normalDisplay:"6–10", normalMin:6, normalMax:10, unit:"mm",
+    rangeLow:3, rangeHigh:20,
+    segments:[
+      {label:"Tipis",min:3,max:6,color:"yellow"},
+      {label:"Normal",min:6,max:10,color:"green"},
+      {label:"Hipertrofi",min:10,max:20,color:"red"}
+    ],
+    interpretation:{
+      low:"LVPWd tipis: miokard tipis — post-iskemia, kardiomiopati.",
+      high:"LVPWd >12 mm: hipertrofi dinding posterior. Evaluasi penyebab pressure overload."
+    },
+    measurement:"M-mode ekokardiografi dari PLAX, end-diastole",
+    sexSpecific:false
+  },
+  {
+    id:"lvidd", name:"LV Internal Diameter (Diastole)", abbr:"LVIDd", category:"ekokardiografi",
+    formula:null,
+    normalDisplay:"♂ 42–58 / ♀ 38–52 mm", normalMin:38, normalMax:58, unit:"mm",
+    rangeLow:25, rangeHigh:85,
+    segments:[
+      {label:"Kecil",min:25,max:38,color:"yellow"},
+      {label:"Normal",min:38,max:58,color:"green"},
+      {label:"Dilatasi",min:58,max:85,color:"red"}
+    ],
+    interpretation:{
+      low:"LVIDd kecil: hipertrofi konsentrik, hipovolemia, atau tamponade.",
+      high:"LVIDd >58 mm (♂) / >52 mm (♀): dilatasi LV. Evaluasi penyebab volume overload."
+    },
+    measurement:"M-mode PLAX, leading edge to leading edge, onset R wave EKG",
+    sexSpecific:true,
+    maleRange:"42–58 mm",
+    femaleRange:"38–52 mm"
+  },
+  {
+    id:"lvids", name:"LV Internal Diameter (Systole)", abbr:"LVIDs", category:"ekokardiografi",
+    formula:null,
+    normalDisplay:"25–40", normalMin:25, normalMax:40, unit:"mm",
+    rangeLow:10, rangeHigh:70,
+    segments:[
+      {label:"Kecil",min:10,max:25,color:"yellow"},
+      {label:"Normal",min:25,max:40,color:"green"},
+      {label:"Dilatasi",min:40,max:70,color:"red"}
+    ],
+    interpretation:{
+      low:"LVIDs kecil: hiperkontraksi atau volume preload rendah.",
+      high:"LVIDs >40 mm: disfungsi sistolik LV, dilatasi end-systolic."
+    },
+    measurement:"M-mode PLAX, end-systole (nadir septum posterior motion)",
+    sexSpecific:false
+  },
+  {
+    id:"lavi", name:"LA Volume Index", abbr:"LAVI", category:"ekokardiografi",
+    formula:"LA volume / BSA",
+    normalDisplay:"<34", normalMin:16, normalMax:34, unit:"mL/m²",
+    rangeLow:10, rangeHigh:80,
+    segments:[
+      {label:"Normal (<34)",min:10,max:34,color:"green"},
+      {label:"Dilatasi Ringan (34–41)",min:34,max:41,color:"yellow"},
+      {label:"Dilatasi Sedang (42–48)",min:41,max:48,color:"yellow"},
+      {label:"Dilatasi Berat (>48)",min:48,max:80,color:"red"}
+    ],
+    interpretation:{
+      low:"LAVI normal: tidak ada dilatasi LA bermakna.",
+      high:"LAVI >34 mL/m²: dilatasi LA. Prediktor AF, stroke, dan disfungsi diastolik kronis."
+    },
+    measurement:"Biplane method of discs (MOD) pada end-systole di apikal 4C dan 2C; dibagi BSA",
+    sexSpecific:false
+  },
+  {
+    id:"ewave", name:"E Wave (Mitral Inflow)", abbr:"E wave", category:"ekokardiografi",
+    formula:null,
+    normalDisplay:"0.6–1.3", normalMin:0.6, normalMax:1.3, unit:"m/s",
+    rangeLow:0.2, rangeHigh:2.5,
+    segments:[
+      {label:"Rendah",min:0.2,max:0.6,color:"yellow"},
+      {label:"Normal",min:0.6,max:1.3,color:"green"},
+      {label:"Tinggi",min:1.3,max:2.5,color:"red"}
+    ],
+    interpretation:{
+      low:"E rendah: relaksasi terganggu (Grade I diastolic dysfunction). E/A <0.8.",
+      high:"E tinggi: tekanan LA meningkat atau pseudonormal/Grade III. Korelasi dengan E/e' dan LAVI."
+    },
+    measurement:"PW Doppler apikal 4C, sample volume di tip leaflet mitral saat diastole",
+    sexSpecific:false
+  },
+  {
+    id:"awave", name:"A Wave (Mitral Inflow)", abbr:"A wave", category:"ekokardiografi",
+    formula:null,
+    normalDisplay:"0.3–0.7", normalMin:0.3, normalMax:0.7, unit:"m/s",
+    rangeLow:0, rangeHigh:1.5,
+    segments:[
+      {label:"Rendah",min:0,max:0.3,color:"yellow"},
+      {label:"Normal",min:0.3,max:0.7,color:"green"},
+      {label:"Tinggi",min:0.7,max:1.5,color:"yellow"}
+    ],
+    interpretation:{
+      low:"A rendah atau absen: fibrilasi atrium, relaksasi sangat baik, atau Grade III dysfunction.",
+      high:"A tinggi: kompensasi relaksasi terganggu (Grade I). Penurunan preload memperbesar A."
+    },
+    measurement:"PW Doppler apikal 4C, bersamaan dengan E wave; hindari pengukuran saat HR tinggi",
+    sexSpecific:false
+  },
+  {
+    id:"ea_ratio", name:"E/A Ratio", abbr:"E/A", category:"ekokardiografi",
+    formula:"E / A",
+    normalDisplay:"0.8–2.0 (usia-dependen)", normalMin:0.8, normalMax:2.0, unit:"(ratio)",
+    rangeLow:0.2, rangeHigh:5,
+    segments:[
+      {label:"Relaksasi Terganggu (<0.8)",min:0.2,max:0.8,color:"red"},
+      {label:"Normal (0.8–2.0)",min:0.8,max:2.0,color:"green"},
+      {label:"Pseudonormal (0.8–2.0)",min:0.8,max:2.0,color:"yellow"},
+      {label:"Restriktif (>2.0)",min:2.0,max:5,color:"red"}
+    ],
+    interpretation:{
+      low:"E/A <0.8: relaksasi terganggu (Grade I dysfunction). Umum pada usia >65 tahun.",
+      high:"E/A >2.0: pola restriktif (Grade III), tekanan filling sangat tinggi — prognosis buruk."
+    },
+    measurement:"Dari nilai E dan A pada PW Doppler. Catatan: E/A 0.8–2.0 dapat normal atau pseudonormal — gunakan E/e' dan LAVI untuk diferensiasi.",
+    sexSpecific:false
+  },
+  {
+    id:"dt", name:"Deceleration Time", abbr:"DT", category:"ekokardiografi",
+    formula:null,
+    normalDisplay:"150–240", normalMin:150, normalMax:240, unit:"ms",
+    rangeLow:50, rangeHigh:400,
+    segments:[
+      {label:"Pendek (<150)",min:50,max:150,color:"red"},
+      {label:"Normal",min:150,max:240,color:"green"},
+      {label:"Panjang (>240)",min:240,max:400,color:"yellow"}
+    ],
+    interpretation:{
+      low:"DT <150 ms: pola restriktif — tekanan LA sangat tinggi, prognosis buruk pada HF.",
+      high:"DT >240 ms: relaksasi terganggu (Grade I dysfunction), kaku LV rendah."
+    },
+    measurement:"Slope dari puncak E wave hingga baseline pada PW Doppler",
+    sexSpecific:false
+  },
+  {
+    id:"ee_ratio", name:"E/e' Ratio (Septal)", abbr:"E/e'", category:"ekokardiografi",
+    formula:"E (mitral PW) / e' (septal TDI)",
+    normalDisplay:"<15 (septal)", normalMin:5, normalMax:15, unit:"(ratio)",
+    rangeLow:3, rangeHigh:25,
+    segments:[
+      {label:"Normal (<15)",min:3,max:15,color:"green"},
+      {label:"Borderline (15–20)",min:15,max:20,color:"yellow"},
+      {label:"Tinggi (>20)",min:20,max:25,color:"red"}
+    ],
+    interpretation:{
+      low:"E/e' <8 (lateral) atau <15 (septal): tekanan filling LV normal.",
+      high:"E/e' ≥15 (septal): tekanan filling LV meningkat — LV diastolic dysfunction."
+    },
+    measurement:"E dari PW Doppler mitral; e' dari TDI septal annulus. ASE/EACVI 2016: E/e' average septal+lateral <14 normal.",
+    sexSpecific:false
+  },
+  {
+    id:"eprime_s", name:"e' Septal (TDI)", abbr:"e' septal", category:"ekokardiografi",
+    formula:null,
+    normalDisplay:">7 cm/s", normalMin:7, normalMax:15, unit:"cm/s",
+    rangeLow:2, rangeHigh:20,
+    segments:[
+      {label:"Rendah (<7)",min:2,max:7,color:"red"},
+      {label:"Normal (≥7)",min:7,max:20,color:"green"}
+    ],
+    interpretation:{
+      low:"e' septal <7 cm/s: relaksasi miokard terganggu — marker disfungsi diastolik.",
+      high:"e' tinggi: relaksasi sangat baik, kondisi hiperdinamik atau atlet."
+    },
+    measurement:"TDI (Tissue Doppler Imaging) pulsed wave di septal annulus mitral, apikal 4C",
+    sexSpecific:false
+  },
+  {
+    id:"eprime_l", name:"e' Lateral (TDI)", abbr:"e' lateral", category:"ekokardiografi",
+    formula:null,
+    normalDisplay:">10 cm/s", normalMin:10, normalMax:20, unit:"cm/s",
+    rangeLow:3, rangeHigh:25,
+    segments:[
+      {label:"Rendah (<10)",min:3,max:10,color:"red"},
+      {label:"Normal (≥10)",min:10,max:25,color:"green"}
+    ],
+    interpretation:{
+      low:"e' lateral <10 cm/s: disfungsi relaksasi lateral. Lebih sensitif dari e' septal pada awal disfungsi.",
+      high:"e' lateral tinggi: hiperdinamik, atlet, atau kondisi normal pada usia muda."
+    },
+    measurement:"TDI pulsed wave di lateral annulus mitral, apikal 4C",
+    sexSpecific:false
+  },
+  {
+    id:"sprime", name:"S' (Systolic Annular Velocity)", abbr:"S'", category:"ekokardiografi",
+    formula:null,
+    normalDisplay:">7 cm/s", normalMin:7, normalMax:15, unit:"cm/s",
+    rangeLow:2, rangeHigh:20,
+    segments:[
+      {label:"Rendah (<7)",min:2,max:7,color:"red"},
+      {label:"Normal (≥7)",min:7,max:20,color:"green"}
+    ],
+    interpretation:{
+      low:"S' <7 cm/s (septal/lateral): disfungsi sistolik LV regional atau global.",
+      high:"S' tinggi: hiperdinamik, katup regurgitasi dengan kompensasi."
+    },
+    measurement:"TDI pulsed wave di annulus mitral (septal atau lateral), fase sistolik",
+    sexSpecific:false
+  },
+  {
+    id:"tapse", name:"TAPSE", abbr:"TAPSE", category:"ekokardiografi",
+    formula:null,
+    normalDisplay:"≥17", normalMin:17, normalMax:28, unit:"mm",
+    rangeLow:5, rangeHigh:35,
+    segments:[
+      {label:"Disfungsi Berat (<12)",min:5,max:12,color:"red"},
+      {label:"Disfungsi (12–17)",min:12,max:17,color:"yellow"},
+      {label:"Normal (≥17)",min:17,max:35,color:"green"}
+    ],
+    interpretation:{
+      low:"TAPSE <17 mm: disfungsi sistolik RV. <12 mm: berat — prognosis buruk pada HTP, ADHF.",
+      high:"TAPSE tinggi: fungsi RV hiperkontraktil, volume overload RV."
+    },
+    measurement:"M-mode dari lateral annulus trikuspid di apikal 4C. Perpindahan vertikal annulus dari diastole ke akhir sistole.",
+    sexSpecific:false
+  },
+  {
+    id:"rv_sprime", name:"RV S' (TDI Tricuspid Annulus)", abbr:"RV S'", category:"ekokardiografi",
+    formula:null,
+    normalDisplay:"≥9.5 cm/s", normalMin:9.5, normalMax:18, unit:"cm/s",
+    rangeLow:3, rangeHigh:22,
+    segments:[
+      {label:"Rendah (<9.5)",min:3,max:9.5,color:"red"},
+      {label:"Normal (≥9.5)",min:9.5,max:22,color:"green"}
+    ],
+    interpretation:{
+      low:"RV S' <9.5 cm/s: disfungsi sistolik RV (ASE/EACVI 2010). Lebih preload-independen dari TAPSE.",
+      high:"RV S' tinggi: kondisi hiperdinamik RV."
+    },
+    measurement:"TDI pulsed wave di lateral annulus trikuspid, apikal 4C",
+    sexSpecific:false
+  },
+  {
+    id:"ivc", name:"IVC Diameter & Collapsibility", abbr:"IVC", category:"ekokardiografi",
+    formula:null,
+    normalDisplay:"≤21 mm + kolaps >50%", normalMin:10, normalMax:21, unit:"mm",
+    rangeLow:5, rangeHigh:40,
+    segments:[
+      {label:"Hipovolemia (<10)",min:5,max:10,color:"yellow"},
+      {label:"Normal (≤21)",min:10,max:21,color:"green"},
+      {label:"Dilatasi (>21)",min:21,max:40,color:"red"}
+    ],
+    interpretation:{
+      low:"IVC ≤21 mm + kolaps >50% → RAP ~3 mmHg (0–5). IVC sangat kecil + kolaps total: hipovolemia atau responsif cairan.",
+      high:"IVC >21 mm + kolaps <50% → RAP ~15 mmHg (10–20). Kondisi intermediate (hanya satu kriteria terpenuhi) → RAP ~8 mmHg (5–10). [ASE 2015]"
+    },
+    measurement:"Subkostal long-axis, 1–2 cm dari junction atrium kanan; ukur diameter pada end-expirasi. Kolapsibilitas (sniff test) = (Dmax–Dmin)/Dmax × 100%. Tidak valid pada ventilasi mekanik tekanan positif.",
+    sexSpecific:false
+  },
+  {
+    id:"ao_root", name:"Aortic Root Diameter", abbr:"Ao Root", category:"ekokardiografi",
+    formula:null,
+    normalDisplay:"20–37", normalMin:20, normalMax:37, unit:"mm",
+    rangeLow:15, rangeHigh:65,
+    segments:[
+      {label:"Normal",min:15,max:37,color:"green"},
+      {label:"Dilatasi Ringan (37–45)",min:37,max:45,color:"yellow"},
+      {label:"Dilatasi Berat (>45)",min:45,max:65,color:"red"}
+    ],
+    interpretation:{
+      low:"Ao root kecil: tidak bermakna klinis.",
+      high:"Ao root >45 mm: pertimbangkan operasi elektif pada pasien Marfan. >50 mm pada populasi umum: risiko diseksi meningkat."
+    },
+    measurement:"Ekokardiografi PLAX, end-diastole: leading edge to leading edge di level sinus of Valsalva",
+    sexSpecific:false
+  },
+  {
+    id:"asc_ao", name:"Ascending Aorta Diameter", abbr:"Asc Ao", category:"ekokardiografi",
+    formula:null,
+    normalDisplay:"≤40", normalMin:20, normalMax:40, unit:"mm",
+    rangeLow:15, rangeHigh:70,
+    segments:[
+      {label:"Normal (≤40)",min:15,max:40,color:"green"},
+      {label:"Dilatasi (40–45)",min:40,max:45,color:"yellow"},
+      {label:"Aneurisma (>45)",min:45,max:70,color:"red"}
+    ],
+    interpretation:{
+      low:"Ascending Ao normal: tidak ada intervensi diperlukan.",
+      high:"Ascending Ao >40 mm: serial monitoring tahunan. >45–50 mm: evaluasi bedah (tergantung etiologi dan faktor risiko)."
+    },
+    measurement:"Ekokardiografi PLAX atau parasternal high, end-diastole; CT angio atau MRI untuk konfirmasi dan pre-operatif",
+    sexSpecific:false
+  }
+];
+
+// ══════════════════════════════════════════════════════
+// RENDER ENGINE
+// ══════════════════════════════════════════════════════
+
+let allExpanded = true;
+let activeMetode = null;
+
+function getSegmentWidth(seg, rangeLow, rangeHigh) {
+  const total = rangeHigh - rangeLow;
+  return ((seg.max - seg.min) / total * 100).toFixed(2);
+}
+
+function buildRangeBar(param) {
+  const { segments, rangeLow, rangeHigh, normalMin, normalMax } = param;
+  let html = `<div class="range-bar">`;
+  for (const seg of segments) {
+    const w = getSegmentWidth(seg, rangeLow, rangeHigh);
+    const cls = `seg-${seg.color}`;
+    html += `<div class="bar-seg ${cls}" style="flex: ${w} 0 0%" title="${seg.label}: ${seg.min}–${seg.max}"></div>`;
+  }
+  html += `</div>`;
+
+  // ticks
+  const total = rangeHigh - rangeLow;
+  const tickVals = [];
+  tickVals.push(rangeLow);
+  for (const seg of segments) {
+    if (!tickVals.includes(seg.max) && seg.max < rangeHigh) tickVals.push(seg.max);
+  }
+  tickVals.push(rangeHigh);
+
+  const sortedTicks = tickVals.sort((a,b)=>a-b);
+  html += `<div class="range-ticks">`;
+  sortedTicks.forEach((v, i) => {
+    const pct = ((v - rangeLow) / total * 100).toFixed(2);
+    let transform = 'translateX(-50%)';
+    if (i === 0) transform = 'translateX(0)';
+    else if (i === sortedTicks.length - 1) transform = 'translateX(-100%)';
+    html += `<span style="left:${pct}%; transform:${transform};">${v}</span>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function buildNilaiCell(param) {
+  if (param.sexSpecific) {
+    return `<div class="nilai-sex">
+      <div><span class="sex-label">♂ </span>${param.maleRange}</div>
+      <div><span class="sex-label">♀ </span>${param.femaleRange}</div>
+    </div>
+    <div class="nilai-unit">${param.unit}</div>`;
+  }
+  return `<div class="nilai-range">${param.normalDisplay}</div>
+          <div class="nilai-unit">${param.unit}</div>`;
+}
+
+function buildRow(param) {
+  const formulaHtml = param.formula
+    ? `<div class="param-formula">${param.formula}</div>`
+    : '';
+  return `
+    <tr data-id="${param.id}" data-cat="${param.category}">
+      <td>
+        <div class="param-name">${param.name}</div>
+        <span class="param-abbr">${param.abbr}</span>
+        ${formulaHtml}
+      </td>
+      <td class="nilai-cell">${buildNilaiCell(param)}</td>
+      <td class="bar-cell hide-tablet">
+        <div class="range-bar-wrap">${buildRangeBar(param)}</div>
+      </td>
+      <td class="interp-cell hide-mobile">
+        <div class="interp-text">
+          ${param.interpretation.low ? `<div class="lbl low">▼ Rendah</div>${param.interpretation.low}` : ''}
+          ${param.interpretation.high ? `<div class="lbl high" style="margin-top:5px">▲ Tinggi</div>${param.interpretation.high}` : ''}
+        </div>
+      </td>
+      <td class="metode-cell">
+        <button class="metode-btn" data-metode="${encodeURIComponent(param.measurement)}" data-name="${encodeURIComponent(param.name)}" title="Metode pengukuran">⚗</button>
+      </td>
+    </tr>`;
+}
+
+function buildSection(cat) {
+  const catParams = PARAMS.filter(p => p.category === cat.id);
+  const rows = catParams.map(buildRow).join('');
+  return `
+    <div class="section" id="sec-${cat.id}">
+      <div class="section-header" data-cat="${cat.id}">
+        ${cat.icon}
+        <span class="section-title">${cat.name}</span>
+        <span class="section-badge" id="badge-${cat.id}">${catParams.length} parameter</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="section-body">
+        <table class="param-table">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Nilai Normal</th>
+              <th class="hide-tablet">Rentang</th>
+              <th class="hide-mobile">Interpretasi Klinis</th>
+              <th>Metode</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-${cat.id}">${rows}</tbody>
+        </table>
+        <div class="empty-state" id="empty-${cat.id}">Tidak ditemukan</div>
+      </div>
+    </div>`;
+}
+
+function renderApp() {
+  const main = document.getElementById('main');
+  main.innerHTML = CATEGORIES.map(buildSection).join('');
+  attachSectionHandlers();
+  attachMetodeHandlers();
+}
+
+function attachSectionHandlers() {
+  document.querySelectorAll('.section-header').forEach(hdr => {
+    hdr.addEventListener('click', () => {
+      const sec = hdr.closest('.section');
+      sec.classList.toggle('collapsed');
+      allExpanded = document.querySelectorAll('.section:not(.collapsed)').length > 0;
+      updateToggleBtn();
+    });
+  });
+}
+
+function attachMetodeHandlers() {
+  document.querySelectorAll('.metode-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const popup = document.getElementById('metode-popup');
+      const content = document.getElementById('metode-content');
+      if (activeMetode === btn) {
+        popup.classList.remove('active');
+        activeMetode = null;
+        return;
+      }
+      content.textContent = decodeURIComponent(btn.dataset.metode);
+      popup.querySelector('.metode-title').textContent = decodeURIComponent(btn.dataset.name);
+      const rect = btn.getBoundingClientRect();
+      let top = rect.bottom + 6;
+      let left = rect.left;
+      if (left + 280 > window.innerWidth) left = window.innerWidth - 290;
+      popup.style.top = top + 'px';
+      popup.style.left = left + 'px';
+      popup.classList.add('active');
+      activeMetode = btn;
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.metode-btn') && !e.target.closest('#metode-popup')) {
+      document.getElementById('metode-popup').classList.remove('active');
+      activeMetode = null;
+    }
+  });
+}
+
+function updateToggleBtn() {
+  const btn = document.getElementById('toggle-all-btn');
+  const anyOpen = document.querySelectorAll('.section:not(.collapsed)').length > 0;
+  btn.textContent = anyOpen ? 'Tutup Semua' : 'Buka Semua';
+}
+
+// ══════════════════════════════════════════════════════
+// SEARCH
+// ══════════════════════════════════════════════════════
+function normalizeStr(s) {
+  return s.toLowerCase().replace(/[₂₀₁]/g, m => ({'₂':'2','₀':'0','₁':'1'}[m]||m));
+}
+
+function searchParams(query) {
+  const q = normalizeStr(query.trim());
+  if (!q) {
+    // show all
+    document.querySelectorAll('.param-table tbody tr').forEach(tr => {
+      tr.style.display = '';
+      tr.classList.remove('highlight-match');
+    });
+    CATEGORIES.forEach(cat => {
+      document.getElementById(`empty-${cat.id}`).style.display = 'none';
+    });
+    return;
+  }
+
+  CATEGORIES.forEach(cat => {
+    const tbody = document.getElementById(`tbody-${cat.id}`);
+    const rows = tbody.querySelectorAll('tr');
+    let visibleCount = 0;
+
+    rows.forEach(tr => {
+      const id = tr.dataset.id;
+      const param = PARAMS.find(p => p.id === id);
+      const searchText = normalizeStr([
+        param.name, param.abbr, param.formula||'', param.unit,
+        param.normalDisplay, param.category,
+        param.interpretation.low||'', param.interpretation.high||''
+      ].join(' '));
+
+      if (searchText.includes(q)) {
+        tr.style.display = '';
+        tr.classList.remove('highlight-match');
+        // slight delay for animation re-trigger
+        setTimeout(() => tr.classList.add('highlight-match'), 10);
+        visibleCount++;
+
+        // expand parent section
+        const sec = document.getElementById(`sec-${cat.id}`);
+        sec.classList.remove('collapsed');
+      } else {
+        tr.style.display = 'none';
+        tr.classList.remove('highlight-match');
+      }
+    });
+
+    const empty = document.getElementById(`empty-${cat.id}`);
+    const badge = document.getElementById(`badge-${cat.id}`);
+    empty.style.display = visibleCount === 0 ? 'block' : 'none';
+    badge.textContent = visibleCount + (visibleCount === 1 ? ' parameter' : ' parameter');
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  renderApp();
+
+  const input = document.getElementById('search-input');
+  const clear = document.getElementById('search-clear');
+
+  input.addEventListener('input', () => {
+    const q = input.value;
+    clear.style.display = q ? 'block' : 'none';
+    searchParams(q);
+    updateToggleBtn();
+  });
+
+  clear.addEventListener('click', () => {
+    input.value = '';
+    clear.style.display = 'none';
+    searchParams('');
+    // restore badges
+    CATEGORIES.forEach(cat => {
+      const count = PARAMS.filter(p => p.category === cat.id).length;
+      document.getElementById(`badge-${cat.id}`).textContent = count + ' parameter';
+    });
+    updateToggleBtn();
+  });
+
+  document.getElementById('toggle-all-btn').addEventListener('click', () => {
+    const anyOpen = document.querySelectorAll('.section:not(.collapsed)').length > 0;
+    if (anyOpen) {
+      document.querySelectorAll('.section').forEach(s => s.classList.add('collapsed'));
+    } else {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('collapsed'));
+    }
+    updateToggleBtn();
+  });
+});
+</script>
+</body>
+</html>
