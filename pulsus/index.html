@@ -106,11 +106,18 @@ table { border-collapse: collapse; width: 100%; }
 .collapse-header-right { display: flex; align-items: center; gap: 10px; }
 .collapse-body { background: var(--bg-surface); border: 1px solid var(--border);
   border-top: none; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;
-  overflow: hidden; max-height: 0;
-  transition: max-height .35s cubic-bezier(.4,0,.2,1); }
-.collapse-body.open { max-height: 8000px; }
-.collapse-body-inner { padding: 16px 20px 20px; }
-.chevron { transition: transform .3s ease; color: var(--text-muted); font-size: 14px;
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows .5s cubic-bezier(.2,.9,.25,1);
+  overflow: hidden; }
+.collapse-body.open { grid-template-rows: 1fr; }
+.collapse-body-inner { min-height: 0; overflow: hidden; padding: 0 20px;
+  opacity: 0; transform: translateY(-6px);
+  transition: opacity .25s ease, transform .3s ease, padding .5s cubic-bezier(.2,.9,.25,1); }
+.collapse-body.open .collapse-body-inner {
+  padding: 16px 20px 20px;
+  opacity: 1; transform: translateY(0);
+  transition: opacity .4s ease .15s, transform .45s cubic-bezier(.2,.9,.25,1) .15s, padding .5s cubic-bezier(.2,.9,.25,1); }
+.chevron { transition: transform .45s cubic-bezier(.2,.9,.25,1); color: var(--text-muted); font-size: 14px;
   display: inline-block; width: 14px; text-align: center; }
 .chevron.open { transform: rotate(180deg); }
 
@@ -162,6 +169,25 @@ table { border-collapse: collapse; width: 100%; }
 .param-clinical strong { color: var(--text-primary); font-weight: 500; }
 .col-param { width: 22%; } .col-value { width: 16%; } .col-range { width: 28%; } .col-clin { width: 34%; }
 
+/* ECG illustration strip */
+.ecg-strip-container { margin-top: 10px; }
+.ecg-strip {
+  position: relative; width: 100%; max-width: 280px; height: 64px;
+  border-radius: 4px; border: 1px solid var(--border); overflow: hidden;
+  background-color: #08070a;
+  background-image:
+    linear-gradient(rgba(220,90,90,0.10) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(220,90,90,0.10) 1px, transparent 1px),
+    linear-gradient(rgba(220,90,90,0.22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(220,90,90,0.22) 1px, transparent 1px);
+  background-size: 4px 4px, 4px 4px, 20px 20px, 20px 20px;
+  background-position: 0 0;
+}
+.ecg-strip svg { width: 100%; height: 100%; display: block; }
+.ecg-strip-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  color: var(--text-muted); margin-top: 4px; letter-spacing: .04em; }
+
 /* Citation tag */
 .cite-tag { display: inline-block; font-family: 'JetBrains Mono', monospace;
   font-size: 9px; color: var(--text-muted); border: 1px dashed var(--border-bright);
@@ -182,14 +208,34 @@ table { border-collapse: collapse; width: 100%; }
 .cond-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
 @media (max-width: 980px) { .cond-grid { grid-template-columns: 1fr; } }
 .cond-card { background: var(--bg-elevated); border: 1px solid var(--border);
-  border-radius: 10px; padding: 16px 18px; }
-.cond-head { display: flex; align-items: flex-start; justify-content: space-between;
-  gap: 10px; margin-bottom: 10px; }
-.cond-name { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600;
-  color: var(--text-primary); letter-spacing: .01em; }
+  border-radius: 10px; overflow: hidden;
+  transition: border-color .2s ease; }
+.cond-card:hover { border-color: var(--border-bright); }
+.cond-card.open { border-color: var(--moss-dim); }
+.cond-card-head { display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; cursor: pointer; gap: 10px;
+  transition: background .15s ease; }
+.cond-card-head:hover { background: var(--bg-hover); }
+.cond-card-head .cond-name { flex: 1; font-family: 'Outfit', sans-serif;
+  font-size: 13px; font-weight: 600; color: var(--text-primary); letter-spacing: .01em; }
+.cond-card-head .chevron { font-size: 12px; color: var(--text-muted); }
+.cond-body { display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows .45s cubic-bezier(.2,.9,.25,1);
+  overflow: hidden;
+  border-top: 1px solid transparent; }
+.cond-card.open .cond-body { grid-template-rows: 1fr; border-top-color: var(--border-dim); }
+.cond-body-inner { min-height: 0; overflow: hidden; padding: 0 16px;
+  opacity: 0; transform: translateY(-4px);
+  transition: opacity .2s ease, transform .25s ease, padding .45s cubic-bezier(.2,.9,.25,1); }
+.cond-card.open .cond-body-inner { padding: 14px 16px 16px;
+  opacity: 1; transform: translateY(0);
+  transition: opacity .35s ease .12s, transform .4s cubic-bezier(.2,.9,.25,1) .12s, padding .45s cubic-bezier(.2,.9,.25,1); }
+.cond-head { display: none; }
 .cond-mech { font-style: italic; font-size: 12px; color: var(--text-secondary);
   margin-bottom: 12px; line-height: 1.55; }
 .cond-criteria-table { margin: 10px 0; font-size: 11px; }
+.cond-table-wrap { margin: 10px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.cond-table-wrap .cond-criteria-table { margin: 0; min-width: 100%; }
 .cond-criteria-table th { text-align: left; font-family: 'Outfit', sans-serif;
   font-size: 9px; text-transform: uppercase; letter-spacing: .08em;
   color: var(--text-muted); font-weight: 600; padding: 6px 10px;
@@ -280,6 +326,10 @@ table { border-collapse: collapse; width: 100%; }
 .dx-conf.consider { background: var(--blue-bg); color: var(--blue-text); border: 1px solid var(--blue-border); }
 .dx-support { font-size: 11px; color: var(--text-secondary); margin: 4px 0 6px; padding-left: 16px; }
 .dx-support li { list-style: '·  '; padding: 2px 0; }
+.dx-source { font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  color: var(--text-muted); border: 1px dashed var(--border-bright);
+  padding: 2px 6px; border-radius: 3px; display: inline-block;
+  margin-top: 6px; margin-right: 6px; letter-spacing: .02em; }
 .dx-link { display: inline-block; font-size: 11px; color: var(--moss-light);
   cursor: pointer; margin-top: 4px; border: none; background: transparent; padding: 0; }
 .dx-link:hover { color: var(--moss-pale); text-decoration: underline; }
@@ -303,15 +353,92 @@ table { border-collapse: collapse; width: 100%; }
 
 /* Mobile */
 @media (max-width: 768px) {
-  .navbar { padding: 0 14px; } .brand .subtitle { display: none; }
-  .tabs { gap: 4px; } .tab-btn { padding: 5px 12px; font-size: 11px; }
-  .main { padding: 14px; } .tab-panel { inset: 14px 14px auto 14px; }
+  .navbar { padding: 0 12px; height: 52px; }
+  .brand .subtitle { display: none; }
+  .brand .wordmark { font-size: 22px; }
+  .tabs { gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; flex-shrink: 0; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn { padding: 6px 14px; font-size: 11px; min-height: 32px; }
+  .main { margin-top: 52px; padding: 12px; }
+  .tab-panel { inset: 12px 12px auto 12px; }
+
+  /* Tab 1 — block layout for table rows */
   .col-param, .col-value, .col-range, .col-clin { width: auto; }
   .param-table thead { display: none; }
-  .param-table tbody tr { display: block; padding: 12px 14px; border-bottom: 1px solid var(--border); }
-  .param-table td { display: block; padding: 4px 0; }
+  .param-table tbody tr { display: block; padding: 14px;
+    border-bottom: 1px solid var(--border); }
+  .param-table td { display: block; padding: 6px 0; }
   .param-clinical { max-width: none; }
-  .wip-footer { font-size: 10px; padding: 0 12px; }
+  .param-name { font-size: 14px; }
+
+  /* Collapse headers & sub-cards — touch friendly */
+  .collapse-header { padding: 14px 14px; min-height: 52px; }
+  .collapse-title { font-size: 16px; }
+  .cond-card-head { padding: 14px 14px; min-height: 48px; }
+  .cond-card-head .cond-name { font-size: 13px; }
+
+  /* Tab 1 controls stack */
+  .tab1-controls { flex-direction: column; align-items: stretch; gap: 10px; }
+  .tab1-controls h2 { font-size: 18px; }
+  .tab1-controls h2 .sub { display: block; margin-left: 0; margin-top: 2px; font-size: 10px; }
+  .tab1-controls .btn-outline { align-self: flex-end; min-height: 36px; }
+
+  /* Pills — bigger touch target */
+  .pill { padding: 8px 14px; font-size: 12px; min-height: 38px; }
+  .form-group { padding: 14px 14px; }
+  .form-group-label { font-size: 11px; }
+  .form-row-label { font-size: 12px; }
+
+  /* Algo column: full height stack, no overflow constraint */
+  .algo-col { overflow-y: visible; }
+  .algo-col-title { font-size: 16px; }
+
+  /* Cond criteria table — scroll horizontally if wide */
+  .cond-criteria-table { font-size: 10px; }
+  .cond-criteria-table th, .cond-criteria-table td { padding: 6px 8px;
+    overflow-wrap: anywhere; word-break: break-word; }
+  .cond-clinical-block { font-size: 10px; line-height: 1.7; padding: 10px 12px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    overflow-wrap: break-word; }
+  .cond-mech { font-size: 12px; overflow-wrap: break-word; word-break: break-word; }
+  .cond-card { overflow: hidden; }
+  .cond-card-head { flex-wrap: wrap; }
+  .cond-card-head .cond-name { font-size: 13px; overflow-wrap: break-word;
+    word-break: break-word; min-width: 0; }
+  .cond-card-head .badge { white-space: normal; font-size: 10px;
+    flex-shrink: 1; max-width: 100%; }
+  .note-box { overflow-wrap: break-word; word-break: break-word;
+    font-size: 11px; padding: 10px 12px; }
+  .badge { white-space: normal; }
+
+  /* Footer compact */
+  .wip-footer { font-size: 10px; padding: 0 12px; height: 36px; line-height: 1.3; }
+  body { padding-bottom: 36px; }
+
+  /* ECG strip responsive */
+  .ecg-strip { max-width: 100%; }
+  .ecg-strip-container { margin-top: 10px; }
+
+  /* Dx card responsiveness */
+  .dx-card { padding: 12px 14px; }
+  .dx-name { font-size: 14px; }
+  .next-step { font-size: 13px; }
+  .template-box { font-size: 11px; padding: 12px; }
+}
+/* Very small phones */
+@media (max-width: 480px) {
+  .brand .wordmark { font-size: 20px; }
+  .tab-btn { padding: 5px 12px; font-size: 10px; }
+  .navbar { padding: 0 10px; height: 50px; }
+  .main { margin-top: 50px; padding: 10px; }
+  .tab-panel { inset: 10px 10px auto 10px; }
+  .collapse-title { font-size: 15px; }
+  .cat-letter { font-size: 16px; }
+  .cond-criteria-table { font-size: 9px; }
+  .cond-criteria-table th, .cond-criteria-table td { padding: 5px 6px; }
+  .pill { padding: 8px 12px; font-size: 11px; }
+  .ecg-strip { height: 70px; }
 }
 /* Print */
 @media print {
@@ -430,10 +557,10 @@ const NORMAL_GROUPS = [
      source:"AHA/ACC 2009"},
   ]},
   {id:"qrs", title:"Kompleks QRS", desc:"Depolarisasi ventrikel", rows:[
-    {name:"Durasi QRS", abbr:"QRS-dur", value:"<120", unit:"ms",
-     range:[{pct:55,color:"var(--moss)",normal:true},{pct:20,color:"var(--yellow)",op:.8},{pct:25,color:"var(--red)",op:.7}],
-     ticks:["60","100","120",">150"],
-     clinical:"<strong>120–149 ms:</strong> incomplete BBB atau IVCD. <strong>≥150 ms:</strong> complete BBB / paced / hyperkalemia ekstrim / VT / Na-channel blocker toxicity.",
+    {name:"Durasi QRS", abbr:"QRS-dur", value:"<110", unit:"ms",
+     range:[{pct:50,color:"var(--moss)",normal:true},{pct:15,color:"var(--yellow)",op:.8},{pct:35,color:"var(--red)",op:.7}],
+     ticks:["60","110","120",">150"],
+     clinical:"<strong>110–119 ms:</strong> incomplete BBB atau IVCD. <strong>≥120 ms:</strong> complete BBB / paced / hyperkalemia berat / VT / Na-channel blocker toxicity. <strong>≥150 ms (LBBB):</strong> kriteria true LBBB Strauss → CRT eligibility.",
      source:"AHA/ACC 2009"},
     {name:"Axis QRS", abbr:"Axis", value:"−30° s/d +90°", unit:"frontal plane",
      range:[{pct:20,color:"var(--red)",op:.7},{pct:15,color:"var(--yellow)",op:.8},{pct:35,color:"var(--moss)",normal:true},{pct:15,color:"var(--yellow)",op:.8},{pct:15,color:"var(--red)",op:.7}],
@@ -1503,8 +1630,27 @@ function interpretECG(s) {
   const any = (k, ...vals) => vals.includes(s[k]);
   const set = (k) => s[k] !== null && s[k] !== undefined;
   const addStep = (txt) => { if (!nextSteps.find(n => n.text === txt)) nextSteps.push({text:txt}); };
+  const addDx = (d) => { if (!diagnoses.find(x => x.name === d.name)) diagnoses.push(d); };
 
-  /* Completeness */
+  /* ─── Source references (canonical citations) ─── */
+  const SRC = {
+    aha2009:   "AHA/ACC/HRS 2009 ECG Standardization",
+    esc2023:   "ESC 2023 ACS Guidelines",
+    goldberger:"Goldberger's Clinical ECG 9e",
+    marriott:  "Marriott's Practical ECG 12e",
+    sgarbossa: "Sgarbossa 1996 / Smith 2012",
+    brugada:   "Brugada 1991",
+    deZwaan:   "de Zwaan 1989 (Wellens)",
+    deWinter:  "de Winter 2008",
+    schwartz:  "Schwartz 2011 (LQTS)",
+    spodick:   "Spodick 2003 (pericarditis)",
+    sokolow:   "Sokolow & Lyon 1949",
+    surawicz:  "Surawicz / AHA 2009",
+    drew:      "Drew 2010 (QT/TdP)",
+    haïs:      "Haïssaguerre 2008 (J wave)",
+  };
+
+  /* ─── Completeness ─── */
   const groupKeys = {
     tech:["speed","cal","leads"], rate:["rate","rhythm","pwave","pqrs"],
     intervals:["pr","qrsDur","qrsMorph","qtc"], axis:["axis"],
@@ -1517,7 +1663,7 @@ function interpretECG(s) {
     if (keys.some(k => set(k))) groupsFilled++;
   });
 
-  /* Conflict detection */
+  /* ─── Conflict detection ─── */
   if (has("pwave","absent") && has("pr","120-200")) {
     conflicts.push({text:"P wave 'tidak ada' bertentangan dengan PR interval 120–200 ms — periksa ulang."});
   }
@@ -1527,378 +1673,634 @@ function interpretECG(s) {
   if (has("pqrs","diss") && has("pwave","absent")) {
     conflicts.push({text:"AV disosiasi memerlukan P wave terlihat — periksa ulang."});
   }
+  if (has("pr","varProg") && has("pqrs","1to1")) {
+    conflicts.push({text:"PR memanjang progresif (Wenckebach) tidak konsisten dengan konduksi 1:1."});
+  }
 
-  /* ─── TIER 1: EMERGENCY ─── */
+  /* ═══════════════════════════════════════════════════
+     TIER 1 — EMERGENCY (red)
+     ═══════════════════════════════════════════════════ */
 
   /* VF */
   if (has("rhythm","irregIrreg") && has("pwave","absent") &&
       (has("qrsMorph","vt") || has("qrsDur","gte150"))) {
-    diagnoses.push({sev:"red", conf:"high", name:"Ventricular Fibrillation (VF)",
-      supports:["Irama irregularly irregular","Tidak ada P wave","QRS tidak teridentifikasi"], link:"arr"});
+    addDx({sev:"red", conf:"high", name:"Ventricular Fibrillation (VF)",
+      supports:["Irama irregularly irregular","Tidak ada P wave","QRS tidak teridentifikasi/sangat lebar"],
+      source: SRC.marriott, link:"arr"});
     findings.push({sev:"red", text:"💥 Pola konsisten dengan VF — defibrilasi segera"});
-    addStep("DEFIBRILASI segera (unsynchronized)");
-    addStep("Mulai CPR berkualitas tinggi");
-    addStep("Aktivasi code blue / resus team");
+    addStep("DEFIBRILASI segera (unsynchronized, 200 J biphasic)");
+    addStep("Mulai CPR berkualitas tinggi: 30:2, depth 5–6 cm, rate 100–120/min");
+    addStep("Epinephrine 1 mg IV/IO setiap 3–5 menit");
+    addStep("Amiodarone 300 mg IV bolus (refractory VF setelah 3 shock)");
   }
 
-  /* VT */
+  /* VT — wide complex tachycardia + AV diss/morphologic */
   if (any("rate","100-150","gt150") && any("qrsDur","120-149","gte150")) {
     const pro = [];
     if (has("pqrs","diss")) pro.push("AV disosiasi");
-    if (has("qrsMorph","vt")) pro.push("Pattern VT");
-    if (has("axis","extreme")) pro.push("Extreme axis");
+    if (has("qrsMorph","vt")) pro.push("Pattern VT (lebar irregular)");
+    if (has("axis","extreme")) pro.push("Extreme axis (northwest)");
     if (has("qrsDur","gte150")) pro.push("QRS ≥150 ms");
     const isVT = pro.length >= 1;
     if (isVT) {
-      diagnoses.push({sev:"red", conf: pro.length >= 2 ? "high" : "medium",
+      addDx({sev:"red", conf: pro.length >= 2 ? "high" : "medium",
         name:"Ventricular Tachycardia (VT)",
-        supports:["Rate >100","QRS ≥120 ms",...pro], link:"arr"});
+        supports:["Rate >100","QRS ≥120 ms",...pro,"Brugada algorithm Step 3/4 positif"],
+        source: SRC.marriott, link:"arr"});
       findings.push({sev:"red", text:"⚠️ Wide-complex tachycardia — assume VT sampai terbukti sebaliknya"});
-      addStep("Cek hemodinamik — jika unstable: kardioversi sinkron 100–200 J");
-      addStep("Stable VT: amiodarone 150 mg IV / procainamide 20–50 mg/min");
-      addStep("Konsultasi kardiologi segera");
-      warnings.push({text:"Wide-complex tachycardia: konfirmasi dengan Brugada algorithm. JANGAN beri AVN blocker jika WPW-AF dicurigai."});
+      addStep("Cek hemodinamik — UNSTABLE: kardioversi sinkron 100→200→300 J");
+      addStep("STABLE: amiodarone 150 mg IV bolus over 10 min, atau procainamide 20–50 mg/min");
+      addStep("Koreksi elektrolit: K⁺ >4.0, Mg²⁺ >2.0");
+      addStep("Konsultasi kardiologi/EP segera; pertimbangkan ICD post-stabilisasi");
+      warnings.push({text:"WCT regular: JANGAN beri AVN blocker (adenosine, BB, CCB, digoksin) jika WPW-AF dicurigai — bisa precipitate VF."});
     } else {
-      diagnoses.push({sev:"yellow", conf:"medium",
+      addDx({sev:"yellow", conf:"medium",
         name:"Wide-complex tachycardia (VT vs SVT-aberrancy)",
-        supports:["Rate >100","QRS ≥120 ms"], link:"arr"});
-      warnings.push({text:"Wide-complex tachycardia tanpa AV disosiasi terlihat: gunakan Brugada algorithm, atau treat as VT jika unstable."});
+        supports:["Rate >100","QRS ≥120 ms","Tidak ada AV disosiasi terdokumentasi"],
+        source: SRC.brugada, link:"arr"});
+      warnings.push({text:"WCT tanpa AV disosiasi: jalankan Brugada 4-step algorithm. Riwayat MI/CHF → WCT regular = VT >90% kasus."});
     }
   }
 
-  /* CHB */
-  if (has("pqrs","diss") || has("pqrs","moreP")) {
-    diagnoses.push({sev:"red", conf:"high", name:"AV Block derajat 3 (CHB)",
-      supports:[has("pqrs","diss") ? "AV disosiasi total" : "P lebih banyak dari QRS",
-        s.rate ? "Rate "+s.rate : "Rate variable"], link:"cond"});
-    findings.push({sev:"red", text:"⚠️ AV block lengkap — disosiasi atrium-ventrikel"});
-    addStep("Persiapkan pacing transkutan; konsultasi cardiologi STAT");
-    addStep("Atropin 0.5–1 mg IV (limited efficacy pada CHB)");
-    addStep("Periksa K⁺, obat AVN-blocker, troponin (inferior MI)");
+  /* Complete Heart Block (3°) */
+  if (has("pqrs","diss")) {
+    const escapeRate = has("qrsDur","lt120") ? "junctional (QRS sempit)" : "ventricular (QRS lebar)";
+    addDx({sev:"red", conf:"high", name:"AV Block derajat 3 (Total / CHB)",
+      supports:["AV disosiasi total","Atrial rate > ventricular rate","Escape "+escapeRate], 
+      source: SRC.goldberger, link:"cond"});
+    findings.push({sev:"red", text:"⚠️ AV block lengkap — disosiasi atrium-ventrikel total"});
+    addStep("Persiapkan transcutaneous pacing (TCP); konsultasi kardiologi STAT");
+    addStep("Atropin 1 mg IV — efikasi terbatas pada infranodal block");
+    addStep("Cek troponin (R/O inferior MI), K⁺, level obat (digoksin, BB, CCB)");
+    addStep("Transvenous pacing dalam <1 jam jika unstable");
   }
 
-  /* STEMI Inferior */
+  /* High-grade / Mobitz II — moreP without varProg */
+  if (has("pqrs","moreP") && !has("pr","varProg") && !has("pqrs","diss")) {
+    const isMII = has("pr","gt200") || has("pr","120-200");
+    addDx({sev:"red", conf: isMII ? "high" : "medium",
+      name: isMII ? "AV Block derajat 2 Mobitz II / High-grade" : "AV Block derajat 2 (tipe tidak jelas)",
+      supports:["P lebih banyak dari QRS","PR konstan sebelum dropped beat", isMII ? "QRS sering lebar (infranodal)" : ""].filter(Boolean),
+      source: SRC.goldberger, link:"cond"});
+    findings.push({sev:"red", text:"⚠️ AV block 2° Mobitz II / high-grade — risiko tinggi progresi ke CHB"});
+    addStep("Persiapkan transcutaneous pacing — Mobitz II = indikasi PPM Class I");
+    addStep("Konsultasi kardiologi/EP untuk pacemaker permanen");
+    addStep("Atropin: hindari — paradoxical worsening pada infranodal block");
+  }
+
+  /* STEMI — Inferior */
   if (has("stInf","ste")) {
-    const supp = ["STE inferior (II/III/aVF) ≥1 mm"];
-    if (has("stLat","std") || has("stAnt","std")) supp.push("Reciprocal STD");
-    diagnoses.push({sev:"red", conf:"high", name:"STEMI Inferior",
-      supports: supp, link:"acs"});
-    findings.push({sev:"red", text:"💢 STE inferior — STEMI inferior (RCA/LCx)"});
-    addStep("Aktivasi cath lab — door-to-balloon <90 menit");
-    addStep("Rekam right-sided V3R–V4R (RV infarct → hindari nitrat)");
-    addStep("Aspirin 162–325 mg + P2Y12 inhibitor sesuai protokol");
-    addStep("Heparin/enoxaparin sesuai protokol");
+    const supp = ["STE inferior (II, III, aVF) ≥1 mm di ≥2 lead kontigu"];
+    const reciprocals = [];
+    if (has("stLat","std")) reciprocals.push("I, aVL");
+    if (has("stAnt","std")) reciprocals.push("V1–V3");
+    if (reciprocals.length) supp.push("Reciprocal STD di "+reciprocals.join(" + "));
+    addDx({sev:"red", conf:"high", name:"STEMI Inferior",
+      supports: supp, source: SRC.esc2023, link:"acs"});
+    findings.push({sev:"red", text:"💢 STE inferior — STEMI inferior akut (oklusi RCA 80% / LCx 20%)"});
+    addStep("AKTIVASI CATH LAB — door-to-balloon <90 menit");
+    addStep("Rekam V3R–V4R untuk R/O RV infarct (jika ada → hindari nitrat & morfin, beri loading fluid)");
+    addStep("Rekam V7–V9 untuk R/O posterior extension");
+    addStep("DAPT: aspirin 162–325 mg + ticagrelor 180 mg / prasugrel 60 mg / clopidogrel 600 mg");
+    addStep("Antikoagulan: heparin UFH 60 U/kg bolus atau enoxaparin 1 mg/kg SC");
+    addStep("Statin loading: atorvastatin 80 mg PO");
   }
 
-  /* STEMI Anterior */
+  /* STEMI — Anterior */
   if (has("stAnt","ste")) {
-    const supp = ["STE anterior (V1–V4) memenuhi threshold sex-specific"];
+    const supp = ["STE V1–V4 memenuhi threshold sex-specific (♂≥40y: 2.0mm; ♂<40y: 2.5mm; ♀: 1.5mm)"];
     if (has("stInf","std")) supp.push("Reciprocal STD inferior");
-    diagnoses.push({sev:"red", conf:"high", name:"STEMI Anterior",
-      supports: supp, link:"acs"});
-    findings.push({sev:"red", text:"💢 STE anterior — STEMI anterior (LAD)"});
-    addStep("Aktivasi cath lab — door-to-balloon <90 menit");
-    addStep("Aspirin 162–325 mg + P2Y12 inhibitor");
-    addStep("Echocardiogram untuk EF dan komplikasi mekanik");
+    if (has("stLat","ste")) supp.push("Extension lateral (extensive anterior)");
+    addDx({sev:"red", conf:"high", name: has("stLat","ste") ? "STEMI Anterolateral (Extensive)" : "STEMI Anterior",
+      supports: supp, source: SRC.esc2023, link:"acs"});
+    findings.push({sev:"red", text:"💢 STE anterior — STEMI anterior akut (oklusi LAD proximal)"});
+    addStep("AKTIVASI CATH LAB — door-to-balloon <90 menit");
+    addStep("DAPT + antikoagulan + statin loading (lihat protokol STEMI)");
+    addStep("Echocardiogram urgent: EF, LV thrombus, komplikasi mekanik (VSR, free wall rupture)");
+    addStep("ICCU monitoring 24–48 jam — risiko aritmia ventrikel + HF akut");
   }
 
-  /* STEMI Lateral */
+  /* STEMI — Lateral (isolated) */
   if (has("stLat","ste") && !has("stAnt","ste") && !has("stInf","ste")) {
-    diagnoses.push({sev:"red", conf:"high", name:"STEMI Lateral",
-      supports:["STE lateral (I/aVL/V5–V6) ≥1 mm"], link:"acs"});
-    findings.push({sev:"red", text:"💢 STE lateral — STEMI lateral (LCx/diagonal)"});
-    addStep("Aktivasi cath lab");
+    addDx({sev:"red", conf:"high", name:"STEMI Lateral",
+      supports:["STE I, aVL, V5–V6 ≥1 mm","Tanpa STE inferior/anterior — isolated lateral"],
+      source: SRC.esc2023, link:"acs"});
+    findings.push({sev:"red", text:"💢 STE lateral isolated — kemungkinan oklusi LCx atau diagonal LAD"});
+    addStep("AKTIVASI CATH LAB");
+    addStep("Catatan: STEMI lateral isolated sering 'electrically silent' pada ECG awal — bandingkan ECG serial");
   }
 
-  /* aVR STE — LMCA/3VD */
+  /* Inferolateral / Inferoposterior combo */
+  if (has("stInf","ste") && has("stLat","ste")) {
+    addDx({sev:"red", conf:"high", name:"STEMI Inferolateral",
+      supports:["STE inferior + lateral","Curiga LCx dominan atau RCA + branches"],
+      source: SRC.esc2023, link:"acs"});
+  }
+
+  /* aVR STE + diffuse STD — LMCA / 3VD */
   if (has("stAvr","ste") && (has("stInf","std") || has("stAnt","std") || has("stLat","std"))) {
-    diagnoses.push({sev:"red", conf:"high", name:"aVR STE + diffuse STD — LMCA/3VD",
-      supports:["STE aVR","Diffuse STD di teritori lain"], link:"acs"});
-    findings.push({sev:"red", text:"⚠️ aVR STE >1 mm + diffuse STD → curiga LMCA atau 3-vessel disease"});
-    addStep("Aktivasi cath lab segera — mortality risk sangat tinggi");
+    const std_count = (has("stInf","std")?1:0) + (has("stAnt","std")?1:0) + (has("stLat","std")?1:0);
+    addDx({sev:"red", conf:"high", name:"aVR STE + diffuse STD — LMCA / 3-vessel disease",
+      supports:["STE aVR ≥1 mm","Diffuse STD di "+std_count+" teritori","Pola subendocardial ischemia global"],
+      source: SRC.esc2023, link:"acs"});
+    findings.push({sev:"red", text:"⚠️ aVR STE >1 mm + diffuse STD ≥6 leads → suspect LMCA atau 3VD; mortality sangat tinggi"});
+    addStep("AKTIVASI CATH LAB SEGERA — pertimbangkan langsung CABG bukan PCI");
+    addStep("Konsultasi cardiothoracic surgery");
+    addStep("IABP / Impella jika cardiogenic shock");
   }
 
-  /* Brugada Type 1 */
+  /* Brugada Type 1 — coved STE V1–V2 */
   if (has("stAnt","coved")) {
-    diagnoses.push({sev:"red", conf:"high", name:"Brugada Type 1 (coved STE V1–V2)",
-      supports:["Coved STE V1–V2 ≥2 mm"], link:"her"});
-    findings.push({sev:"red", text:"⚡ Brugada Type 1 pattern — risiko VF idiopathic"});
-    addStep("Cek triggering factors: demam, hipokalemia, obat (Na blocker)");
-    addStep("Konsultasi electrophysiology — pertimbangkan ICD");
-    addStep("Family screening");
+    addDx({sev:"red", conf:"high", name:"Brugada Type 1 (coved-type)",
+      supports:["Coved STE ≥2 mm V1–V2","Slope descending → T inversion","Pola high-risk untuk VF/SCD"],
+      source: SRC.brugada, link:"her"});
+    findings.push({sev:"red", text:"⚡ Brugada Type 1 pattern — risiko tinggi VF idiopathic / SCD"});
+    addStep("Cek triggering factors: demam (antipiretik agresif), hipokalemia, obat Na-blocker (TCA, kokain)");
+    addStep("Konsultasi electrophysiology — pertimbangkan ICD primary prevention");
+    addStep("Family screening (autosomal dominant, ~30% SCN5A mutation)");
+    addStep("Edukasi: hindari obat berisiko (lihat brugadadrugs.org)");
   }
 
-  /* De Winter */
+  /* De Winter T-waves */
   if (has("stAnt","std") && (has("tWave","hyper") || has("tWave","peaked")) &&
       has("tLead","ant") && has("stMorph","up")) {
-    diagnoses.push({sev:"red", conf:"high", name:"De Winter T-waves (STEMI-equivalent)",
-      supports:["Upsloping STD anterior ≥1 mm di J-point","Tall symmetric T waves anterior"], link:"acs"});
-    findings.push({sev:"red", text:"💢 De Winter pattern — LAD oklusi total/kritis (STEMI-equivalent)"});
-    addStep("Aktivasi cath lab — treat as STEMI");
-    warnings.push({text:"De Winter klasifikasi formal bukan STEMI klasik, tetapi >90% kasus = LAD oklusi total. Treat sebagai STEMI-equivalent."});
+    addDx({sev:"red", conf:"high", name:"De Winter T-waves (STEMI-equivalent)",
+      supports:["Upsloping STD ≥1 mm anterior di J-point","Tall symmetric T waves V1–V6","Tanpa STE convencional"],
+      source: SRC.deWinter, link:"acs"});
+    findings.push({sev:"red", text:"💢 De Winter pattern — LAD oklusi total/kritis akut"});
+    addStep("AKTIVASI CATH LAB — treat sebagai STEMI-equivalent");
+    addStep("DAPT + antikoagulan loading sesuai protokol STEMI");
+    warnings.push({text:"De Winter: klasifikasi formal bukan STEMI klasik, tetapi >90% kasus = oklusi total LAD. Treat sebagai STEMI-equivalent."});
   }
 
-  /* Wellens */
+  /* Wellens — biphasic / deep symmetric TWI anterior */
   if (!has("stAnt","ste") && has("tLead","ant") &&
       (has("tWave","bi") || has("tWave","deepInv")) && any("rProg","normal")) {
-    diagnoses.push({sev:"red", conf:"high", name:"Wellens Syndrome (LAD kritikal)",
+    const pattern = has("tWave","bi") ? "A (biphasic pos→neg)" : "B (deep symmetric inversion >5 mm)";
+    addDx({sev:"red", conf:"high", name:"Wellens Syndrome (Pattern "+pattern+")",
       supports:[
-        has("tWave","bi") ? "Biphasic T (pos→neg) di V2–V3" : "Deep symmetric inverted T di V2–V3",
-        "R wave progression preserved","Tidak ada Q wave atau STE significant"
-      ], link:"acs"});
+        has("tWave","bi") ? "Biphasic T (pos→neg) V2–V3" : "Deep symmetric inverted T >5 mm V2–V3",
+        "R wave progression preserved","Tanpa Q wave / STE significant",
+        "Pain-free state (klasik post-pain)"
+      ], source: SRC.deZwaan, link:"acs"});
     findings.push({sev:"red", text:"⚡ Wellens pattern — stenosis kritikal proximal LAD"});
-    addStep("Cath lab dalam 24–48 jam (urgent, bukan emergent)");
-    addStep("JANGAN stress test — bisa precipitate complete occlusion");
+    addStep("Angiografi koroner urgent dalam 24–48 jam");
+    addStep("KONTRAINDIKASI: stress test (treadmill/dobutamine) — risiko precipitate complete occlusion");
+    addStep("DAPT + antikoagulan + statin sesuai protokol ACS high-risk");
   }
 
-  /* Posterior STEMI */
-  if (has("stAnt","std") && has("rProg","early")) {
-    diagnoses.push({sev:"red", conf:"high", name:"Posterior STEMI",
-      supports:["STD anterior (V1–V3)","Tall R wave V1–V3 (mirror)","Curiga LCx atau RCA"], link:"acs"});
-    findings.push({sev:"red", text:"💢 STD V1–V3 + tall R — kemungkinan posterior STEMI"});
-    addStep("Rekam leads posterior V7–V9 (STE ≥0.5 mm = diagnostic)");
-    addStep("Aktivasi cath lab jika V7–V9 konfirmasi");
-  } else if (has("stAnt","std")) {
-    warnings.push({text:"STD V1–V3 isolated: rule out posterior STEMI. Rekam V7–V9 selalu."});
+  /* Posterior STEMI — STD V1–V3 + tall R + upright T */
+  if (has("stAnt","std") && has("rProg","early") && (has("tLead","ant") ? !has("tWave","deepInv") : true)) {
+    addDx({sev:"red", conf:"high", name:"Posterior STEMI",
+      supports:["STD V1–V3 (mirror image)","Tall R V1–V3 (R/S >1)","Upright/tall T V1–V3","Curiga oklusi RCA distal atau LCx"],
+      source: SRC.esc2023, link:"acs"});
+    findings.push({sev:"red", text:"💢 STD V1–V3 + tall R + upright T — posterior STEMI hingga proven otherwise"});
+    addStep("Rekam V7–V9 segera (STE ≥0.5 mm = diagnostic)");
+    addStep("AKTIVASI CATH LAB jika V7–V9 mengkonfirmasi");
+    addStep("Sering disertai inferior STEMI — cek ulang lead inferior");
+  } else if (has("stAnt","std") && !has("tLead","ant")) {
+    /* STD anterior tanpa konteks lain — flag untuk posterior R/O */
+    warnings.push({text:"STD V1–V3 isolated: SELALU rule out posterior STEMI. Rekam V7–V9."});
     addStep("Rekam leads posterior V7–V9");
   }
 
-  /* Hyperacute T */
+  /* Hyperacute T isolated (no STE yet) */
   if (has("tWave","hyper") && !has("stAnt","ste") && !has("stInf","ste") && !has("stLat","ste")) {
-    diagnoses.push({sev:"red", conf:"medium", name:"Hyperacute T waves — earliest STEMI sign",
-      supports:["Tall broad asymmetric T waves","Belum ada STE definite"], link:"acs"});
-    findings.push({sev:"red", text:"⚠️ Hyperacute T — kemungkinan early STEMI"});
-    addStep("Serial EKG setiap 15 menit — STE bisa develop");
-    addStep("Troponin serial; treat sebagai high-risk ACS");
+    addDx({sev:"red", conf:"medium", name:"Hyperacute T waves — earliest STEMI sign",
+      supports:["Tall broad asymmetric T waves","Belum ada STE definite","Pre-STEMI window: 0–30 menit oklusi"],
+      source: SRC.goldberger, link:"acs"});
+    findings.push({sev:"red", text:"⚠️ Hyperacute T — kemungkinan early STEMI (sebelum STE develop)"});
+    addStep("Serial ECG setiap 10–15 menit — STE bisa muncul dalam 30–60 menit");
+    addStep("Troponin hs serial 0/1/3 jam");
+    addStep("Treat sebagai high-risk ACS: DAPT + antikoagulan");
   }
 
-  /* ─── TIER 2: URGENT ─── */
+  /* Severe Hyperkalemia — pre-arrest pattern */
+  if (has("pwave","absent") && has("qrsDur","gte150") && has("tWave","peaked")) {
+    addDx({sev:"red", conf:"high", name:"Hyperkalemia berat — pre-arrest",
+      supports:["P wave hilang","QRS lebar ≥150 ms","T wave peaked simetrik","Pola pre-sinusoidal"],
+      source: SRC.surawicz, link:"elec"});
+    findings.push({sev:"red", text:"⚡ Hyperkalemia berat — pola pre-arrest, risiko VF/asistol imminent"});
+    addStep("CALCIUM GLUCONATE 1–2 g IV STAT (membrane stabilization, onset <5 min)");
+    addStep("INSULIN reguler 10 U IV + D40% 25 g IV (intracellular shift, onset 15–30 min)");
+    addStep("β2-agonist nebulasi (salbutamol 10–20 mg) sebagai tambahan");
+    addStep("HEMODIALISIS EMERGENT — definitive treatment");
+    addStep("Cek K⁺ serum + ABG + EKG serial setiap 30 menit");
+  }
 
-  /* New LBBB at high rate */
+  /* Acute Pericarditis */
+  if (has("prSeg","depDiff") && (has("stInf","ste") || has("stAnt","ste") || has("stLat","ste"))) {
+    const territoriesSte = [has("stInf","ste"), has("stAnt","ste"), has("stLat","ste")].filter(Boolean).length;
+    addDx({sev:"yellow", conf: territoriesSte >= 2 ? "high" : "medium",
+      name:"Acute Pericarditis",
+      supports:["PR depresi difus (PR elevasi di aVR)","STE concave-up di "+territoriesSte+" teritori","Tanpa reciprocal STD","Tanpa Q wave development"],
+      source: SRC.spodick, link:"peri"});
+    findings.push({sev:"yellow", text:"Pericarditis pattern — Spodick Stage I (PR depression + diffuse concave STE)"});
+    addStep("Echocardiogram untuk efusi perikard / tamponade");
+    addStep("Troponin serial — positif menyarankan myo-pericarditis (cardiac MRI)");
+    addStep("CRP, ESR untuk inflammatory marker");
+    addStep("NSAID dosis tinggi (ibuprofen 600–800 mg q8h) + colchicine 0.5 mg BID × 3 bulan");
+    addStep("Hindari NSAID jika myocarditis disuspek (gunakan steroid jika diperlukan)");
+  }
+
+  /* Pulmonary Embolism — S1Q3T3 + sinus tachy + RAD */
+  if (any("rate","100-150","gt150") && has("rhythm","reg") && has("pwave","normal") &&
+      (has("axis","rad") || has("qPath","inf") || (has("tLead","inf") && (has("tWave","deepInv") || has("tWave","diff"))))) {
+    const peSupp = ["Sinus tachycardia"];
+    if (has("axis","rad")) peSupp.push("RAD (S1Q3T3 component)");
+    if (has("qPath","inf")) peSupp.push("Q wave inferior (III)");
+    if (has("tLead","inf") && (has("tWave","deepInv") || has("tWave","diff"))) peSupp.push("T inversion inferior (III)");
+    if (has("qrsMorph","rbbb")) peSupp.push("RBBB baru — right heart strain");
+    /* Require at least 2 PE indicators beyond sinus tachy */
+    if (peSupp.length >= 3) {
+      addDx({sev:"red", conf:"medium", name:"Pulmonary Embolism (cor pulmonale akut)",
+        supports: peSupp.concat(["EKG sensitivitas terbatas (~25%) — klinis + Wells score + CTPA"]),
+        source: SRC.goldberger, link:"hyp"});
+      findings.push({sev:"red", text:"⚠️ Pola right heart strain — pertimbangkan PE akut"});
+      addStep("Hitung Wells score / Geneva score untuk PE pretest probability");
+      addStep("D-dimer jika low/intermediate probability");
+      addStep("CTPA (gold standard) atau V/Q scan jika kontraindikasi kontras");
+      addStep("Echocardiogram bedside: RV dilatasi, McConnell sign, septal flattening");
+      addStep("Antikoagulasi empiris (heparin/LMWH) jika probability tinggi sambil menunggu imaging");
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════
+     TIER 2 — URGENT (yellow)
+     ═══════════════════════════════════════════════════ */
+
+  /* LBBB with tachy — Sgarbossa reminder */
   if (has("qrsMorph","lbbb") && any("rate","100-150","gt150")) {
-    diagnoses.push({sev:"yellow", conf:"medium", name:"LBBB dengan tachycardia",
-      supports:["LBBB pattern","Rate >100"], link:"cond"});
-    warnings.push({text:"LBBB + nyeri dada: gunakan kriteria Sgarbossa / Modified Sgarbossa untuk identifikasi STEMI."});
-    addStep("Bandingkan dengan EKG lama — LBBB baru?");
+    addDx({sev:"yellow", conf:"medium", name:"LBBB dengan tachycardia",
+      supports:["LBBB pattern (broad R I/V6, QS V1)","Rate >100","Rule-out STEMI: gunakan Sgarbossa/Smith-modified"],
+      source: SRC.sgarbossa, link:"cond"});
+    warnings.push({text:"LBBB + chest pain: aplikasi Sgarbossa criteria (≥3 poin) atau Modified Sgarbossa (discordant STE/S ratio ≥0.25)."});
+    addStep("Bandingkan dengan EKG lama — LBBB baru = treat sebagai high-risk ACS");
+    addStep("Troponin hs serial");
   }
 
-  /* 2° AVB Mobitz I */
+  /* 2° AVB Mobitz I (Wenckebach) */
   if (has("pr","varProg")) {
-    diagnoses.push({sev:"blue", conf:"high", name:"AV Block derajat 2 Mobitz I (Wenckebach)",
-      supports:["PR memanjang progresif sebelum dropped beat"], link:"cond"});
+    addDx({sev:"blue", conf:"high", name:"AV Block derajat 2 Mobitz I (Wenckebach)",
+      supports:["PR memanjang progresif sebelum dropped beat","Pause <2× PP interval","Lokasi AVN (biasanya benign)"],
+      source: SRC.goldberger, link:"cond"});
     findings.push({sev:"blue", text:"AV block 2° Mobitz I (Wenckebach) — biasanya benign, AVN-level"});
-    addStep("Monitor; biasanya tidak perlu pacing kecuali simptomatik");
-    addStep("Cek obat AVN-blocker, tone vagal, iskemia inferior");
+    addStep("Monitor; pacing tidak diindikasikan kecuali simptomatik");
+    addStep("Cek obat AVN-blocker (BB, CCB, digoksin), iskemia inferior, tone vagal");
+    addStep("Atropin 0.5–1 mg IV jika simptomatik bradycardia");
   }
 
   /* QTc >500 — TdP risk */
   if (has("qtc","gt500")) {
-    diagnoses.push({sev:"yellow", conf:"high", name:"QTc >500 ms — risiko TdP tinggi",
-      supports:["QTc >500 ms"], link:"elec"});
+    addDx({sev:"yellow", conf:"high", name:"QTc >500 ms — risiko Torsades de Pointes",
+      supports:["QTc >500 ms (zona high risk)","Setiap +10 ms = ~5% peningkatan risiko TdP"],
+      source: SRC.drew, link:"elec"});
     findings.push({sev:"yellow", text:"⚠️ QTc >500 ms — high risk Torsades de Pointes"});
-    addStep("Stop semua obat QT-prolonging (cek CredibleMeds)");
-    addStep("Cek K⁺, Mg²⁺, Ca²⁺ STAT — koreksi K⁺ >4.0, Mg >2.0");
-    addStep("Pertimbangkan Mg sulfate 2g IV profilaksis");
-    addStep("Cardiac monitor kontinyu");
+    addStep("Stop SEMUA obat QT-prolonging (cek crediblemeds.org)");
+    addStep("Cek + koreksi K⁺ >4.0, Mg²⁺ >2.0, Ca²⁺ normal");
+    addStep("Magnesium sulfate 2 g IV profilaksis jika QTc >550 ms");
+    addStep("Cardiac monitor kontinyu sampai QTc <500 ms");
+    addStep("Konsultasi kardiologi — R/O kongenital LQTS jika tidak ada reversible cause");
   }
 
-  /* Severe hyperkalemia */
-  if (has("pwave","absent") && has("qrsDur","gte150") && has("tWave","peaked")) {
-    diagnoses.push({sev:"red", conf:"high", name:"Hyperkalemia berat (suspect)",
-      supports:["P wave absent","QRS lebar ≥150 ms","T wave peaked"], link:"elec"});
-    findings.push({sev:"red", text:"⚡ Hyperkalemia berat — pre-arrest pattern"});
-    addStep("Calcium gluconate 1g IV STAT (membrane stabilization)");
-    addStep("Insulin 10U + D50 1 ampul (intracellular shift)");
-    addStep("Cek K⁺ serum + EKG serial");
-    addStep("Pertimbangkan hemodialisis emergent");
-  } else if (has("tWave","peaked")) {
-    diagnoses.push({sev:"yellow", conf:"medium", name:"Peaked T waves — kemungkinan hyperkalemia",
-      supports:["T wave peaked narrow"], link:"elec"});
-    findings.push({sev:"yellow", text:"T peaked — cek K⁺ serum"});
-    addStep("Cek K⁺ serum STAT");
-  }
-
-  /* ─── TIER 3: MONITOR ─── */
-
-  /* AF */
-  if (has("rhythm","irregIrreg") && has("pwave","absent") && any("qrsDur","lt120","120-149")) {
-    let label = "Atrial Fibrillation";
-    if (s.rate === "gt150" || s.rate === "100-150") label += " (rapid ventricular response)";
-    else if (s.rate === "lt40") label += " (slow ventricular response)";
-    diagnoses.push({sev:"blue", conf:"high", name: label,
-      supports:["Irregularly irregular","Tidak ada P wave"], link:"arr"});
-    findings.push({sev:"blue", text:"Atrial fibrillation"});
-    addStep("Hitung CHA₂DS₂-VASc dan HAS-BLED — pertimbangkan antikoagulasi");
-    if (s.rate === "gt150" || s.rate === "100-150") {
-      addStep("Rate control: BB atau CCB (verapamil/diltiazem) — kecuali HF lanjut");
+  /* Hyperkalemia — peaked T (mild-moderate, not pre-arrest) */
+  if (has("tWave","peaked") && !(has("pwave","absent") && has("qrsDur","gte150"))) {
+    const supp = ["T wave peaked simetrik base sempit"];
+    if (has("pwave","absent")) supp.push("P wave flat/hilang");
+    if (any("pr","gt200","varProg")) supp.push("PR memanjang");
+    if (any("qrsDur","120-149","gte150")) supp.push("QRS melebar");
+    const sev = supp.length >= 3 ? "red" : "yellow";
+    const conf = supp.length >= 3 ? "high" : "medium";
+    addDx({sev, conf, name:"Hyperkalemia (suspect)",
+      supports: supp.concat(["Progresi: peaked T → P flat → QRS lebar → sine wave"]),
+      source: SRC.surawicz, link:"elec"});
+    findings.push({sev, text: sev==="red" ? "⚡ Hyperkalemia signifikan — treat segera" : "T peaked — cek K⁺ serum"});
+    addStep("Cek K⁺ serum STAT + ABG");
+    addStep("EKG serial setiap 30–60 menit");
+    if (sev === "red") {
+      addStep("Calcium gluconate 1 g IV jika QRS lebar atau aritmia");
+      addStep("Insulin + glucose untuk intracellular shift");
     }
   }
 
-  /* SVT */
+  /* Hypokalemia — prominent U + flat T */
+  if (has("uWave","prom") && (has("tWave","normal") || has("tLead","diffuse") || !set("tWave"))) {
+    addDx({sev:"yellow", conf:"high", name:"Hypokalemia (suspect)",
+      supports:["U wave prominent","T flat / amplitudo menurun","Kemungkinan ST depresi ringan","QU lebih panjang dari QT (TU fusion)"],
+      source: SRC.surawicz, link:"elec"});
+    findings.push({sev:"yellow", text:"⚠️ U prominent + T flat — suspect hipokalemia"});
+    addStep("Cek K⁺ + Mg²⁺ serum STAT (sering coexist)");
+    addStep("Koreksi: K⁺ <3.0 → KCl IV 10 mEq/jam via central; K⁺ 3.0–3.5 → KCl oral");
+    addStep("Mg sulfate 2 g IV jika Mg <1.8 (sulit koreksi K⁺ tanpa koreksi Mg)");
+    addStep("Cardiac monitor — risiko TdP, PVC, AF");
+  }
+
+  /* NSTEMI / Ischemia — STD or TWI regional */
+  const std_anywhere = has("stInf","std") || has("stLat","std") ||
+                       (has("stAnt","std") && !has("rProg","early") && !(has("tWave","hyper") && has("stMorph","up")));
+  const twi_regional = has("tWave","deepInv") && any("tLead","ant","lat","inf");
+  if ((std_anywhere || twi_regional) &&
+      !has("stInf","ste") && !has("stAnt","ste") && !has("stLat","ste") && !has("stAnt","coved")) {
+    const supp = [];
+    if (has("stInf","std")) supp.push("STD inferior (II/III/aVF)");
+    if (has("stAnt","std")) supp.push("STD anterior (V1–V4)");
+    if (has("stLat","std")) supp.push("STD lateral (I/aVL/V5–V6)");
+    if (has("stMorph","horiz")) supp.push("Morfologi horizontal (ischemic)");
+    if (has("stMorph","down")) supp.push("Morfologi downsloping (ischemic)");
+    if (twi_regional) {
+      const lmap = {ant:"anterior", lat:"lateral", inf:"inferior"};
+      supp.push("Deep TWI regional ("+(lmap[s.tLead]||s.tLead)+")");
+    }
+    addDx({sev:"yellow", conf:"high", name:"NSTEMI / Unstable Angina (Subendocardial Ischemia)",
+      supports: supp.concat(["Pola subendocardial; tidak transmural"]),
+      source: SRC.esc2023, link:"acs"});
+    findings.push({sev:"yellow", text:"⚠️ STD/TWI regional — NSTEMI/UAP pattern"});
+    addStep("Troponin hs serial 0/1/3 jam — positif = NSTEMI; negatif = UAP");
+    addStep("DAPT: aspirin 162–325 mg + ticagrelor/clopidogrel");
+    addStep("Antikoagulan: fondaparinux 2.5 mg SC atau enoxaparin 1 mg/kg SC");
+    addStep("GRACE score untuk risk stratification — high risk → invasif <24 jam");
+    addStep("Statin tinggi-intensitas (atorvastatin 80 mg)");
+  }
+
+  /* WPW — delta wave or short PR + wide QRS */
+  if (has("delta","present") || (has("pr","lt120") && has("qrsDur","120-149"))) {
+    addDx({sev:"yellow", conf:"high", name:"WPW Syndrome (Pre-excitation)",
+      supports:[
+        has("delta","present") ? "Delta wave (slurred upstroke QRS)" : "PR <120 ms + QRS lebar",
+        "Accessory pathway (bundle of Kent)","Risiko AVRT dan AF dengan pre-excitation"
+      ], source: SRC.marriott, link:"cond"});
+    findings.push({sev:"yellow", text:"⚡ Pre-excitation pattern — WPW"});
+    warnings.push({text:"WPW + AF = LIFE-THREATENING. KONTRAINDIKASI: adenosine, BB, CCB non-DHP, digoksin, amiodarone IV. Gunakan procainamide/ibutilide atau DC kardioversi."});
+    addStep("Konsultasi electrophysiology untuk risk stratification");
+    addStep("EP study + RF ablation curative pada sebagian besar kasus");
+    addStep("Pasien simptomatik → ablation Class I indikasi");
+  }
+
+  /* Brugada Type 2 — saddle-back */
+  if (has("stAnt","saddle")) {
+    addDx({sev:"yellow", conf:"medium", name:"Brugada Type 2 pattern (saddle-back)",
+      supports:["Saddle-back STE V1–V2 ≥2 mm","T positif/biphasic","Bukan diagnostic — perlu provokasi"],
+      source: SRC.brugada, link:"her"});
+    warnings.push({text:"Brugada Type 2: bukan diagnostic. Perlu drug challenge (ajmaline, flecainide, procainamide) untuk konversi ke Type 1."});
+    addStep("Rekam V1–V2 di ICS 2nd dan 3rd (high leads) — meningkatkan sensitivitas");
+    addStep("Konsultasi EP untuk pertimbangan ajmaline challenge");
+    addStep("Cek triggering: demam, hipokalemia, obat");
+  }
+
+  /* ═══════════════════════════════════════════════════
+     TIER 3 — MONITOR (blue)
+     ═══════════════════════════════════════════════════ */
+
+  /* AF — with rate response label */
+  if (has("rhythm","irregIrreg") && has("pwave","absent") && any("qrsDur","lt120","120-149")) {
+    let label = "Atrial Fibrillation";
+    let rateNote = "";
+    if (s.rate === "gt150" || s.rate === "100-150") { label += " RVR"; rateNote = "Rapid ventricular response"; }
+    else if (s.rate === "lt40") { label += " SVR"; rateNote = "Slow ventricular response — curiga AV block atau obat"; }
+    else if (s.rate === "40-60") { label += " (controlled)"; rateNote = "Rate controlled"; }
+    else if (s.rate === "60-100") { label += " (well-controlled)"; rateNote = "Well-controlled"; }
+    addDx({sev:"blue", conf:"high", name: label,
+      supports:["Irregularly irregular","P wave absent (f waves di baseline)",rateNote].filter(Boolean),
+      source: SRC.marriott, link:"arr"});
+    findings.push({sev:"blue", text:"Atrial fibrillation" + (rateNote ? " — "+rateNote : "")});
+    addStep("CHA₂DS₂-VASc + HAS-BLED — pertimbangkan antikoagulasi (DOAC/warfarin)");
+    if (s.rate === "gt150" || s.rate === "100-150") {
+      addStep("Rate control: metoprolol 5 mg IV q5min atau diltiazem 0.25 mg/kg IV (hindari CCB pada HFrEF)");
+      addStep("Rhythm control jika onset <48 jam atau antikoagulasi adekuat ≥3 minggu");
+    }
+    if (s.rate === "lt40") {
+      addStep("Cek obat AVN-blocker, evaluasi underlying AV block");
+    }
+  }
+
+  /* SVT — narrow regular tachy without normal P */
   if (any("rate","100-150","gt150") && has("rhythm","reg") && has("qrsDur","lt120") &&
       any("pwave","absent","retro")) {
-    diagnoses.push({sev:"blue", conf:"medium", name:"SVT (AVNRT / AVRT)",
-      supports:["Rate >100","QRS sempit","P absent atau retrograde","Regular"], link:"arr"});
-    findings.push({sev:"blue", text:"Narrow-complex tachycardia regular — SVT pattern"});
-    addStep("Maneuver vagal (Valsalva modified)");
-    addStep("Adenosine 6 mg IV push → 12 mg jika gagal");
-    addStep("Jika unstable: kardioversi sinkron 50–100 J");
+    addDx({sev:"blue", conf:"medium", name:"SVT (AVNRT / AVRT orthodromic)",
+      supports:["Rate 150–250 bpm","QRS sempit (<120 ms)","Regular","P absent atau retrograde",
+        "DD/: AVNRT (typical 60% kasus), AVRT (WPW)"],
+      source: SRC.marriott, link:"arr"});
+    findings.push({sev:"blue", text:"Narrow-complex tachycardia regular — SVT"});
+    addStep("Maneuver vagal (Valsalva modified, REVERT trial method)");
+    addStep("Adenosine 6 mg IV push rapid → 12 mg jika gagal → 12 mg lagi");
+    addStep("Jika gagal: diltiazem 0.25 mg/kg IV atau metoprolol 5 mg IV");
+    addStep("Unstable (hipotensi, chest pain, syncope): kardioversi sinkron 50–100 J");
   }
 
   /* Sinus brady/tachy */
   if (has("rhythm","reg") && has("pwave","normal") && has("pqrs","1to1")) {
     if (any("rate","lt40","40-60")) {
-      diagnoses.push({sev:"blue", conf:"high", name:"Sinus Bradycardia",
-        supports:["Rate <60","P normal","1:1 conduction"], link:"arr"});
+      addDx({sev:"blue", conf:"high", name:"Sinus Bradycardia",
+        supports:["Rate <60 bpm","P normal upright II/III/aVF","Konduksi 1:1"],
+        source: SRC.goldberger, link:"arr"});
       findings.push({sev:"blue", text:"Sinus bradycardia"});
+      addStep("Evaluasi simptomatik (syncope, presyncope, fatigue, angina)");
+      addStep("Cek obat: BB, CCB non-DHP, digoksin, amiodarone, ivabradine");
+      addStep("R/O hipotiroid, OSA, ICP tinggi, hipotermia");
+      addStep("Simptomatik berat + bradycardia: atropin 0.5–1 mg IV → pacing");
     } else if (any("rate","100-150","gt150")) {
-      diagnoses.push({sev:"blue", conf:"high", name:"Sinus Tachycardia",
-        supports:["Rate >100","P normal","1:1 conduction"], link:"arr"});
-      findings.push({sev:"blue", text:"Sinus tachycardia — cari etiologi (demam, dehidrasi, anemia)"});
+      addDx({sev:"blue", conf:"high", name:"Sinus Tachycardia",
+        supports:["Rate >100 bpm","P normal","1:1 conduction"],
+        source: SRC.goldberger, link:"arr"});
+      findings.push({sev:"blue", text:"Sinus tachycardia — cari etiologi"});
+      addStep("Cari penyebab: demam, sepsis, dehidrasi, anemia, nyeri, ansietas");
+      addStep("R/O: PE, hipertiroid, perdarahan, ketoacidosis, withdrawal");
+      addStep("Treat penyebab — JANGAN slow rate dengan BB tanpa identifikasi penyebab");
     }
   }
 
   /* 1° AVB */
   if (has("pr","gt200")) {
-    diagnoses.push({sev:"blue", conf:"high", name:"AV Block derajat 1",
-      supports:["PR >200 ms","1:1 conduction"], link:"cond"});
-    findings.push({sev:"blue", text:"PR memanjang — AV block 1° (biasanya benign)"});
+    addDx({sev:"blue", conf:"high", name:"AV Block derajat 1",
+      supports:["PR konstan >200 ms","Konduksi 1:1 (semua P diikuti QRS)"],
+      source: SRC.goldberger, link:"cond"});
+    findings.push({sev:"blue", text:"PR memanjang — AV block 1° (biasanya benign isolated)"});
+    addStep("Tidak perlu treatment kecuali simptomatik atau PR ekstrim (>300 ms)");
+    addStep("Cek obat AVN-blocker, tone vagal tinggi");
   }
 
   /* RBBB */
   if (has("qrsMorph","rbbb") && any("qrsDur","120-149","gte150")) {
-    diagnoses.push({sev:"blue", conf:"high", name:"Right Bundle Branch Block (RBBB)",
-      supports:["rSR' V1","QRS ≥120 ms"], link:"cond"});
+    addDx({sev:"blue", conf:"high", name:"Right Bundle Branch Block (RBBB)",
+      supports:["QRS ≥120 ms","rSR' / RSR' (rabbit ears, M-shape) V1","Wide slurred S wave I/V6","T inversion V1–V3 (sekunder)"],
+      source: SRC.aha2009, link:"cond"});
     findings.push({sev:"blue", text:"RBBB pattern"});
+    addStep("Tidak masking STEMI — STE tetap dianalisis normal");
+    addStep("RBBB baru pada konteks akut: R/O PE, MI, miokarditis");
   }
 
-  /* LBBB (without tachy already handled above) */
+  /* LBBB without tachy */
   if (has("qrsMorph","lbbb") && any("qrsDur","120-149","gte150") &&
       !any("rate","100-150","gt150")) {
-    diagnoses.push({sev:"blue", conf:"high", name:"Left Bundle Branch Block (LBBB)",
-      supports:["Broad R I/V6, QS V1","QRS ≥120 ms"], link:"cond"});
+    addDx({sev:"blue", conf:"high", name:"Left Bundle Branch Block (LBBB)",
+      supports:["QRS ≥120 ms","Broad monophasic R I/aVL/V6 (no Q)","Wide QS / rS V1","ST/T discordant (appropriate)"],
+      source: SRC.aha2009, link:"cond"});
     findings.push({sev:"blue", text:"LBBB pattern"});
-    warnings.push({text:"LBBB + nyeri dada: gunakan kriteria Sgarbossa untuk evaluasi STEMI."});
+    warnings.push({text:"LBBB + chest pain: Sgarbossa criteria untuk evaluasi STEMI tersembunyi."});
+    addStep("Echocardiogram: EF — LBBB + EF ≤35% + QRS ≥150 ms = kandidat CRT");
+    addStep("Bandingkan ECG lama — LBBB baru pada konteks akut = high-risk");
   }
 
   /* LAFB */
   if (has("axis","lad") && !has("qrsMorph","lbbb")) {
-    diagnoses.push({sev:"blue", conf:"medium", name:"Left Anterior Fascicular Block (LAFB)",
-      supports:["LAD < −30°","QRS biasanya <120 ms"], link:"cond"});
+    addDx({sev:"blue", conf:"medium", name:"Left Anterior Fascicular Block (LAFB)",
+      supports:["LAD ≤ -45°","qR I/aVL; rS II/III/aVF","QRS biasanya <120 ms","Eksklusi inferior MI lama, RVH"],
+      source: SRC.aha2009, link:"cond"});
+    findings.push({sev:"blue", text:"LAFB (Left Anterior Fascicular Block)"});
   }
   /* LPFB */
-  if (has("axis","rad") && !has("qrsMorph","rbbb")) {
-    diagnoses.push({sev:"blue", conf:"consider", name:"Left Posterior Fascicular Block (LPFB)",
-      supports:["RAD > +90°","Eksklusi RVH, PE, lateral MI diperlukan"], link:"cond"});
-    warnings.push({text:"RAD: eksklusi RVH, PE acute, lateral MI sebelum diagnosa LPFB (jarang isolated)."});
+  if (has("axis","rad") && !has("qrsMorph","rbbb") && !has("axis","extreme")) {
+    addDx({sev:"blue", conf:"consider", name:"Left Posterior Fascicular Block (LPFB)",
+      supports:["RAD ≥ +90°","rS I/aVL; qR II/III/aVF","Eksklusi RVH, PE acute, lateral MI, vertical heart"],
+      source: SRC.aha2009, link:"cond"});
+    warnings.push({text:"LPFB diagnosis of EXCLUSION — singkirkan RVH, PE, lateral MI dahulu (LPFB sangat jarang isolated)."});
   }
 
   /* Bifascicular */
   if (has("qrsMorph","rbbb") && has("axis","lad")) {
-    diagnoses.push({sev:"yellow", conf:"high", name:"Bifascicular Block (RBBB + LAFB)",
-      supports:["RBBB + LAD"], link:"cond"});
+    addDx({sev:"yellow", conf:"high", name:"Bifascicular Block (RBBB + LAFB)",
+      supports:["RBBB","LAD ≤ -45°","Konduksi via fasikel posterior LBB saja"],
+      source: SRC.goldberger, link:"cond"});
     if (has("pr","gt200")) {
-      diagnoses.push({sev:"yellow", conf:"medium", name:"Trifascicular block (incomplete)",
-        supports:["Bifascicular + PR memanjang"], link:"cond"});
+      addDx({sev:"yellow", conf:"medium", name:"Trifascicular block (incomplete)",
+        supports:["Bifascicular + 1° AVB","Risiko progresi ke CHB"],
+        source: SRC.goldberger, link:"cond"});
+      addStep("Bifascicular + 1° AVB + syncope = pacemaker Class IIa");
     }
   }
 
-  /* QTc borderline-prolonged */
+  /* QTc prolonged borderline (470-500) */
   if (has("qtc","gt470")) {
-    diagnoses.push({sev:"yellow", conf:"medium", name:"QTc prolonged (>470 ms)",
-      supports:["QTc >470 ms"], link:"elec"});
-    findings.push({sev:"yellow", text:"QTc prolonged"});
-    addStep("Review obat QT-prolonging; cek K⁺, Mg²⁺");
+    addDx({sev:"yellow", conf:"medium", name:"QTc prolonged (>470 ms)",
+      supports:["QTc >470 ms (borderline-prolonged)","Risiko TdP meningkat tetapi belum critical"],
+      source: SRC.drew, link:"elec"});
+    findings.push({sev:"yellow", text:"QTc prolonged — review obat & elektrolit"});
+    addStep("Review obat QT-prolonging (crediblemeds.org)");
+    addStep("Cek K⁺ + Mg²⁺ + Ca²⁺");
+    addStep("Monitor QTc serial");
   }
 
-  /* LVH voltage */
+  /* QTc short — suspect hypercalcemia / SQTS */
+  if (has("qtc","lt340")) {
+    addDx({sev:"yellow", conf:"medium", name:"QTc pendek (<340 ms)",
+      supports:["QTc <340 ms","DD/: hypercalcemia (cek Ca²⁺ ionized), digoxin effect, hipertermia, Short QT Syndrome"],
+      source: SRC.drew, link:"elec"});
+    findings.push({sev:"yellow", text:"QTc pendek — cek Ca²⁺, digoksin, suhu"});
+    addStep("Cek Ca²⁺ ionized, fosfat, PTH");
+    addStep("Cek level digoksin jika sedang konsumsi");
+    addStep("Family history SCD → R/O Short QT Syndrome (genetik)");
+  }
+
+  /* LVH voltage — with optional strain */
   if (has("voltage","high")) {
-    diagnoses.push({sev:"blue", conf:"medium", name:"LVH (suspect — voltage criteria)",
-      supports:["Voltage tinggi precordial/limb"], link:"hyp"});
-    findings.push({sev:"blue", text:"Voltage tinggi — suspect LVH"});
-    addStep("Konfirmasi dengan echocardiogram");
+    const supp = ["Voltage tinggi (Sokolow-Lyon: S V1 + R V5/V6 ≥35 mm)"];
+    let withStrain = false;
+    if ((has("stLat","std") && has("tLead","lat") && has("tWave","deepInv")) ||
+        (has("stLat","std") && has("tWave","deepInv"))) {
+      supp.push("LV strain pattern (STD + asymmetric TWI lateral)");
+      withStrain = true;
+    }
+    addDx({sev: withStrain ? "yellow" : "blue", conf:"medium",
+      name: withStrain ? "LVH dengan Strain Pattern" : "LVH (suspect — voltage criteria)",
+      supports: supp.concat(["Cornell, Romhilt-Estes alternatif"]),
+      source: SRC.sokolow, link:"hyp"});
+    findings.push({sev: withStrain ? "yellow" : "blue",
+      text: withStrain ? "LVH dengan strain pattern — adverse prognosis" : "Voltage tinggi — suspect LVH"});
+    addStep("Echocardiogram untuk konfirmasi (LV mass index, wall thickness)");
+    if (withStrain) addStep("Strain pattern: cari penyebab — HTN lama, AS, HCM, cardiomyopathy");
   }
 
-  /* WPW */
-  if (has("delta","present") || (has("pr","lt120") && has("qrsDur","120-149"))) {
-    diagnoses.push({sev:"yellow", conf:"high", name:"WPW Syndrome (pre-excitation)",
-      supports:[has("delta","present") ? "Delta wave (slurred upstroke)" : "PR <120 + QRS >120",
-        "Pre-excitation pattern"], link:"cond"});
-    findings.push({sev:"yellow", text:"⚡ Pre-excitation pattern — WPW"});
-    warnings.push({text:"WPW + AF: KONTRAINDIKASI adenosine/BB/CCB/digoksin. Gunakan procainamide atau kardioversi."});
-    addStep("Konsultasi electrophysiology untuk risk stratification");
+  /* Low voltage */
+  if (has("voltage","low")) {
+    addDx({sev:"yellow", conf:"medium", name:"Low Voltage QRS (difus)",
+      supports:["QRS amplitudo <5 mm di limb, <10 mm di precordial","DD/: efusi perikard, efusi pleura, obesitas, COPD, amiloidosis, miksedema, infark luas"],
+      source: SRC.marriott, link:"hyp"});
+    findings.push({sev:"yellow", text:"Low voltage difus — cari efusi/infiltrasi"});
+    addStep("Echocardiogram untuk efusi perikard, EF, infiltratif");
+    addStep("Pertimbangkan: amyloidosis (deposisi), hipotiroid, obesitas morbid");
   }
 
-  /* Saddle-back V1–V2 — Brugada Type 2 */
-  if (has("stAnt","saddle")) {
-    diagnoses.push({sev:"yellow", conf:"medium", name:"Brugada Type 2 pattern (saddle-back)",
-      supports:["Saddle-back STE V1–V2"], link:"her"});
-    warnings.push({text:"Brugada Type 2: perlu provokasi (ajmaline/flecainide) untuk konfirmasi. Rekam high leads ICS 2/3."});
-    addStep("Rekam V1–V2 di ICS 2nd dan 3rd (high leads)");
-  }
-
-  /* Pericarditis */
-  if (has("prSeg","depDiff") && (has("stInf","ste") || has("stAnt","ste") || has("stLat","ste"))) {
-    diagnoses.push({sev:"yellow", conf:"high", name:"Acute Pericarditis",
-      supports:["PR depresi difus","STE concave-up diffuse","Tidak ada reciprocal STD"], link:"peri"});
-    findings.push({sev:"yellow", text:"Pericarditis pattern — STE diffuse + PR depression"});
-    addStep("Echocardiogram untuk efusi perikard");
-    addStep("Troponin (rule out myo-pericarditis)");
-    addStep("NSAID + colchicine (jika myocarditis ruled out)");
-  }
-
-  /* Osborn J wave */
+  /* Osborn J wave — hypothermia */
   if (has("other","osborn")) {
-    diagnoses.push({sev:"yellow", conf:"high", name:"Hypothermia (Osborn J wave)",
-      supports:["Osborn wave terminal QRS","Bradycardia umumnya"], link:"elec"});
+    addDx({sev:"yellow", conf:"high", name:"Hypothermia (Osborn / J wave)",
+      supports:["Osborn wave terminal QRS","Amplitudo ∝ derajat hipotermia","Bradycardia + PR/QRS/QT memanjang"],
+      source: SRC.haïs, link:"elec"});
     findings.push({sev:"yellow", text:"⚡ Osborn (J) wave — hipotermia"});
-    addStep("Suhu inti tubuh; re-warming gradual 0.5–1°C/jam");
-    addStep("Hindari manipulasi kasar (risiko VF)");
+    addStep("Ukur suhu inti tubuh (rectal/esophageal)");
+    addStep("Re-warming gradual (0.5–1°C/jam) — passive external → active external → active internal");
+    addStep("Hindari manipulasi kasar — risiko VF (myocardium irritable)");
+    addStep("Tidak deklarasi mati sampai re-warmed ≥32°C ('not dead until warm and dead')");
   }
 
-  /* Epsilon wave */
+  /* Epsilon wave — ARVC */
   if (has("other","epsilon")) {
-    diagnoses.push({sev:"yellow", conf:"high", name:"ARVC (Epsilon wave)",
-      supports:["Epsilon wave V1–V3","TWI anterior pertimbangkan"], link:"her"});
-    findings.push({sev:"yellow", text:"⚡ Epsilon wave — Arrhythmogenic RV Cardiomyopathy"});
-    addStep("Cardiac MRI dengan kontras");
-    addStep("Konsultasi cardiology / electrophysiology");
-    addStep("Family screening (autosomal dominant)");
+    addDx({sev:"yellow", conf:"high", name:"ARVC (Arrhythmogenic RV Cardiomyopathy)",
+      supports:["Epsilon wave V1–V3 (deflection terminal QRS)","Sering disertai TWI anterior tanpa RBBB"],
+      source: SRC.marriott, link:"her"});
+    findings.push({sev:"yellow", text:"⚡ Epsilon wave — ARVC suspect"});
+    addStep("Cardiac MRI dengan kontras (gold standard: fatty infiltration, RV dilatation)");
+    addStep("Konsultasi cardiology / EP — exercise stress test (sering memicu VT)");
+    addStep("Family screening (autosomal dominant; desmosomal mutations)");
+    addStep("ICD untuk symptomatic atau aborted SCD");
   }
 
-  /* ─── TIER 4: INTERPRET ─── */
+  /* Inverted U wave — ischemia marker */
+  if (has("uWave","inv")) {
+    addDx({sev:"yellow", conf:"medium", name:"Negative U wave (suspect ischemia)",
+      supports:["U wave opposite arah dari T","High specificity untuk patologi — terutama CAD LAD"],
+      source: SRC.surawicz, link:"elec"});
+    findings.push({sev:"yellow", text:"⚠️ U inverted — suspect ischemia / strain"});
+    addStep("R/O CAD aktif — sering precede ST/T changes pada angina");
+    addStep("Echocardiogram untuk wall motion, valvular");
+  }
+
+  /* ═══════════════════════════════════════════════════
+     TIER 4 — INTERPRET (grey)
+     ═══════════════════════════════════════════════════ */
 
   /* Pathological Q waves */
   if (any("qPath","inf","ant","lat")) {
     const loc = {inf:"inferior",ant:"anterior",lat:"lateral"}[s.qPath];
-    diagnoses.push({sev:"grey", conf:"medium", name:"Old MI ("+loc+")",
-      supports:["Q patologis "+loc,"Tanpa STE akut"], link:"old"});
+    addDx({sev:"grey", conf:"medium", name:"Old MI ("+loc+")",
+      supports:["Q patologis "+loc+" (≥40 ms atau >25% R)","Tanpa STE akut","Loss viable myocardium territorial"],
+      source: SRC.goldberger, link:"old"});
     findings.push({sev:"grey", text:"Q patologis "+loc+" — infark lama"});
-    addStep("Bandingkan dengan EKG lama untuk dating");
-    addStep("Echocardiogram untuk EF dan wall motion");
+    addStep("Bandingkan EKG lama untuk dating infark");
+    addStep("Echocardiogram untuk EF, wall motion, mural thrombus");
+    addStep("Optimisasi sekunder: DAPT, statin, ACEi/ARB, BB, lifestyle");
   }
 
   /* PRWP */
   if (has("rProg","poor") && !has("qPath","ant")) {
-    diagnoses.push({sev:"grey", conf:"medium", name:"Poor R Wave Progression (PRWP)",
-      supports:["R V3 ≤3 mm","Transition >V4"], link:"old"});
+    addDx({sev:"grey", conf:"medium", name:"Poor R Wave Progression (PRWP)",
+      supports:["R V3 ≤3 mm","Transition >V4","DD/: anteroseptal MI lama, LVH, LBBB, COPD, lead misplacement"],
+      source: SRC.marriott, link:"old"});
     findings.push({sev:"grey", text:"Poor R progression — anteroseptal MI vs LVH vs COPD"});
+    addStep("Verifikasi lead placement V1/V2 di ICS 4 (bukan terlalu tinggi)");
+    addStep("Echocardiogram untuk membedakan etiologi");
   }
 
   /* Fragmented QRS */
   if (has("other","fragQrs")) {
-    diagnoses.push({sev:"grey", conf:"medium", name:"Fragmented QRS",
-      supports:["RSR'/notching di ≥2 lead kontigu"], link:"old"});
-    findings.push({sev:"grey", text:"Fragmented QRS — marker fibrosis/scar"});
+    addDx({sev:"grey", conf:"medium", name:"Fragmented QRS",
+      supports:["RSR' / notching pada R atau S di ≥2 lead kontigu (tanpa BBB)","Marker fibrosis/scar miokard"],
+      source: SRC.marriott, link:"old"});
+    findings.push({sev:"grey", text:"Fragmented QRS — marker scar miokard"});
+    addStep("Prediktor mortalitas pada CAD — cek fungsi LV, perfusion imaging");
   }
 
-  /* Normal Sinus Rhythm (if nothing flagged) */
+  /* ═══════════════════════════════════════════════════
+     TIER 5 — NORMAL (green) — only if nothing else flagged
+     ═══════════════════════════════════════════════════ */
   if (diagnoses.length === 0 && has("rhythm","reg") && has("pwave","normal") &&
       has("pqrs","1to1") && has("rate","60-100") && has("qrsDur","lt120") &&
-      has("qrsMorph","normal") && has("axis","normal")) {
-    diagnoses.push({sev:"green", conf:"high", name:"Normal Sinus Rhythm",
-      supports:["Rate 60–100","P normal 1:1","QRS sempit","Axis normal"], link:null});
-    findings.push({sev:"green", text:"✓ Normal sinus rhythm — tidak ada temuan abnormal"});
+      has("qrsMorph","normal") && has("axis","normal") &&
+      (any("qtc","340-440","440-470") || !set("qtc"))) {
+    addDx({sev:"green", conf:"high", name:"Normal Sinus Rhythm",
+      supports:["Rate 60–100","P normal upright II/III/aVF","1:1 conduction","QRS sempit <120 ms",
+        "Axis normal","Tidak ada temuan patologis"],
+      source: SRC.goldberger, link:null});
+    findings.push({sev:"green", text:"✓ Normal Sinus Rhythm — tidak ada temuan abnormal"});
   }
 
   /* Confidence label by completeness */
@@ -1908,6 +2310,1436 @@ function interpretECG(s) {
 
   return {findings, diagnoses, warnings, nextSteps, conflicts, groupsFilled, confLabel};
 }
+
+/* ═══════════════════════════════════════════════════════════
+   ECG ILLUSTRATION COMPOSER
+   Coordinate system: 1 unit ≈ 1px. 4 units = 1 small box (40ms)
+   ═══════════════════════════════════════════════════════ */
+
+/* Beat builder — returns {path, endX} */
+function ecgBeat(x0, o) {
+  o = Object.assign({
+    base: 38, pDur: 10, pAmp: 3, pShape: 'normal',
+    prSeg: 4, qDur: 2, qAmp: 2, rDur: 3, rAmp: 18,
+    sDur: 3, sAmp: 5, stDur: 12, stOffset: 0, stShape: 'flat',
+    tDur: 18, tAmp: 5, tShape: 'normal', uAmp: 0, uDur: 10
+  }, o);
+  let p = "M "+x0+" "+o.base;
+  let x = x0;
+  /* P wave */
+  if (o.pShape === 'absent') {
+    p += " L "+(x+o.pDur)+" "+o.base;
+  } else if (o.pShape === 'bifid') {
+    const m1 = x + o.pDur*0.3, m2 = x + o.pDur*0.7;
+    p += " Q "+(x+o.pDur*0.15)+" "+(o.base-o.pAmp*2)+" "+m1+" "+(o.base-o.pAmp*0.4);
+    p += " Q "+(x+o.pDur*0.5)+" "+(o.base-o.pAmp*0.4)+" "+m2+" "+(o.base-o.pAmp*0.4);
+    p += " Q "+(x+o.pDur*0.85)+" "+(o.base-o.pAmp*2)+" "+(x+o.pDur)+" "+o.base;
+  } else if (o.pShape === 'peaked') {
+    p += " L "+(x+o.pDur/2)+" "+(o.base-o.pAmp*3);
+    p += " L "+(x+o.pDur)+" "+o.base;
+  } else if (o.pShape === 'inverted') {
+    p += " Q "+(x+o.pDur/2)+" "+(o.base+o.pAmp*2)+" "+(x+o.pDur)+" "+o.base;
+  } else {
+    p += " Q "+(x+o.pDur/2)+" "+(o.base-o.pAmp*2)+" "+(x+o.pDur)+" "+o.base;
+  }
+  x += o.pDur;
+  /* PR segment */
+  x += o.prSeg;
+  p += " L "+x+" "+o.base;
+  /* QRS — sharp */
+  p += " L "+(x+o.qDur)+" "+(o.base+o.qAmp);
+  x += o.qDur;
+  p += " L "+(x+o.rDur)+" "+(o.base-o.rAmp);
+  x += o.rDur;
+  p += " L "+(x+o.sDur)+" "+(o.base+o.sAmp);
+  x += o.sDur;
+  /* J-point */
+  p += " L "+(x+1)+" "+(o.base+o.stOffset);
+  x += 1;
+  /* ST segment */
+  if (o.stShape === 'concave-up') {
+    const m = x + o.stDur/2;
+    p += " Q "+m+" "+(o.base+o.stOffset+2.5)+" "+(x+o.stDur)+" "+(o.base+o.stOffset);
+  } else if (o.stShape === 'convex-up') {
+    const m = x + o.stDur/2;
+    p += " Q "+m+" "+(o.base+o.stOffset-3)+" "+(x+o.stDur)+" "+(o.base+o.stOffset);
+  } else if (o.stShape === 'coved') {
+    /* Brugada coved — descends progressively */
+    const m = x + o.stDur/2;
+    p += " Q "+m+" "+(o.base+o.stOffset+3)+" "+(x+o.stDur)+" "+(o.base+o.stOffset+5);
+  } else if (o.stShape === 'saddle') {
+    const m = x + o.stDur/2;
+    p += " Q "+m+" "+(o.base+o.stOffset+4)+" "+(x+o.stDur)+" "+(o.base+o.stOffset);
+  } else if (o.stShape === 'downsloping') {
+    p += " L "+(x+o.stDur)+" "+(o.base+o.stOffset+3);
+  } else if (o.stShape === 'upsloping') {
+    p += " L "+(x+o.stDur)+" "+(o.base+o.stOffset-3);
+  } else {
+    p += " L "+(x+o.stDur)+" "+(o.base+o.stOffset);
+  }
+  x += o.stDur;
+  /* T wave */
+  let stEnd = o.stShape==='coved' ? o.stOffset+5 : (o.stShape==='downsloping' ? o.stOffset+3 : (o.stShape==='upsloping' ? o.stOffset-3 : o.stOffset));
+  if (o.tShape === 'inverted') {
+    const m = x + o.tDur*0.6;
+    p += " Q "+m+" "+(o.base+o.tAmp*2+stEnd)+" "+(x+o.tDur)+" "+o.base;
+  } else if (o.tShape === 'peaked') {
+    p += " L "+(x+o.tDur/2)+" "+(o.base-o.tAmp*2.5+stEnd);
+    p += " L "+(x+o.tDur)+" "+o.base;
+  } else if (o.tShape === 'hyperacute') {
+    const m = x + o.tDur*0.4;
+    p += " Q "+m+" "+(o.base-o.tAmp*2.6+stEnd)+" "+(x+o.tDur)+" "+o.base;
+  } else if (o.tShape === 'biphasic') {
+    const m1 = x + o.tDur*0.4, m2 = x + o.tDur*0.7;
+    p += " Q "+(x+o.tDur*0.2)+" "+(o.base-o.tAmp*1.5+stEnd)+" "+m1+" "+(o.base+stEnd);
+    p += " Q "+m2+" "+(o.base+o.tAmp*1.8+stEnd)+" "+(x+o.tDur)+" "+o.base;
+  } else if (o.tShape === 'flat') {
+    p += " L "+(x+o.tDur)+" "+o.base;
+  } else if (o.tShape === 'deep-inv') {
+    const m = x + o.tDur/2;
+    p += " Q "+m+" "+(o.base+o.tAmp*3+stEnd)+" "+(x+o.tDur)+" "+o.base;
+  } else {
+    const m = x + o.tDur*0.55;
+    p += " Q "+m+" "+(o.base-o.tAmp*2+stEnd)+" "+(x+o.tDur)+" "+o.base;
+  }
+  x += o.tDur;
+  /* U wave (optional) */
+  if (o.uAmp > 0) {
+    x += 2;
+    const m = x + o.uDur/2;
+    p += " L "+x+" "+o.base;
+    p += " Q "+m+" "+(o.base-o.uAmp*2)+" "+(x+o.uDur)+" "+o.base;
+    x += o.uDur;
+  } else if (o.uAmp < 0) {
+    x += 2;
+    const m = x + o.uDur/2;
+    p += " L "+x+" "+o.base;
+    p += " Q "+m+" "+(o.base-o.uAmp*2)+" "+(x+o.uDur)+" "+o.base;
+    x += o.uDur;
+  }
+  return { path: p, endX: x };
+}
+
+/* SVG style constants */
+const WAVE_N = 'stroke="#9EC494" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+const WAVE_A = 'stroke="#E87060" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+const WAVE_Y = 'stroke="#D4A860" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+const LBL = 'fill="rgba(160,160,160,0.9)" font-family="JetBrains Mono,monospace" font-size="8"';
+const LBL_N = 'fill="#9EC494" font-family="JetBrains Mono,monospace" font-size="8"';
+const LBL_A = 'fill="#E87060" font-family="JetBrains Mono,monospace" font-size="8"';
+const LBL_Y = 'fill="#D4A860" font-family="JetBrains Mono,monospace" font-size="8"';
+const MARK = 'stroke="rgba(212,175,106,0.7)" stroke-width="0.8" stroke-dasharray="2,2" fill="none"';
+const DIM = 'stroke="rgba(160,160,160,0.5)" stroke-width="0.6" fill="none"';
+
+function svgWrap(body, w, h) {
+  return '<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">'+body+'</svg>';
+}
+
+/* Main illustration dispatcher */
+function ecgIllust(type) {
+  const W = 240, H = 60;
+  let body = '';
+  switch(type) {
+
+    /* ─── P WAVE ─── */
+    case 'p-duration': {
+      const b1 = ecgBeat(15, {pDur: 10, pAmp: 3, base: 35});
+      const b2 = ecgBeat(130, {pDur: 26, pAmp: 3, pShape: 'bifid', base: 35});
+      body = '<path d="'+b1.path+'" '+WAVE_N+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
+           + '<text x="15" y="55" '+LBL_N+'>Normal &lt;120ms</text>'
+           + '<text x="130" y="55" '+LBL_A+'>P mitrale (bifid)</text>';
+      break;
+    }
+    case 'p-amplitude': {
+      const b1 = ecgBeat(15, {pDur: 12, pAmp: 2.5, base: 35});
+      const b2 = ecgBeat(130, {pDur: 12, pAmp: 6, pShape: 'peaked', base: 35});
+      body = '<path d="'+b1.path+'" '+WAVE_N+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
+           + '<text x="15" y="55" '+LBL_N+'>Normal &lt;2.5mm</text>'
+           + '<text x="130" y="55" '+LBL_A+'>P pulmonale</text>';
+      break;
+    }
+    case 'p-morphology': {
+      const b1 = ecgBeat(10, {pDur: 12, pAmp: 3, base: 35});
+      const b2 = ecgBeat(90, {pDur: 24, pAmp: 3, pShape: 'bifid', base: 35});
+      const b3 = ecgBeat(175, {pDur: 12, pAmp: 6, pShape: 'peaked', base: 35});
+      body = '<path d="'+b1.path+'" '+WAVE_N+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
+           + '<path d="'+b3.path+'" '+WAVE_A+'/>'
+           + '<text x="14" y="55" '+LBL_N+'>Normal</text>'
+           + '<text x="95" y="55" '+LBL_A+'>LAE</text>'
+           + '<text x="180" y="55" '+LBL_A+'>RAE</text>';
+      break;
+    }
+    case 'p-axis': {
+      const b1 = ecgBeat(15, {pDur: 12, pAmp: 3, base: 30});
+      const b2 = ecgBeat(130, {pDur: 12, pAmp: 3, pShape: 'inverted', base: 30});
+      body = '<path d="'+b1.path+'" '+WAVE_N+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
+           + '<text x="15" y="55" '+LBL_N+'>Upright (sinus)</text>'
+           + '<text x="130" y="55" '+LBL_A+'>Inverted (ectopic)</text>';
+      break;
+    }
+    case 'p-pp-interval': {
+      /* Show 3 beats with constant PP (regular) vs varying PP (wandering) */
+      let p1 = '', p2 = '';
+      for (let i = 0; i < 3; i++) {
+        const b = ecgBeat(10 + i*40, {pDur: 8, pAmp: 3, base: 22, rAmp: 12, sAmp: 3, tDur: 10, tAmp: 3});
+        p1 += '<path d="'+b.path+'" '+WAVE_N+'/>';
+      }
+      const offsets = [125, 155, 200];
+      const shapes = ['normal','bifid','peaked'];
+      offsets.forEach((x, i) => {
+        const b = ecgBeat(x, {pDur: 8, pAmp: 3, pShape: shapes[i], base: 52, rAmp: 12, sAmp: 3, tDur: 10, tAmp: 3});
+        p2 += '<path d="'+b.path+'" '+WAVE_A+'/>';
+      });
+      body = p1 + p2
+           + '<text x="10" y="11" '+LBL_N+'>Regular sinus</text>'
+           + '<text x="125" y="42" '+LBL_A+'>Wandering / MAT</text>';
+      break;
+    }
+
+    /* ─── PR INTERVAL ─── */
+    case 'pr-normal': {
+      const b = ecgBeat(60, {pDur: 12, prSeg: 8, base: 35});
+      body = '<path d="'+b.path+'" '+WAVE_N+'/>'
+           + '<line x1="60" y1="14" x2="60" y2="50" '+MARK+'/>'
+           + '<line x1="82" y1="14" x2="82" y2="50" '+MARK+'/>'
+           + '<line x1="60" y1="14" x2="82" y2="14" '+MARK+'/>'
+           + '<text x="64" y="11" '+LBL_Y+'>PR 120-200ms</text>';
+      break;
+    }
+    case 'pr-short': {
+      const b = ecgBeat(60, {pDur: 8, prSeg: 0, base: 35, qDur: 0, qAmp: 0});
+      /* Add delta wave: replace initial R upstroke with slurred slope */
+      body = '<path d="'+b.path+'" '+WAVE_A+'/>'
+           + '<line x1="60" y1="14" x2="60" y2="50" '+MARK+'/>'
+           + '<line x1="68" y1="14" x2="68" y2="50" '+MARK+'/>'
+           + '<text x="72" y="11" '+LBL_A+'>PR &lt;120ms (WPW)</text>';
+      break;
+    }
+    case 'pr-long': {
+      const b = ecgBeat(40, {pDur: 12, prSeg: 22, base: 35});
+      body = '<path d="'+b.path+'" '+WAVE_A+'/>'
+           + '<line x1="40" y1="14" x2="40" y2="50" '+MARK+'/>'
+           + '<line x1="74" y1="14" x2="74" y2="50" '+MARK+'/>'
+           + '<line x1="40" y1="14" x2="74" y2="14" '+MARK+'/>'
+           + '<text x="44" y="11" '+LBL_A+'>PR &gt;200ms (1° AVB)</text>';
+      break;
+    }
+
+    /* ─── QRS ─── */
+    case 'qrs-duration': {
+      const b1 = ecgBeat(15, {pDur: 10, rDur: 2, sDur: 2, base: 35});
+      const b2 = ecgBeat(130, {pDur: 10, rDur: 8, sDur: 8, rAmp: 14, base: 35});
+      body = '<path d="'+b1.path+'" '+WAVE_N+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
+           + '<text x="15" y="55" '+LBL_N+'>QRS &lt;120ms</text>'
+           + '<text x="130" y="55" '+LBL_A+'>QRS ≥120ms</text>';
+      break;
+    }
+    case 'qrs-axis-wheel': {
+      /* Hexaxial diagram */
+      const cx = 120, cy = 28, r = 22;
+      let zones = '';
+      /* Normal zone: -30 to +90 (right-down) */
+      zones += '<path d="M '+cx+' '+cy+' L '+(cx+r*Math.cos(-Math.PI/6))+' '+(cy+r*Math.sin(-Math.PI/6))+' A '+r+' '+r+' 0 0 1 '+(cx+r*Math.cos(Math.PI/2))+' '+(cy+r*Math.sin(Math.PI/2))+' Z" fill="rgba(78,125,66,0.3)"/>';
+      /* LAD: -30 to -90 */
+      zones += '<path d="M '+cx+' '+cy+' L '+(cx+r*Math.cos(-Math.PI/6))+' '+(cy+r*Math.sin(-Math.PI/6))+' A '+r+' '+r+' 0 0 0 '+(cx+r*Math.cos(-Math.PI/2))+' '+(cy+r*Math.sin(-Math.PI/2))+' Z" fill="rgba(212,168,96,0.3)"/>';
+      /* RAD: +90 to +180 */
+      zones += '<path d="M '+cx+' '+cy+' L '+(cx+r*Math.cos(Math.PI/2))+' '+(cy+r*Math.sin(Math.PI/2))+' A '+r+' '+r+' 0 0 1 '+(cx-r)+' '+cy+' Z" fill="rgba(112,168,212,0.3)"/>';
+      /* Extreme: -90 to -180 */
+      zones += '<path d="M '+cx+' '+cy+' L '+(cx+r*Math.cos(-Math.PI/2))+' '+(cy+r*Math.sin(-Math.PI/2))+' A '+r+' '+r+' 0 0 0 '+(cx-r)+' '+cy+' Z" fill="rgba(232,112,96,0.3)"/>';
+      /* Outer circle */
+      zones += '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="rgba(160,160,160,0.5)" stroke-width="0.8"/>';
+      /* Axis lines */
+      zones += '<line x1="'+(cx-r)+'" y1="'+cy+'" x2="'+(cx+r)+'" y2="'+cy+'" '+DIM+'/>';
+      zones += '<line x1="'+cx+'" y1="'+(cy-r)+'" x2="'+cx+'" y2="'+(cy+r)+'" '+DIM+'/>';
+      body = zones
+           + '<text x="6" y="14" '+LBL_N+'>NL</text>'
+           + '<text x="6" y="48" '+LBL_Y+'>LAD</text>'
+           + '<text x="180" y="14" '+LBL_A+'>EXT</text>'
+           + '<text x="180" y="48" fill="#70A8D4" font-family="JetBrains Mono,monospace" font-size="8">RAD</text>';
+      break;
+    }
+    case 'r-progression': {
+      /* V1 through V6 — small inverted-to-tall R progression */
+      const xs = [12, 50, 88, 126, 164, 202];
+      const ampR = [3, 6, 10, 14, 16, 14];
+      const ampS = [12, 10, 6, 3, 1, 1];
+      let waves = '';
+      for (let i = 0; i < 6; i++) {
+        const b = ecgBeat(xs[i]-15, {
+          pDur: 6, pAmp: 1.5, prSeg: 1,
+          qDur: 1, qAmp: 1,
+          rDur: 2, rAmp: ampR[i],
+          sDur: 2, sAmp: ampS[i],
+          stDur: 4, tDur: 6, tAmp: 2, base: 30
+        });
+        waves += '<path d="'+b.path+'" '+WAVE_N+'/>';
+        waves += '<text x="'+(xs[i]-10)+'" y="55" '+LBL+'>V'+(i+1)+'</text>';
+      }
+      body = waves;
+      break;
+    }
+    case 'septal-q': {
+      const b1 = ecgBeat(20, {qDur: 2, qAmp: 2, base: 35});  /* small physiologic */
+      const b2 = ecgBeat(140, {qDur: 5, qAmp: 8, rDur: 5, rAmp: 14, base: 35}); /* deep pathologic */
+      body = '<path d="'+b1.path+'" '+WAVE_N+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
+           + '<text x="20" y="55" '+LBL_N+'>q fisiologis</text>'
+           + '<text x="135" y="55" '+LBL_A+'>Q patologis</text>';
+      break;
+    }
+    case 'transition-zone': {
+      const xs = [12, 50, 88, 126, 164, 202];
+      const ampR = [3, 6, 10, 12, 16, 14];
+      const ampS = [12, 10, 8, 6, 1, 1];
+      let waves = '';
+      for (let i = 0; i < 6; i++) {
+        const b = ecgBeat(xs[i]-15, {
+          pDur: 6, pAmp: 1.5, prSeg: 1, qDur: 1, qAmp: 1,
+          rDur: 2, rAmp: ampR[i], sDur: 2, sAmp: ampS[i],
+          stDur: 4, tDur: 6, tAmp: 2, base: 30
+        });
+        waves += '<path d="'+b.path+'" '+WAVE_N+'/>';
+        const isTransition = (i === 2 || i === 3);
+        waves += '<text x="'+(xs[i]-10)+'" y="55" '+(isTransition ? LBL_N : LBL)+'>V'+(i+1)+'</text>';
+      }
+      /* Mark transition zone at V3/V4 */
+      waves += '<rect x="73" y="6" width="76" height="42" fill="rgba(78,125,66,0.15)" stroke="rgba(78,125,66,0.5)" stroke-width="0.6" stroke-dasharray="2,2"/>';
+      body = waves
+           + '<text x="80" y="13" '+LBL_N+'>R=S transition</text>';
+      break;
+    }
+    case 'sokolow-lyon': {
+      /* V1 with deep S; V5 with tall R; show measurement */
+      const b1 = ecgBeat(20, {pDur: 6, pAmp: 1.5, prSeg: 1, qDur: 1, qAmp: 1, rDur: 2, rAmp: 4, sDur: 3, sAmp: 18, stDur: 4, tDur: 6, tAmp: 2, base: 26});
+      const b2 = ecgBeat(140, {pDur: 6, pAmp: 1.5, prSeg: 1, qDur: 1, qAmp: 2, rDur: 3, rAmp: 20, sDur: 2, sAmp: 1, stDur: 4, stOffset: 1.5, tDur: 6, tAmp: 2, tShape: 'inverted', base: 28});
+      body = '<path d="'+b1.path+'" '+WAVE_A+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
+           + '<text x="20" y="55" '+LBL_A+'>V1: S=18mm</text>'
+           + '<text x="135" y="55" '+LBL_A+'>V5: R=20mm</text>'
+           + '<text x="20" y="9" '+LBL_Y+'>S V1 + R V5 = 38mm ≥35 → LVH</text>';
+      break;
+    }
+    case 'fragmented-qrs': {
+      /* Notched R wave */
+      const x = 40, base = 35;
+      let p = "M "+x+" "+base;
+      p += " L "+(x+10)+" "+base; /* P-PR placeholder */
+      /* notched R: up, small down, up, down */
+      p += " L "+(x+15)+" "+(base+1);  /* tiny q */
+      p += " L "+(x+18)+" "+(base-8);  /* R1 */
+      p += " L "+(x+20)+" "+(base-4);  /* notch dip */
+      p += " L "+(x+23)+" "+(base-12); /* R2 (higher) */
+      p += " L "+(x+26)+" "+(base+4);  /* S */
+      p += " L "+(x+30)+" "+base;
+      p += " L "+(x+48)+" "+base;
+      /* T */
+      p += " Q "+(x+58)+" "+(base-5)+" "+(x+68)+" "+base;
+      const b2 = ecgBeat(135, {base: 35});
+      body = '<path d="'+p+'" '+WAVE_A+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_N+'/>'
+           + '<text x="40" y="55" '+LBL_A+'>Fragmented (notched)</text>'
+           + '<text x="135" y="55" '+LBL_N+'>Normal</text>';
+      break;
+    }
+
+    /* ─── ST SEGMENT ─── */
+    case 'st-normal': {
+      const b = ecgBeat(60, {base: 35});
+      body = '<path d="'+b.path+'" '+WAVE_N+'/>'
+           + '<line x1="40" y1="35" x2="200" y2="35" '+MARK+'/>'
+           + '<text x="80" y="14" '+LBL_N+'>Isoelectric ST</text>';
+      break;
+    }
+    case 'st-elevation': {
+      const b = ecgBeat(60, {base: 35, stOffset: -5, stShape: 'convex-up'});
+      body = '<path d="'+b.path+'" '+WAVE_A+'/>'
+           + '<line x1="40" y1="35" x2="200" y2="35" '+MARK+'/>'
+           + '<text x="80" y="14" '+LBL_A+'>STE ≥1-2mm (STEMI)</text>';
+      break;
+    }
+    case 'st-depression': {
+      const b = ecgBeat(60, {base: 28, stOffset: 4, stShape: 'downsloping'});
+      body = '<path d="'+b.path+'" '+WAVE_A+'/>'
+           + '<line x1="40" y1="28" x2="200" y2="28" '+MARK+'/>'
+           + '<text x="80" y="55" '+LBL_A+'>STD horizontal/downsloping</text>';
+      break;
+    }
+    case 'st-jpoint': {
+      const b = ecgBeat(60, {base: 35, stOffset: -3, stShape: 'concave-up'});
+      const jX = 60 + 12 + 4 + 2 + 3 + 3 + 1; /* end of S → J */
+      body = '<path d="'+b.path+'" '+WAVE_N+'/>'
+           + '<circle cx="'+jX+'" cy="32" r="2" fill="#D4A860" stroke="#08070a" stroke-width="0.5"/>'
+           + '<line x1="'+jX+'" y1="20" x2="'+jX+'" y2="32" '+MARK+'/>'
+           + '<text x="'+(jX-4)+'" y="14" '+LBL_Y+'>J-point</text>';
+      break;
+    }
+    case 'st-morphology': {
+      /* 4 mini-views: concave, convex, coved, saddle */
+      const types = [
+        {st:'concave-up', off:-4, lbl:'Concave', col: WAVE_N, lblc: LBL_N},
+        {st:'convex-up', off:-4, lbl:'Convex', col: WAVE_A, lblc: LBL_A},
+        {st:'coved', off:-2, lbl:'Coved (Br1)', col: WAVE_A, lblc: LBL_A},
+        {st:'saddle', off:-2, lbl:'Saddle (Br2)', col: WAVE_Y, lblc: LBL_Y}
+      ];
+      let waves = '';
+      types.forEach((t, i) => {
+        const b = ecgBeat(8 + i*58, {
+          pDur: 6, pAmp: 1.5, prSeg: 1, qDur: 1, qAmp: 1,
+          rDur: 2, rAmp: 12, sDur: 2, sAmp: 3,
+          stDur: 8, stOffset: t.off, stShape: t.st,
+          tDur: 10, tAmp: 3, base: 30
+        });
+        waves += '<path d="'+b.path+'" '+t.col+'/>';
+        waves += '<text x="'+(10 + i*58)+'" y="55" '+t.lblc+' style="font-size:7px;">'+t.lbl+'</text>';
+      });
+      body = waves;
+      break;
+    }
+
+    /* ─── T WAVE ─── */
+    case 't-normal': {
+      const b = ecgBeat(60, {base: 35, tDur: 22, tAmp: 5});
+      body = '<path d="'+b.path+'" '+WAVE_N+'/>'
+           + '<text x="80" y="55" '+LBL_N+'>Asimetris, ascending slow</text>';
+      break;
+    }
+    case 't-amplitude': {
+      const b1 = ecgBeat(15, {base: 35, tDur: 20, tAmp: 4});
+      const b2 = ecgBeat(130, {base: 35, tDur: 20, tAmp: 11, tShape: 'hyperacute'});
+      body = '<path d="'+b1.path+'" '+WAVE_N+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
+           + '<text x="15" y="55" '+LBL_N+'>Normal</text>'
+           + '<text x="130" y="55" '+LBL_A+'>Tall T (>5/10mm)</text>';
+      break;
+    }
+    case 't-hyperacute': {
+      const b = ecgBeat(60, {base: 35, tDur: 26, tAmp: 12, tShape: 'hyperacute'});
+      body = '<path d="'+b.path+'" '+WAVE_A+'/>'
+           + '<text x="55" y="14" '+LBL_A+'>Hyperacute T (early STEMI)</text>';
+      break;
+    }
+    case 't-biphasic': {
+      const b = ecgBeat(60, {base: 35, tDur: 26, tAmp: 6, tShape: 'biphasic'});
+      body = '<path d="'+b.path+'" '+WAVE_A+'/>'
+           + '<text x="55" y="14" '+LBL_A+'>Biphasic T — Wellens A</text>';
+      break;
+    }
+    case 't-deep-inv': {
+      const b = ecgBeat(60, {base: 28, tDur: 24, tAmp: 8, tShape: 'deep-inv'});
+      body = '<path d="'+b.path+'" '+WAVE_A+'/>'
+           + '<text x="55" y="12" '+LBL_A+'>Deep symmetric TWI — Wellens B</text>';
+      break;
+    }
+    case 't-alternans': {
+      /* 4 beats, alternating T amplitude */
+      let waves = '';
+      for (let i = 0; i < 4; i++) {
+        const isLarge = i % 2 === 0;
+        const b = ecgBeat(10 + i*55, {
+          pDur: 8, pAmp: 2, prSeg: 2,
+          rDur: 2, rAmp: 14, sDur: 2, sAmp: 3,
+          stDur: 8, tDur: 16,
+          tAmp: isLarge ? 6 : 2,
+          tShape: isLarge ? 'normal' : 'flat',
+          base: 35
+        });
+        waves += '<path d="'+b.path+'" '+(isLarge ? WAVE_N : WAVE_A)+'/>';
+      }
+      body = waves
+           + '<text x="40" y="14" '+LBL_A+'>T-wave alternans (TWA)</text>';
+      break;
+    }
+
+    /* ─── QT / QTc ─── */
+    case 'qtc-formula': {
+      body = '<text x="20" y="22" fill="#9EC494" font-family="Cormorant Garamond,serif" font-size="22" font-style="italic">QTc = </text>'
+           + '<line x1="105" y1="14" x2="180" y2="14" stroke="#9EC494" stroke-width="1.2"/>'
+           + '<text x="115" y="13" fill="#9EC494" font-family="Cormorant Garamond,serif" font-size="14">QT</text>'
+           + '<text x="115" y="30" fill="#9EC494" font-family="Cormorant Garamond,serif" font-size="14">√RR</text>'
+           + '<text x="20" y="48" '+LBL+'>RR dalam detik. Bazett (1920).</text>';
+      break;
+    }
+    case 'qtc-normal': {
+      const b = ecgBeat(40, {base: 35, tDur: 22, tAmp: 5});
+      body = '<path d="'+b.path+'" '+WAVE_N+'/>'
+           + '<line x1="55" y1="14" x2="55" y2="50" '+MARK+'/>'
+           + '<line x1="100" y1="14" x2="100" y2="50" '+MARK+'/>'
+           + '<line x1="55" y1="14" x2="100" y2="14" '+MARK+'/>'
+           + '<text x="58" y="11" '+LBL_N+'>QTc 340-440ms</text>';
+      break;
+    }
+    case 'qtc-borderline': {
+      const b = ecgBeat(40, {base: 35, tDur: 30, tAmp: 4});
+      body = '<path d="'+b.path+'" '+WAVE_Y+'/>'
+           + '<line x1="55" y1="14" x2="55" y2="50" '+MARK+'/>'
+           + '<line x1="115" y1="14" x2="115" y2="50" '+MARK+'/>'
+           + '<line x1="55" y1="14" x2="115" y2="14" '+MARK+'/>'
+           + '<text x="58" y="11" '+LBL_Y+'>QTc 440-470ms borderline</text>';
+      break;
+    }
+    case 'qtc-prolonged': {
+      const b = ecgBeat(30, {base: 35, tDur: 42, tAmp: 4});
+      body = '<path d="'+b.path+'" '+WAVE_A+'/>'
+           + '<line x1="45" y1="14" x2="45" y2="50" '+MARK+'/>'
+           + '<line x1="125" y1="14" x2="125" y2="50" '+MARK+'/>'
+           + '<line x1="45" y1="14" x2="125" y2="14" '+MARK+'/>'
+           + '<text x="48" y="11" '+LBL_A+'>QTc &gt;470ms prolonged</text>';
+      break;
+    }
+    case 'qtc-short': {
+      const b = ecgBeat(60, {base: 35, stDur: 4, tDur: 14, tAmp: 5});
+      body = '<path d="'+b.path+'" '+WAVE_A+'/>'
+           + '<line x1="75" y1="14" x2="75" y2="50" '+MARK+'/>'
+           + '<line x1="100" y1="14" x2="100" y2="50" '+MARK+'/>'
+           + '<line x1="75" y1="14" x2="100" y2="14" '+MARK+'/>'
+           + '<text x="76" y="11" '+LBL_A+'>QTc &lt;340ms short</text>';
+      break;
+    }
+    case 'qtc-500': {
+      const b = ecgBeat(20, {base: 35, tDur: 56, tAmp: 4});
+      body = '<path d="'+b.path+'" '+WAVE_A+'/>'
+           + '<line x1="35" y1="14" x2="35" y2="50" '+MARK+'/>'
+           + '<line x1="130" y1="14" x2="130" y2="50" '+MARK+'/>'
+           + '<line x1="35" y1="14" x2="130" y2="14" '+MARK+'/>'
+           + '<text x="40" y="11" '+LBL_A+'>QTc &gt;500ms — TdP risk!</text>';
+      break;
+    }
+
+    /* ─── U WAVE ─── */
+    case 'u-normal': {
+      const b = ecgBeat(40, {base: 35, tDur: 18, uAmp: 1.5, uDur: 12});
+      body = '<path d="'+b.path+'" '+WAVE_N+'/>'
+           + '<text x="120" y="55" '+LBL_N+'>U normal: small, same arah T</text>';
+      break;
+    }
+    case 'u-prominent': {
+      const b = ecgBeat(30, {base: 35, tDur: 18, tAmp: 2, tShape: 'flat', uAmp: 6, uDur: 16});
+      body = '<path d="'+b.path+'" '+WAVE_A+'/>'
+           + '<text x="80" y="55" '+LBL_A+'>U prominent (hipokalemia)</text>';
+      break;
+    }
+    case 'u-inverted': {
+      const b = ecgBeat(40, {base: 32, tDur: 18, uAmp: -3, uDur: 14});
+      body = '<path d="'+b.path+'" '+WAVE_A+'/>'
+           + '<text x="80" y="55" '+LBL_A+'>U inverted (suspect ischemia)</text>';
+      break;
+    }
+
+    /* ─── TECHNICAL ─── */
+    case 'hr-large-box': {
+      /* 3 beats spaced at ~80px = ~4 large boxes apart */
+      let waves = '';
+      const positions = [20, 100, 180];
+      positions.forEach((x, i) => {
+        const b = ecgBeat(x, {pDur: 6, pAmp: 2, prSeg: 2, rAmp: 16, sAmp: 3, stDur: 6, tDur: 12, tAmp: 3, base: 32});
+        waves += '<path d="'+b.path+'" '+WAVE_N+'/>';
+      });
+      /* Mark RR with 4 large boxes count */
+      waves += '<text x="55" y="14" '+LBL_Y+'>4 kotak besar = 300/4 = 75 bpm</text>';
+      body = waves;
+      break;
+    }
+    case 'hr-small-box': {
+      let waves = '';
+      const positions = [40, 145];
+      positions.forEach((x) => {
+        const b = ecgBeat(x, {pDur: 6, pAmp: 2, prSeg: 2, rAmp: 18, sAmp: 4, stDur: 6, tDur: 12, tAmp: 3, base: 32});
+        waves += '<path d="'+b.path+'" '+WAVE_N+'/>';
+      });
+      waves += '<text x="42" y="14" '+LBL_Y+'>1500 / kotak kecil = HR</text>';
+      body = waves;
+      break;
+    }
+    case 'hr-6s': {
+      let waves = '';
+      /* 6 beats in strip = HR 60 if 6 sec */
+      for (let i = 0; i < 7; i++) {
+        const b = ecgBeat(10 + i*32, {pDur: 5, pAmp: 2, prSeg: 1, qDur: 1, qAmp: 1, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 5, tDur: 9, tAmp: 3, base: 32});
+        waves += '<path d="'+b.path+'" '+WAVE_N+'/>';
+      }
+      waves += '<text x="20" y="14" '+LBL_Y+'>QRS dalam 6 detik × 10 = HR</text>';
+      body = waves;
+      break;
+    }
+    case 'paper-speed': {
+      const b1 = ecgBeat(20, {pDur: 10, prSeg: 4, rDur: 2, sDur: 2, stDur: 10, tDur: 16, tAmp: 4, base: 32});
+      const b2 = ecgBeat(130, {pDur: 20, prSeg: 8, rDur: 4, sDur: 4, stDur: 20, tDur: 32, tAmp: 4, base: 32});
+      body = '<path d="'+b1.path+'" '+WAVE_N+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_Y+'/>'
+           + '<text x="20" y="55" '+LBL_N+'>25 mm/s standar</text>'
+           + '<text x="130" y="55" '+LBL_Y+'>50 mm/s (lebar 2×)</text>';
+      break;
+    }
+    case 'calibration': {
+      /* Calibration pulse: square 10mm × 200ms */
+      let p = "M 30 40";
+      p += " L 60 40";
+      p += " L 60 18"; /* 22 units up = 10mm */
+      p += " L 80 18";
+      p += " L 80 40";
+      p += " L 120 40";
+      /* Half-cal */
+      p += " L 150 40";
+      p += " L 150 29";
+      p += " L 170 29";
+      p += " L 170 40";
+      p += " L 210 40";
+      body = '<path d="'+p+'" '+WAVE_N+'/>'
+           + '<text x="50" y="55" '+LBL_N+'>10 mm/mV</text>'
+           + '<text x="145" y="55" '+LBL_Y+'>5 mm/mV (½)</text>';
+      break;
+    }
+    case 'lead-placement': {
+      /* Schematic chest with V1-V6 dots */
+      /* Torso outline */
+      body = '<ellipse cx="120" cy="32" rx="60" ry="22" fill="none" stroke="rgba(160,160,160,0.4)" stroke-width="0.8"/>'
+           /* Sternum line */
+           + '<line x1="120" y1="14" x2="120" y2="50" '+DIM+'/>'
+           /* V1-V6 positions */
+           + '<circle cx="105" cy="28" r="2" fill="#9EC494"/><text x="100" y="22" '+LBL_N+'>V1</text>'
+           + '<circle cx="115" cy="32" r="2" fill="#9EC494"/><text x="111" y="44" '+LBL_N+'>V2</text>'
+           + '<circle cx="128" cy="36" r="2" fill="#9EC494"/><text x="123" y="48" '+LBL_N+'>V3</text>'
+           + '<circle cx="142" cy="38" r="2" fill="#9EC494"/><text x="137" y="50" '+LBL_N+'>V4</text>'
+           + '<circle cx="156" cy="36" r="2" fill="#9EC494"/><text x="151" y="48" '+LBL_N+'>V5</text>'
+           + '<circle cx="170" cy="32" r="2" fill="#9EC494"/><text x="166" y="44" '+LBL_N+'>V6</text>'
+           + '<text x="6" y="12" '+LBL_Y+'>Standard 12-lead</text>';
+      break;
+    }
+
+    /* ─── PATHO: ACS ─── */
+    case 'stemi-inferior': {
+      /* 2 beats showing convex STE inferior pattern */
+      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 2, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 10, stOffset: -5, stShape: 'convex-up', tDur: 14, tAmp: 4, base: 34});
+      const b2 = ecgBeat(130, {pDur: 8, pAmp: 2, prSeg: 2, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 10, stOffset: -5, stShape: 'convex-up', tDur: 14, tAmp: 4, base: 34});
+      body = '<path d="'+b1.path+'" '+WAVE_A+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
+           + '<text x="20" y="10" '+LBL_A+'>Lead II — STE convex 3-5mm</text>'
+           + '<text x="20" y="55" '+LBL_A+'>STEMI Inferior (RCA/LCx)</text>';
+      break;
+    }
+    case 'stemi-anterior': {
+      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 2, qDur: 2, qAmp: 1, rDur: 2, rAmp: 8, sDur: 3, sAmp: 8, stDur: 10, stOffset: -6, stShape: 'convex-up', tDur: 14, tAmp: 5, base: 32});
+      const b2 = ecgBeat(130, {pDur: 8, pAmp: 2, prSeg: 2, qDur: 2, qAmp: 1, rDur: 2, rAmp: 10, sDur: 3, sAmp: 6, stDur: 10, stOffset: -6, stShape: 'convex-up', tDur: 14, tAmp: 5, base: 32});
+      body = '<path d="'+b1.path+'" '+WAVE_A+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
+           + '<text x="20" y="10" '+LBL_A+'>V1-V4 — STE tinggi + tombstone</text>'
+           + '<text x="20" y="55" '+LBL_A+'>STEMI Anterior (LAD)</text>';
+      break;
+    }
+    case 'sgarbossa-concordant': {
+      /* LBBB beat (broad R, no Q) with concordant STE */
+      const x = 60, base = 35;
+      let p = "M "+x+" "+base;
+      p += " L "+(x+10)+" "+base; /* P + PR */
+      /* LBBB QRS: slow upstroke, broad R, no Q */
+      p += " Q "+(x+13)+" "+(base-3)+" "+(x+18)+" "+(base-14);
+      p += " L "+(x+22)+" "+(base-14);
+      p += " Q "+(x+26)+" "+(base-12)+" "+(x+30)+" "+(base-3);
+      /* CONCORDANT STE: ST elevated in same direction as positive QRS */
+      p += " L "+(x+32)+" "+(base-6);  /* J point elevated */
+      p += " Q "+(x+38)+" "+(base-7)+" "+(x+44)+" "+(base-6);  /* STE concordant */
+      /* T wave */
+      p += " Q "+(x+52)+" "+(base-9)+" "+(x+60)+" "+base;
+      body = '<path d="'+p+'" '+WAVE_A+'/>'
+           + '<circle cx="'+(x+38)+'" cy="'+(base-7)+'" r="4" fill="none" stroke="#E87060" stroke-width="0.8"/>'
+           + '<text x="20" y="10" '+LBL_A+'>LBBB + Concordant STE ≥1mm</text>'
+           + '<text x="20" y="55" '+LBL_A+'>Sgarbossa positive (≥5 poin)</text>';
+      break;
+    }
+    case 'de-winter': {
+      /* Upsloping ST depression + tall symmetric peaked T (anterior) */
+      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 2, rDur: 2, rAmp: 10, sDur: 3, sAmp: 4, stDur: 10, stOffset: 3, stShape: 'upsloping', tDur: 18, tAmp: 10, tShape: 'hyperacute', base: 30});
+      const b2 = ecgBeat(130, {pDur: 8, pAmp: 2, prSeg: 2, rDur: 2, rAmp: 10, sDur: 3, sAmp: 4, stDur: 10, stOffset: 3, stShape: 'upsloping', tDur: 18, tAmp: 10, tShape: 'hyperacute', base: 30});
+      body = '<path d="'+b1.path+'" '+WAVE_A+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
+           + '<text x="20" y="10" '+LBL_A+'>V2-V4: Upsloping STD + tall T</text>'
+           + '<text x="20" y="55" '+LBL_A+'>De Winter (LAD occlusion)</text>';
+      break;
+    }
+    case 'nstemi-pattern': {
+      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 2, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 10, stOffset: 4, stShape: 'downsloping', tDur: 14, tAmp: 5, tShape: 'inverted', base: 28});
+      const b2 = ecgBeat(130, {pDur: 8, pAmp: 2, prSeg: 2, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 10, stOffset: 4, stShape: 'downsloping', tDur: 14, tAmp: 5, tShape: 'inverted', base: 28});
+      body = '<path d="'+b1.path+'" '+WAVE_A+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
+           + '<text x="20" y="9" '+LBL_A+'>STD downsloping + T inv</text>'
+           + '<text x="20" y="55" '+LBL_A+'>NSTEMI / Subendocardial</text>';
+      break;
+    }
+
+    /* ─── PATHO: ARITMIA ─── */
+    case 'sinus-brady-pattern': {
+      let waves = '';
+      [30, 130].forEach(x => {
+        const b = ecgBeat(x, {pDur: 10, pAmp: 3, prSeg: 4, rDur: 2, rAmp: 14, sDur: 2, sAmp: 4, stDur: 8, tDur: 14, tAmp: 4, base: 32});
+        waves += '<path d="'+b.path+'" '+WAVE_N+'/>';
+      });
+      body = waves
+           + '<text x="20" y="10" '+LBL_N+'>Rate &lt;60, P normal 1:1</text>'
+           + '<text x="20" y="55" '+LBL_N+'>Sinus Bradycardia</text>';
+      break;
+    }
+    case 'sinus-tachy-pattern': {
+      let waves = '';
+      [10, 55, 100, 145, 190].forEach(x => {
+        const b = ecgBeat(x, {pDur: 6, pAmp: 2, prSeg: 1, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 5, tDur: 10, tAmp: 3, base: 32});
+        waves += '<path d="'+b.path+'" '+WAVE_Y+'/>';
+      });
+      body = waves
+           + '<text x="20" y="10" '+LBL_Y+'>Rate &gt;100, P normal 1:1</text>'
+           + '<text x="20" y="55" '+LBL_Y+'>Sinus Tachycardia</text>';
+      break;
+    }
+    case 'af-pattern': {
+      /* Irregularly irregular RR, no P, fibrillation baseline */
+      let waves = '';
+      /* Wavy baseline */
+      let baseLine = "M 5 35";
+      for (let i = 5; i < 235; i += 2) {
+        const wave = Math.sin(i*0.5) * 0.8 + (Math.random()-0.5) * 1.5;
+        baseLine += " L "+(i)+" "+(35+wave);
+      }
+      waves += '<path d="'+baseLine+'" stroke="rgba(232,112,96,0.4)" stroke-width="0.8" fill="none"/>';
+      /* Irregular QRS positions */
+      const positions = [25, 72, 115, 168, 218];
+      positions.forEach(x => {
+        let qrs = "M "+(x-3)+" 35";
+        qrs += " L "+(x-1)+" 37";
+        qrs += " L "+(x)+" 18";
+        qrs += " L "+(x+2)+" 41";
+        qrs += " L "+(x+4)+" 35";
+        qrs += " Q "+(x+8)+" 31 "+(x+13)+" 35";
+        waves += '<path d="'+qrs+'" '+WAVE_A+'/>';
+      });
+      body = waves
+           + '<text x="20" y="10" '+LBL_A+'>Irreg. irreg, no P, f waves</text>'
+           + '<text x="20" y="55" '+LBL_A+'>Atrial Fibrillation</text>';
+      break;
+    }
+    case 'aflutter-pattern': {
+      /* Sawtooth flutter waves with regular ventricular response */
+      let p = "M 5 38";
+      /* Sawtooth: ascending then sudden drop */
+      for (let i = 0; i < 12; i++) {
+        const x = 5 + i * 18;
+        p += " L "+(x+12)+" 28";
+        p += " L "+(x+14)+" 42";
+        p += " L "+(x+18)+" 38";
+      }
+      let waves = '<path d="'+p+'" stroke="rgba(232,112,96,0.5)" stroke-width="0.9" fill="none"/>';
+      /* QRS at every 2nd flutter (2:1 conduction) */
+      [55, 130, 205].forEach(x => {
+        let qrs = "M "+(x-2)+" 38";
+        qrs += " L "+(x-1)+" 40";
+        qrs += " L "+(x)+" 22";
+        qrs += " L "+(x+2)+" 44";
+        qrs += " L "+(x+4)+" 38";
+        qrs += " Q "+(x+8)+" 35 "+(x+12)+" 38";
+        waves += '<path d="'+qrs+'" '+WAVE_A+'/>';
+      });
+      body = waves
+           + '<text x="20" y="10" '+LBL_A+'>Sawtooth F waves (II/III/aVF)</text>'
+           + '<text x="20" y="55" '+LBL_A+'>Atrial Flutter</text>';
+      break;
+    }
+    case 'svt-pattern': {
+      /* Narrow, regular, fast — P hidden in T */
+      let waves = '';
+      [15, 50, 85, 120, 155, 190].forEach(x => {
+        const b = ecgBeat(x, {pDur: 0, pAmp: 0, pShape: 'absent', prSeg: 0, rDur: 1, rAmp: 14, sDur: 1, sAmp: 3, stDur: 4, tDur: 12, tAmp: 4, base: 32});
+        waves += '<path d="'+b.path+'" '+WAVE_A+'/>';
+      });
+      body = waves
+           + '<text x="20" y="10" '+LBL_A+'>Narrow regular, P absent/retro</text>'
+           + '<text x="20" y="55" '+LBL_A+'>SVT (AVNRT / AVRT)</text>';
+      break;
+    }
+    case 'mat-pattern': {
+      /* 3 different P morphologies */
+      const b1 = ecgBeat(15, {pDur: 8, pAmp: 3, pShape: 'normal', base: 33, rAmp: 12, sAmp: 3, tDur: 10, tAmp: 3});
+      const b2 = ecgBeat(95, {pDur: 8, pAmp: 5, pShape: 'peaked', base: 33, rAmp: 12, sAmp: 3, tDur: 10, tAmp: 3});
+      const b3 = ecgBeat(175, {pDur: 10, pAmp: 3, pShape: 'bifid', base: 33, rAmp: 12, sAmp: 3, tDur: 10, tAmp: 3});
+      body = '<path d="'+b1.path+'" '+WAVE_A+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
+           + '<path d="'+b3.path+'" '+WAVE_A+'/>'
+           + '<text x="20" y="10" '+LBL_A+'>≥3 P morfologi berbeda, rate &gt;100</text>'
+           + '<text x="20" y="55" '+LBL_A+'>MAT (COPD klasik)</text>';
+      break;
+    }
+    case 'junctional-pattern': {
+      /* Inverted P after QRS or absent */
+      let waves = '';
+      [30, 110, 190].forEach(x => {
+        const b = ecgBeat(x, {pDur: 0, pAmp: 0, pShape: 'absent', prSeg: 0, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 4, tDur: 12, tAmp: 4, base: 32});
+        waves += '<path d="'+b.path+'" '+WAVE_Y+'/>';
+        /* Add retrograde inverted P after QRS */
+        const pX = x + 12;
+        waves += '<path d="M '+pX+' 32 Q '+(pX+3)+' 37 '+(pX+6)+' 32" '+WAVE_Y+'/>';
+      });
+      body = waves
+           + '<text x="20" y="10" '+LBL_Y+'>P inverted post-QRS / absent</text>'
+           + '<text x="20" y="55" '+LBL_Y+'>Junctional Rhythm</text>';
+      break;
+    }
+    case 'vt-pattern': {
+      /* Wide regular fast — monomorphic VT */
+      let waves = '';
+      [10, 55, 100, 145, 190].forEach(x => {
+        let p = "M "+x+" 32";
+        /* Wide, sharp, monomorphic */
+        p += " L "+(x+5)+" 32";
+        p += " Q "+(x+10)+" 30 "+(x+15)+" 14";  /* slow upstroke */
+        p += " L "+(x+18)+" 14";
+        p += " Q "+(x+22)+" 16 "+(x+28)+" 44";  /* wide downstroke */
+        p += " L "+(x+33)+" 38";
+        p += " Q "+(x+36)+" 36 "+(x+40)+" 32";
+        waves += '<path d="'+p+'" '+WAVE_A+'/>';
+      });
+      body = waves
+           + '<text x="20" y="10" '+LBL_A+'>QRS lebar regular, rate &gt;100</text>'
+           + '<text x="20" y="55" '+LBL_A+'>Ventricular Tachycardia</text>';
+      break;
+    }
+    case 'vf-pattern': {
+      /* Chaotic, irregular squiggle */
+      let p = "M 5 32";
+      for (let i = 5; i < 235; i += 1.5) {
+        const amp = (Math.random() - 0.5) * 24 + Math.sin(i*0.8) * 8;
+        p += " L "+i+" "+(32+amp);
+      }
+      body = '<path d="'+p+'" '+WAVE_A+'/>'
+           + '<text x="20" y="10" '+LBL_A+'>Chaotic, no QRS identifiable</text>'
+           + '<text x="20" y="55" '+LBL_A+'>Ventricular Fibrillation</text>';
+      break;
+    }
+    case 'tdp-pattern': {
+      /* Polymorphic VT — twisting amplitude/axis */
+      let p = "M 5 32";
+      const amps = [5, 10, 14, 16, 14, 10, 5, -5, -10, -14, -16, -14, -10, -5, 5, 10, 14, 16, 14, 10];
+      amps.forEach((amp, i) => {
+        const x = 5 + i*12;
+        p += " L "+(x+2)+" "+(32-amp);
+        p += " L "+(x+6)+" "+(32+amp/3);
+        p += " L "+(x+10)+" 32";
+      });
+      body = '<path d="'+p+'" '+WAVE_A+'/>'
+           + '<text x="20" y="10" '+LBL_A+'>Polimorfik, axis berubah (twisting)</text>'
+           + '<text x="20" y="55" '+LBL_A+'>Torsades de Pointes (QTc &gt;500)</text>';
+      break;
+    }
+
+    /* ─── PATHO: CONDUCTION ─── */
+    case 'avb1-pattern': {
+      const b = ecgBeat(35, {pDur: 10, pAmp: 3, prSeg: 24, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 8, tDur: 14, tAmp: 4, base: 32});
+      body = '<path d="'+b.path+'" '+WAVE_Y+'/>'
+           + '<line x1="35" y1="14" x2="35" y2="48" '+MARK+'/>'
+           + '<line x1="71" y1="14" x2="71" y2="48" '+MARK+'/>'
+           + '<line x1="35" y1="14" x2="71" y2="14" '+MARK+'/>'
+           + '<text x="40" y="11" '+LBL_Y+'>PR &gt;200ms konstan</text>'
+           + '<text x="20" y="55" '+LBL_Y+'>AV Block 1°</text>';
+      break;
+    }
+    case 'avb-mobitz1-pattern': {
+      /* Progressive PR lengthening then dropped beat */
+      let waves = '';
+      const prSegs = [4, 10, 16, 22];
+      let curX = 8;
+      prSegs.forEach((pr, i) => {
+        const b = ecgBeat(curX, {pDur: 7, pAmp: 2.5, prSeg: pr, rDur: 1.5, rAmp: 12, sDur: 1.5, sAmp: 3, stDur: 5, tDur: 9, tAmp: 3, base: 32});
+        waves += '<path d="'+b.path+'" '+WAVE_Y+'/>';
+        curX = b.endX + 5;
+      });
+      /* Dropped P after last (P without QRS) */
+      waves += '<path d="M '+curX+' 32 Q '+(curX+4)+' 27 '+(curX+8)+' 32 L '+(curX+20)+' 32" '+WAVE_Y+'/>';
+      curX += 20;
+      /* Reset with normal beat */
+      const bReset = ecgBeat(curX, {pDur: 7, pAmp: 2.5, prSeg: 4, rDur: 1.5, rAmp: 12, sDur: 1.5, sAmp: 3, stDur: 5, tDur: 9, tAmp: 3, base: 32});
+      waves += '<path d="'+bReset.path+'" '+WAVE_Y+'/>';
+      body = waves
+           + '<text x="10" y="10" '+LBL_Y+'>PR memanjang → drop → reset</text>'
+           + '<text x="10" y="55" '+LBL_Y+'>Mobitz I (Wenckebach)</text>';
+      break;
+    }
+    case 'avb-mobitz2-pattern': {
+      /* Constant PR, sudden dropped beat */
+      let waves = '';
+      const positions = [10, 55, 100, 195];  /* Skip 145 — that's the dropped */
+      positions.forEach(x => {
+        const b = ecgBeat(x, {pDur: 7, pAmp: 2.5, prSeg: 10, rDur: 1.5, rAmp: 14, sDur: 1.5, sAmp: 3, stDur: 5, tDur: 9, tAmp: 3, base: 32});
+        waves += '<path d="'+b.path+'" '+WAVE_A+'/>';
+      });
+      /* Dropped P at position 145 (P present but no QRS follows) */
+      waves += '<path d="M 145 32 Q 149 28 153 32 L 195 32" '+WAVE_A+'/>';
+      body = waves
+           + '<text x="10" y="10" '+LBL_A+'>PR konstan → drop tiba-tiba</text>'
+           + '<text x="10" y="55" '+LBL_A+'>Mobitz II / High-grade</text>';
+      break;
+    }
+    case 'chb-pattern': {
+      /* AV dissociation — independent P and QRS */
+      let waves = '';
+      /* Atrial rate ~100 (P every ~30px) */
+      [8, 38, 68, 98, 128, 158, 188, 218].forEach(x => {
+        waves += '<path d="M '+x+' 32 Q '+(x+3)+' 28 '+(x+6)+' 32" '+WAVE_A+'/>';
+      });
+      /* Ventricular rate ~40 (escape every ~75px) — wide */
+      [25, 105, 185].forEach(x => {
+        let p = "M "+x+" 32";
+        p += " Q "+(x+5)+" 30 "+(x+10)+" 16";
+        p += " Q "+(x+13)+" 17 "+(x+18)+" 44";
+        p += " Q "+(x+22)+" 38 "+(x+27)+" 32";
+        waves += '<path d="'+p+'" '+WAVE_A+'/>';
+      });
+      body = waves
+           + '<text x="10" y="10" '+LBL_A+'>P &amp; QRS independen total</text>'
+           + '<text x="10" y="55" '+LBL_A+'>Complete Heart Block (3°)</text>';
+      break;
+    }
+    case 'rbbb-pattern': {
+      /* V1: rSR' (rabbit ears, M-shape); V6: wide slurred S */
+      /* Top: V1 */
+      let v1 = "M 8 18";
+      v1 += " Q 14 16 18 18";  /* small P */
+      v1 += " L 22 18";  /* PR */
+      v1 += " L 23 19";  /* tiny q */
+      v1 += " L 25 12";  /* r */
+      v1 += " L 28 22";  /* S */
+      v1 += " L 30 14";  /* R' (rabbit ear 2) */
+      v1 += " L 33 18";  /* return */
+      v1 += " Q 38 22 44 18";  /* T inverted */
+      v1 += " L 100 18";
+      /* Bottom: V6 */
+      let v6 = "M 8 45";
+      v6 += " Q 14 43 18 45";
+      v6 += " L 22 45";
+      v6 += " L 24 46";  /* q */
+      v6 += " L 28 34";  /* R */
+      v6 += " Q 32 35 40 52";  /* wide slurred S */
+      v6 += " L 45 47";
+      v6 += " Q 50 44 56 45";
+      v6 += " L 100 45";
+      body = '<path d="'+v1+'" '+WAVE_Y+'/>'
+           + '<path d="'+v6+'" '+WAVE_Y+'/>'
+           + '<text x="105" y="20" '+LBL_Y+'>V1: rSR&#39; (M-shape)</text>'
+           + '<text x="105" y="47" '+LBL_Y+'>V6: wide S</text>'
+           + '<text x="10" y="11" '+LBL_Y+'>Right Bundle Branch Block</text>';
+      break;
+    }
+    case 'lbbb-pattern': {
+      /* V1: deep QS or wide rS; V6: broad monophasic R, no Q */
+      let v1 = "M 8 18";
+      v1 += " Q 13 16 17 18";
+      v1 += " L 21 18";
+      v1 += " L 24 24";  /* small r */
+      v1 += " Q 28 27 34 32";  /* deep wide S/QS */
+      v1 += " L 38 24";
+      v1 += " Q 44 22 50 18";  /* T positive (discordant) */
+      v1 += " L 100 18";
+      /* V6: broad monophasic R */
+      let v6 = "M 8 48";
+      v6 += " Q 13 46 17 48";
+      v6 += " L 21 48";  /* no Q */
+      v6 += " Q 25 47 30 32";  /* slow upstroke */
+      v6 += " L 38 32";  /* broad R top */
+      v6 += " Q 44 36 50 48";  /* slow downstroke */
+      v6 += " Q 56 52 62 50";  /* T inverted (discordant) */
+      v6 += " L 100 48";
+      body = '<path d="'+v1+'" '+WAVE_Y+'/>'
+           + '<path d="'+v6+'" '+WAVE_Y+'/>'
+           + '<text x="105" y="20" '+LBL_Y+'>V1: QS / rS dalam</text>'
+           + '<text x="105" y="50" '+LBL_Y+'>V6: broad R, no Q</text>'
+           + '<text x="10" y="11" '+LBL_Y+'>Left Bundle Branch Block</text>';
+      break;
+    }
+    case 'lafb-pattern': {
+      /* Lead I: qR (small q, tall R) — positive */
+      let l1 = "M 8 18";
+      l1 += " Q 13 16 17 18";
+      l1 += " L 21 18";
+      l1 += " L 23 19";  /* q */
+      l1 += " L 26 8";   /* tall R */
+      l1 += " L 29 22";  /* S */
+      l1 += " L 33 18";
+      l1 += " Q 40 16 46 18";
+      l1 += " L 100 18";
+      /* Lead III: rS — predominantly negative */
+      let l3 = "M 8 45";
+      l3 += " Q 13 43 17 45";
+      l3 += " L 21 45";
+      l3 += " L 23 41";  /* small r */
+      l3 += " L 26 58";  /* deep S */
+      l3 += " L 30 47";
+      l3 += " Q 36 44 42 45";
+      l3 += " L 100 45";
+      body = '<path d="'+l1+'" '+WAVE_Y+'/>'
+           + '<path d="'+l3+'" '+WAVE_Y+'/>'
+           + '<text x="105" y="20" '+LBL_Y+'>Lead I: qR positif</text>'
+           + '<text x="105" y="47" '+LBL_Y+'>Lead III: rS dalam</text>'
+           + '<text x="10" y="11" '+LBL_Y+'>LAFB — axis ≤−45°</text>';
+      break;
+    }
+    case 'lpfb-pattern': {
+      /* Mirror of LAFB: I negative, III positive */
+      let l1 = "M 8 18";
+      l1 += " Q 13 16 17 18";
+      l1 += " L 21 18";
+      l1 += " L 23 14";  /* r */
+      l1 += " L 26 30";  /* deep S */
+      l1 += " L 29 19";
+      l1 += " Q 36 16 42 18";
+      l1 += " L 100 18";
+      let l3 = "M 8 45";
+      l3 += " Q 13 43 17 45";
+      l3 += " L 21 45";
+      l3 += " L 23 47";  /* q */
+      l3 += " L 26 33";  /* tall R */
+      l3 += " L 29 50";
+      l3 += " L 33 45";
+      l3 += " Q 40 42 46 45";
+      l3 += " L 100 45";
+      body = '<path d="'+l1+'" '+WAVE_Y+'/>'
+           + '<path d="'+l3+'" '+WAVE_Y+'/>'
+           + '<text x="105" y="20" '+LBL_Y+'>Lead I: rS dalam</text>'
+           + '<text x="105" y="47" '+LBL_Y+'>Lead III: qR positif</text>'
+           + '<text x="10" y="11" '+LBL_Y+'>LPFB — axis ≥+90°</text>';
+      break;
+    }
+    case 'bifascicular-pattern': {
+      /* RBBB pattern + LAD */
+      let v1 = "M 8 18";
+      v1 += " Q 14 16 18 18 L 22 18 L 23 19 L 25 12 L 28 22 L 30 14 L 33 18";
+      v1 += " Q 38 22 44 18 L 100 18";
+      let l1 = "M 8 45";
+      l1 += " Q 13 43 17 45 L 21 45 L 23 46 L 26 35 L 29 49 L 33 45";
+      l1 += " Q 40 43 46 45 L 100 45";
+      body = '<path d="'+v1+'" '+WAVE_Y+'/>'
+           + '<path d="'+l1+'" '+WAVE_Y+'/>'
+           + '<text x="105" y="20" '+LBL_Y+'>V1: rSR&#39; (RBBB)</text>'
+           + '<text x="105" y="47" '+LBL_Y+'>Lead I: qR (LAD)</text>'
+           + '<text x="10" y="11" '+LBL_Y+'>Bifascicular (RBBB + LAFB)</text>';
+      break;
+    }
+    case 'wpw-pattern': {
+      /* Short PR + delta wave (slurred upstroke) + wide QRS */
+      const x = 50, base = 35;
+      let p = "M "+x+" "+base;
+      p += " Q "+(x+5)+" "+(base-3)+" "+(x+12)+" "+base;  /* P */
+      p += " L "+(x+14)+" "+base;  /* very short PR */
+      /* Delta wave: slurred upstroke starting from baseline */
+      p += " L "+(x+22)+" "+(base-6);  /* delta slope */
+      p += " L "+(x+27)+" "+(base-15);  /* R peak */
+      p += " L "+(x+30)+" "+(base+4);
+      p += " L "+(x+33)+" "+base;
+      p += " Q "+(x+40)+" "+(base-4)+" "+(x+48)+" "+base;
+      body = '<path d="'+p+'" '+WAVE_Y+'/>'
+           + '<circle cx="'+(x+18)+'" cy="'+(base-3)+'" r="5" fill="none" stroke="#D4A860" stroke-width="0.8"/>'
+           + '<text x="20" y="11" '+LBL_Y+'>PR &lt;120 + Delta wave (slurred)</text>'
+           + '<text x="20" y="55" '+LBL_Y+'>WPW (Wolff-Parkinson-White)</text>';
+      break;
+    }
+
+    /* ─── PATHO: HYPERTROFI ─── */
+    case 'lvh-strain-pattern': {
+      /* Tall R V5/V6 + STD asymmetric TWI lateral (strain) */
+      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 2, qDur: 1, qAmp: 1, rDur: 3, rAmp: 22, sDur: 2, sAmp: 2, stDur: 8, stOffset: 3, stShape: 'downsloping', tDur: 14, tAmp: 6, tShape: 'inverted', base: 28});
+      const b2 = ecgBeat(140, {pDur: 8, pAmp: 2, prSeg: 2, qDur: 1, qAmp: 1, rDur: 3, rAmp: 22, sDur: 2, sAmp: 2, stDur: 8, stOffset: 3, stShape: 'downsloping', tDur: 14, tAmp: 6, tShape: 'inverted', base: 28});
+      body = '<path d="'+b1.path+'" '+WAVE_Y+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_Y+'/>'
+           + '<text x="20" y="9" '+LBL_Y+'>V5/V6: Tall R + strain (STD + TWI asim)</text>'
+           + '<text x="20" y="55" '+LBL_Y+'>LVH dengan Strain Pattern</text>';
+      break;
+    }
+    case 'rvh-pattern': {
+      /* V1: dominant R wave (R/S >1), RAD */
+      const b1 = ecgBeat(20, {pDur: 8, pAmp: 4, pShape: 'peaked', prSeg: 2, qDur: 1, qAmp: 1, rDur: 3, rAmp: 16, sDur: 2, sAmp: 3, stDur: 8, stOffset: 2, stShape: 'downsloping', tDur: 12, tAmp: 4, tShape: 'inverted', base: 30});
+      const b2 = ecgBeat(130, {pDur: 8, pAmp: 4, pShape: 'peaked', prSeg: 2, qDur: 1, qAmp: 1, rDur: 3, rAmp: 16, sDur: 2, sAmp: 3, stDur: 8, stOffset: 2, stShape: 'downsloping', tDur: 12, tAmp: 4, tShape: 'inverted', base: 30});
+      body = '<path d="'+b1.path+'" '+WAVE_Y+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_Y+'/>'
+           + '<text x="20" y="9" '+LBL_Y+'>V1: dominant R + P pulmonale</text>'
+           + '<text x="20" y="55" '+LBL_Y+'>RVH + Cor Pulmonale</text>';
+      break;
+    }
+    case 'lae-pattern': {
+      /* P mitrale — bifid notched P, >120 ms */
+      const b1 = ecgBeat(20, {pDur: 24, pAmp: 3, pShape: 'bifid', prSeg: 4, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 6, tDur: 12, tAmp: 4, base: 35});
+      const b2 = ecgBeat(140, {pDur: 24, pAmp: 3, pShape: 'bifid', prSeg: 4, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 6, tDur: 12, tAmp: 4, base: 35});
+      body = '<path d="'+b1.path+'" '+WAVE_Y+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_Y+'/>'
+           + '<text x="20" y="9" '+LBL_Y+'>Lead II: bifid, durasi &gt;120ms</text>'
+           + '<text x="20" y="55" '+LBL_Y+'>LAE (P mitrale)</text>';
+      break;
+    }
+    case 'rae-pattern': {
+      const b1 = ecgBeat(20, {pDur: 10, pAmp: 6, pShape: 'peaked', prSeg: 4, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 6, tDur: 12, tAmp: 4, base: 35});
+      const b2 = ecgBeat(140, {pDur: 10, pAmp: 6, pShape: 'peaked', prSeg: 4, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 6, tDur: 12, tAmp: 4, base: 35});
+      body = '<path d="'+b1.path+'" '+WAVE_Y+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_Y+'/>'
+           + '<text x="20" y="9" '+LBL_Y+'>Lead II/III/aVF: P &gt;2.5mm peaked</text>'
+           + '<text x="20" y="55" '+LBL_Y+'>RAE (P pulmonale)</text>';
+      break;
+    }
+
+    /* ─── PATHO: ELEKTROLIT ─── */
+    case 'hyperk-progress-pattern': {
+      /* Progression: normal → peaked T → P flat → wide QRS */
+      const b1 = ecgBeat(8, {pDur: 6, pAmp: 2, prSeg: 1, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 4, tDur: 10, tAmp: 8, tShape: 'peaked', base: 32});
+      const b2 = ecgBeat(75, {pDur: 4, pAmp: 1, prSeg: 4, rDur: 2, rAmp: 10, sDur: 3, sAmp: 4, stDur: 4, tDur: 10, tAmp: 10, tShape: 'peaked', base: 32});
+      const b3 = ecgBeat(140, {pDur: 0, pAmp: 0, pShape: 'absent', prSeg: 0, rDur: 5, rAmp: 8, sDur: 5, sAmp: 5, stDur: 3, tDur: 10, tAmp: 10, tShape: 'peaked', base: 32});
+      body = '<path d="'+b1.path+'" '+WAVE_Y+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
+           + '<path d="'+b3.path+'" '+WAVE_A+'/>'
+           + '<text x="8" y="11" '+LBL_Y+'>K 6.0: peaked T</text>'
+           + '<text x="68" y="11" '+LBL_A+'>K 7.5: P flat</text>'
+           + '<text x="138" y="11" '+LBL_A+'>K &gt;8: wide QRS</text>'
+           + '<text x="68" y="55" '+LBL_A+'>Hiperkalemia Progresif</text>';
+      break;
+    }
+    case 'hypok-pattern': {
+      /* T flat + U prominent + ST depresi */
+      const b = ecgBeat(50, {pDur: 8, pAmp: 2, prSeg: 4, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 8, stOffset: 2, stShape: 'flat', tDur: 14, tAmp: 2, tShape: 'flat', uAmp: 7, uDur: 16, base: 32});
+      body = '<path d="'+b.path+'" '+WAVE_A+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>T flat + STD ringan + U prominent</text>'
+           + '<text x="20" y="55" '+LBL_A+'>Hipokalemia (K &lt;3.0)</text>';
+      break;
+    }
+    case 'hyperca-pattern': {
+      /* Short QT — short ST */
+      const b = ecgBeat(60, {pDur: 8, pAmp: 2, prSeg: 4, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 2, tDur: 14, tAmp: 5, base: 32});
+      body = '<path d="'+b.path+'" '+WAVE_Y+'/>'
+           + '<line x1="74" y1="14" x2="74" y2="50" '+MARK+'/>'
+           + '<line x1="90" y1="14" x2="90" y2="50" '+MARK+'/>'
+           + '<text x="20" y="11" '+LBL_Y+'>QT pendek (ST hampir absent)</text>'
+           + '<text x="20" y="55" '+LBL_Y+'>Hiperkalsemia</text>';
+      break;
+    }
+    case 'hypoca-pattern': {
+      /* Long QT — long ST segment, T width normal */
+      const b = ecgBeat(30, {pDur: 8, pAmp: 2, prSeg: 4, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 30, tDur: 14, tAmp: 5, base: 32});
+      body = '<path d="'+b.path+'" '+WAVE_A+'/>'
+           + '<line x1="44" y1="14" x2="44" y2="50" '+MARK+'/>'
+           + '<line x1="110" y1="14" x2="110" y2="50" '+MARK+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>QT panjang (ST memanjang)</text>'
+           + '<text x="20" y="55" '+LBL_A+'>Hipokalsemia</text>';
+      break;
+    }
+    case 'hypothermia-osborn-pattern': {
+      /* Slow rate + Osborn J wave (positive hump at end of QRS) */
+      let waves = '';
+      [30, 150].forEach(x => {
+        let p = "M "+x+" 32";
+        p += " Q "+(x+3)+" 30 "+(x+8)+" 32";  /* P */
+        p += " L "+(x+12)+" 32";  /* PR */
+        p += " L "+(x+14)+" 33";  /* q */
+        p += " L "+(x+17)+" 18";  /* R */
+        p += " L "+(x+20)+" 38";  /* S */
+        /* Osborn J wave — positive hump */
+        p += " Q "+(x+22)+" 24 "+(x+26)+" 32";
+        p += " L "+(x+34)+" 32";  /* ST */
+        p += " Q "+(x+40)+" 28 "+(x+50)+" 32";  /* T */
+        waves += '<path d="'+p+'" '+WAVE_Y+'/>';
+        /* Circle the J wave */
+        waves += '<circle cx="'+(x+23)+'" cy="27" r="4.5" fill="none" stroke="#D4A860" stroke-width="0.8"/>';
+      });
+      body = waves
+           + '<text x="20" y="11" '+LBL_Y+'>J wave (notch terminal QRS)</text>'
+           + '<text x="20" y="55" '+LBL_Y+'>Hipotermia (Osborn wave)</text>';
+      break;
+    }
+    case 'digitalis-effect-pattern': {
+      /* Scooped ST depression — 'Salvador Dali' */
+      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 4, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 12, stOffset: 2, stShape: 'concave-up', tDur: 12, tAmp: 2, tShape: 'flat', base: 28});
+      const b2 = ecgBeat(140, {pDur: 8, pAmp: 2, prSeg: 4, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 12, stOffset: 2, stShape: 'concave-up', tDur: 12, tAmp: 2, tShape: 'flat', base: 28});
+      body = '<path d="'+b1.path+'" '+WAVE_Y+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_Y+'/>'
+           + '<text x="20" y="11" '+LBL_Y+'>Scooped STD ("Salvador Dali")</text>'
+           + '<text x="20" y="55" '+LBL_Y+'>Digitalis Effect</text>';
+      break;
+    }
+
+    /* ─── PATHO: PERICARDITIS ─── */
+    case 'pericarditis-pattern': {
+      /* Diffuse concave STE + PR depression */
+      const x = 50, base = 35;
+      let p = "M "+x+" "+base;
+      p += " Q "+(x+5)+" "+(base-3)+" "+(x+12)+" "+base;  /* P */
+      /* PR DEPRESSION — segment dips below baseline */
+      p += " L "+(x+14)+" "+(base+2);
+      p += " L "+(x+18)+" "+(base+2);  /* PR depressed */
+      /* QRS */
+      p += " L "+(x+20)+" "+(base+3);
+      p += " L "+(x+23)+" "+(base-12);
+      p += " L "+(x+26)+" "+(base+4);
+      /* CONCAVE STE — smiles up */
+      p += " L "+(x+28)+" "+(base-3);  /* J point elevated */
+      p += " Q "+(x+36)+" "+(base-2)+" "+(x+44)+" "+(base-3);  /* concave shape */
+      /* T positive */
+      p += " Q "+(x+52)+" "+(base-6)+" "+(x+60)+" "+base;
+      const p2 = p.replaceAll(' '+x+' ', ' '+(x+90)+' ').replace(/M \d+/, "M "+(x+90));
+      /* Simpler: redraw at offset */
+      let p3 = "M "+(x+90)+" "+base;
+      p3 += " Q "+(x+95)+" "+(base-3)+" "+(x+102)+" "+base;
+      p3 += " L "+(x+104)+" "+(base+2);
+      p3 += " L "+(x+108)+" "+(base+2);
+      p3 += " L "+(x+110)+" "+(base+3);
+      p3 += " L "+(x+113)+" "+(base-12);
+      p3 += " L "+(x+116)+" "+(base+4);
+      p3 += " L "+(x+118)+" "+(base-3);
+      p3 += " Q "+(x+126)+" "+(base-2)+" "+(x+134)+" "+(base-3);
+      p3 += " Q "+(x+142)+" "+(base-6)+" "+(x+150)+" "+base;
+      body = '<path d="'+p+'" '+WAVE_Y+'/>'
+           + '<path d="'+p3+'" '+WAVE_Y+'/>'
+           + '<text x="20" y="11" '+LBL_Y+'>STE difus concave + PR depresi</text>'
+           + '<text x="20" y="55" '+LBL_Y+'>Pericarditis Akut (Spodick I)</text>';
+      break;
+    }
+    case 'myocarditis-pattern': {
+      /* Variable — show STE + Q wave + TWI mixed */
+      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 4, qDur: 3, qAmp: 4, rDur: 2, rAmp: 10, sDur: 2, sAmp: 3, stDur: 8, stOffset: -3, stShape: 'concave-up', tDur: 14, tAmp: 4, tShape: 'inverted', base: 32});
+      const b2 = ecgBeat(130, {pDur: 8, pAmp: 2, prSeg: 4, qDur: 3, qAmp: 4, rDur: 2, rAmp: 10, sDur: 2, sAmp: 3, stDur: 8, stOffset: -3, stShape: 'concave-up', tDur: 14, tAmp: 4, tShape: 'inverted', base: 32});
+      body = '<path d="'+b1.path+'" '+WAVE_Y+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_Y+'/>'
+           + '<text x="20" y="11" '+LBL_Y+'>STE regional + Q + TWI (variable)</text>'
+           + '<text x="20" y="55" '+LBL_Y+'>Myocarditis (cardiac MRI dx)</text>';
+      break;
+    }
+
+    /* ─── PATHO: HEREDITER ─── */
+    case 'brugada-type1-pattern': {
+      /* Coved STE V1-V2 with TWI */
+      const b1 = ecgBeat(20, {pDur: 6, pAmp: 1.5, prSeg: 2, qDur: 1, qAmp: 1, rDur: 2, rAmp: 10, sDur: 2, sAmp: 3, stDur: 10, stOffset: -4, stShape: 'coved', tDur: 12, tAmp: 4, tShape: 'inverted', base: 30});
+      const b2 = ecgBeat(130, {pDur: 6, pAmp: 1.5, prSeg: 2, qDur: 1, qAmp: 1, rDur: 2, rAmp: 10, sDur: 2, sAmp: 3, stDur: 10, stOffset: -4, stShape: 'coved', tDur: 12, tAmp: 4, tShape: 'inverted', base: 30});
+      body = '<path d="'+b1.path+'" '+WAVE_A+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>V1-V2: Coved STE ≥2mm + TWI</text>'
+           + '<text x="20" y="55" '+LBL_A+'>Brugada Type 1 (Diagnostic)</text>';
+      break;
+    }
+    case 'lqts-pattern': {
+      /* Long QT + notched T (LQT2-like) */
+      const x = 30, base = 35;
+      let p = "M "+x+" "+base;
+      p += " Q "+(x+5)+" "+(base-3)+" "+(x+12)+" "+base;
+      p += " L "+(x+16)+" "+base;
+      p += " L "+(x+18)+" "+(base+2);
+      p += " L "+(x+21)+" "+(base-14);
+      p += " L "+(x+24)+" "+(base+3);
+      p += " L "+(x+26)+" "+base;
+      /* Long isoelectric */
+      p += " L "+(x+48)+" "+base;
+      /* Notched T wave */
+      p += " Q "+(x+55)+" "+(base-4)+" "+(x+60)+" "+(base-3);
+      p += " Q "+(x+64)+" "+(base-5)+" "+(x+68)+" "+(base-2);
+      p += " Q "+(x+74)+" "+(base-4)+" "+(x+82)+" "+base;
+      body = '<path d="'+p+'" '+WAVE_A+'/>'
+           + '<line x1="'+(x+18)+'" y1="14" x2="'+(x+18)+'" y2="48" '+MARK+'/>'
+           + '<line x1="'+(x+82)+'" y1="14" x2="'+(x+82)+'" y2="48" '+MARK+'/>'
+           + '<line x1="'+(x+18)+'" y1="14" x2="'+(x+82)+'" y2="14" '+MARK+'/>'
+           + '<text x="40" y="11" '+LBL_A+'>QT panjang + T notched (LQT2)</text>'
+           + '<text x="40" y="55" '+LBL_A+'>Long QT Syndrome</text>';
+      break;
+    }
+    case 'sqts-pattern': {
+      /* Short QT + tall peaked T */
+      const b = ecgBeat(60, {pDur: 8, pAmp: 2, prSeg: 4, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 2, tDur: 14, tAmp: 9, tShape: 'peaked', base: 32});
+      body = '<path d="'+b.path+'" '+WAVE_A+'/>'
+           + '<line x1="74" y1="14" x2="74" y2="50" '+MARK+'/>'
+           + '<line x1="100" y1="14" x2="100" y2="50" '+MARK+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>QTc &lt;340 + T peaked tall</text>'
+           + '<text x="20" y="55" '+LBL_A+'>Short QT Syndrome</text>';
+      break;
+    }
+    case 'hcm-yamaguchi-pattern': {
+      /* Giant TWI in V3-V5 — apical HCM */
+      const b1 = ecgBeat(20, {pDur: 6, pAmp: 1.5, prSeg: 2, qDur: 1, qAmp: 1, rDur: 2, rAmp: 16, sDur: 2, sAmp: 4, stDur: 6, stOffset: 2, tDur: 14, tAmp: 14, tShape: 'deep-inv', base: 22});
+      const b2 = ecgBeat(130, {pDur: 6, pAmp: 1.5, prSeg: 2, qDur: 1, qAmp: 1, rDur: 2, rAmp: 16, sDur: 2, sAmp: 4, stDur: 6, stOffset: 2, tDur: 14, tAmp: 14, tShape: 'deep-inv', base: 22});
+      body = '<path d="'+b1.path+'" '+WAVE_A+'/>'
+           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>V3-V5: Giant TWI ≥10mm</text>'
+           + '<text x="20" y="55" '+LBL_A+'>Yamaguchi (Apical HCM)</text>';
+      break;
+    }
+    case 'arvc-epsilon-pattern': {
+      /* Epsilon wave — small deflection terminal QRS in V1 */
+      const x = 60, base = 35;
+      let p = "M "+x+" "+base;
+      p += " Q "+(x+5)+" "+(base-3)+" "+(x+12)+" "+base;
+      p += " L "+(x+16)+" "+base;
+      p += " L "+(x+18)+" "+(base+1);
+      p += " L "+(x+20)+" "+(base-10);
+      p += " L "+(x+23)+" "+(base+5);
+      /* Epsilon wave — small notch after S, before ST */
+      p += " L "+(x+25)+" "+base;
+      p += " L "+(x+27)+" "+(base-3);  /* small upward */
+      p += " L "+(x+29)+" "+(base-1);
+      p += " L "+(x+31)+" "+(base-3);
+      p += " L "+(x+33)+" "+base;
+      /* T inverted */
+      p += " Q "+(x+42)+" "+(base+5)+" "+(x+52)+" "+base;
+      body = '<path d="'+p+'" '+WAVE_A+'/>'
+           + '<circle cx="'+(x+29)+'" cy="'+(base-2)+'" r="5" fill="none" stroke="#E87060" stroke-width="0.8"/>'
+           + '<text x="20" y="11" '+LBL_A+'>V1-V3: Epsilon wave (terminal QRS)</text>'
+           + '<text x="20" y="55" '+LBL_A+'>ARVC</text>';
+      break;
+    }
+
+    /* ─── PATHO: OLD INFARCT ─── */
+    case 'q-pathological-pattern': {
+      /* Deep Q in inferior */
+      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 4, qDur: 4, qAmp: 9, rDur: 2, rAmp: 6, sDur: 2, sAmp: 3, stDur: 8, tDur: 14, tAmp: 3, base: 28});
+      const b2 = ecgBeat(140, {pDur: 8, pAmp: 2, prSeg: 4, qDur: 4, qAmp: 9, rDur: 2, rAmp: 6, sDur: 2, sAmp: 3, stDur: 8, tDur: 14, tAmp: 3, base: 28});
+      body = '<path d="'+b1.path+'" stroke="#A0A09E" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+           + '<path d="'+b2.path+'" stroke="#A0A09E" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+           + '<text x="20" y="11" '+LBL+'>Q &gt;40ms / &gt;25% R, di II/III/aVF</text>'
+           + '<text x="20" y="55" '+LBL+'>Old MI (Q patologis)</text>';
+      break;
+    }
+    case 'ventricular-aneurysm-pattern': {
+      /* Q wave + persistent STE */
+      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 4, qDur: 4, qAmp: 8, rDur: 2, rAmp: 4, sDur: 2, sAmp: 2, stDur: 10, stOffset: -4, stShape: 'convex-up', tDur: 12, tAmp: 3, base: 30});
+      const b2 = ecgBeat(130, {pDur: 8, pAmp: 2, prSeg: 4, qDur: 4, qAmp: 8, rDur: 2, rAmp: 4, sDur: 2, sAmp: 2, stDur: 10, stOffset: -4, stShape: 'convex-up', tDur: 12, tAmp: 3, base: 30});
+      body = '<path d="'+b1.path+'" stroke="#A0A09E" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+           + '<path d="'+b2.path+'" stroke="#A0A09E" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+           + '<text x="20" y="11" '+LBL+'>Q + STE persisten &gt;6 minggu</text>'
+           + '<text x="20" y="55" '+LBL+'>LV Aneurysm</text>';
+      break;
+    }
+    case 'prwp-pattern': {
+      /* V1-V4 with tiny R waves */
+      const xs = [12, 50, 88, 126, 164, 202];
+      const ampR = [1, 1.5, 2.5, 3, 6, 10];
+      const ampS = [12, 10, 9, 8, 4, 2];
+      let waves = '';
+      for (let i = 0; i < 6; i++) {
+        const b = ecgBeat(xs[i]-15, {
+          pDur: 6, pAmp: 1.5, prSeg: 1, qDur: 1, qAmp: 1,
+          rDur: 2, rAmp: ampR[i], sDur: 2, sAmp: ampS[i],
+          stDur: 4, tDur: 6, tAmp: 2, base: 28
+        });
+        waves += '<path d="'+b.path+'" stroke="#A0A09E" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        waves += '<text x="'+(xs[i]-10)+'" y="55" '+LBL+'>V'+(i+1)+'</text>';
+      }
+      body = waves
+           + '<text x="8" y="11" '+LBL+'>R kecil di V1-V4 — transition lambat</text>';
+      break;
+    }
+    case 'resting-twi-pattern': {
+      /* TWI in lateral leads, regional, not dynamic */
+      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 4, qDur: 1, qAmp: 1, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 6, tDur: 14, tAmp: 5, tShape: 'inverted', base: 28});
+      const b2 = ecgBeat(140, {pDur: 8, pAmp: 2, prSeg: 4, qDur: 1, qAmp: 1, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 6, tDur: 14, tAmp: 5, tShape: 'inverted', base: 28});
+      body = '<path d="'+b1.path+'" stroke="#A0A09E" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+           + '<path d="'+b2.path+'" stroke="#A0A09E" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+           + '<text x="20" y="11" '+LBL+'>TWI regional, non-dynamic</text>'
+           + '<text x="20" y="55" '+LBL+'>Resting T Inversion (post-isk)</text>';
+      break;
+    }
+
+    default:
+      return '';
+  }
+  return svgWrap(body, W, H);
+}
+
+/* Map row.abbr → illustration type */
+const ILLUST_MAP = {
+  'P-dur': 'p-duration',
+  'P-amp': 'p-amplitude',
+  'P-morph': 'p-morphology',
+  'P-axis': 'p-axis',
+  'P-P': 'p-pp-interval',
+  'PR': 'pr-normal',
+  'PR<120': 'pr-short',
+  'PR>200': 'pr-long',
+  'QRS-dur': 'qrs-duration',
+  'Axis': 'qrs-axis-wheel',
+  'RWP': 'r-progression',
+  'Q-sept': 'septal-q',
+  'TZ': 'transition-zone',
+  'SL': 'sokolow-lyon',
+  'fQRS': 'fragmented-qrs',
+  'ST-iso': 'st-normal',
+  'STE': 'st-elevation',
+  'STD': 'st-depression',
+  'J': 'st-jpoint',
+  'ST-shape': 'st-morphology',
+  'T-morph': 't-normal',
+  'T-amp': 't-amplitude',
+  'T-hyper': 't-hyperacute',
+  'T-bi': 't-biphasic',
+  'T-inv': 't-deep-inv',
+  'TWA': 't-alternans',
+  'QTc-B': 'qtc-formula',
+  'QTc': 'qtc-normal',
+  'QTc-bord': 'qtc-borderline',
+  'QTc-long': 'qtc-prolonged',
+  'QTc-short': 'qtc-short',
+  'QTc>500': 'qtc-500',
+  'U': 'u-normal',
+  'U-prom': 'u-prominent',
+  'U-inv': 'u-inverted',
+  'HR-300': 'hr-large-box',
+  'HR-1500': 'hr-small-box',
+  'HR-6s': 'hr-6s',
+  'speed': 'paper-speed',
+  'cal': 'calibration',
+  'leads': 'lead-placement'
+};
+
+/* Map condition.name → illustration type for Tab 2 (Patofisiologi) */
+const PATHO_ILLUST_MAP = {
+  /* A — ACS */
+  'STEMI Klasik — Lokalisasi Teritorial': 'stemi-inferior',
+  'Sgarbossa Criteria (LBBB / Paced)': 'sgarbossa-concordant',
+  'STEMI Equivalents': 'de-winter',
+  'NSTEMI / Unstable Angina': 'nstemi-pattern',
+  /* B — Aritmia */
+  'Sinus Bradycardia / Tachycardia': 'sinus-tachy-pattern',
+  'Atrial Fibrillation (AF)': 'af-pattern',
+  'Atrial Flutter (AFL)': 'aflutter-pattern',
+  'SVT (AVNRT / AVRT)': 'svt-pattern',
+  'Multifocal Atrial Tachycardia (MAT)': 'mat-pattern',
+  'Junctional Rhythm': 'junctional-pattern',
+  'Ventricular Tachycardia — Brugada Algorithm': 'vt-pattern',
+  'Ventricular Fibrillation (VF)': 'vf-pattern',
+  'Torsades de Pointes (TdP)': 'tdp-pattern',
+  /* C — Conduction */
+  'AV Block — 1° / 2° / 3°': 'chb-pattern',
+  'Right Bundle Branch Block (RBBB)': 'rbbb-pattern',
+  'Left Bundle Branch Block (LBBB)': 'lbbb-pattern',
+  'Left Anterior Fascicular Block (LAFB)': 'lafb-pattern',
+  'Left Posterior Fascicular Block (LPFB)': 'lpfb-pattern',
+  'Bifascicular / Trifascicular Block': 'bifascicular-pattern',
+  'WPW Syndrome (Wolff-Parkinson-White)': 'wpw-pattern',
+  /* D — Hypertrophy */
+  'Left Ventricular Hypertrophy (LVH)': 'lvh-strain-pattern',
+  'Right Ventricular Hypertrophy (RVH)': 'rvh-pattern',
+  'Left Atrial Enlargement (P mitrale)': 'lae-pattern',
+  'Right Atrial Enlargement (P pulmonale)': 'rae-pattern',
+  /* E — Electrolyte */
+  'Hyperkalemia — Progressive Changes': 'hyperk-progress-pattern',
+  'Hypokalemia': 'hypok-pattern',
+  'Hypercalcemia': 'hyperca-pattern',
+  'Hypocalcemia': 'hypoca-pattern',
+  'Hypothermia — Osborn (J) Wave': 'hypothermia-osborn-pattern',
+  'Digitalis Effect vs Toxicity': 'digitalis-effect-pattern',
+  /* F — Pericarditis */
+  'Acute Pericarditis — Spodick Stages': 'pericarditis-pattern',
+  'Myocarditis': 'myocarditis-pattern',
+  /* G — Hereditary */
+  'Brugada Syndrome': 'brugada-type1-pattern',
+  'Long QT Syndrome (LQTS)': 'lqts-pattern',
+  'Short QT Syndrome': 'sqts-pattern',
+  'Hypertrophic Cardiomyopathy (HCM)': 'hcm-yamaguchi-pattern',
+  'ARVC': 'arvc-epsilon-pattern',
+  /* H — Old infarct */
+  'Pathological Q Waves': 'q-pathological-pattern',
+  'Ventricular Aneurysm (Persistent STE)': 'ventricular-aneurysm-pattern',
+  'Poor R Wave Progression (PRWP)': 'prwp-pattern',
+  'Resting T Inversion (Post-ischemic)': 'resting-twi-pattern'
+};
 
 /* ═══════════════════════════════════════════════════════════
    RENDERING FUNCTIONS
@@ -1965,6 +3797,16 @@ function renderNormalTab() {
       html += '<div class="range-ticks">';
       r.ticks.forEach(t => { html += '<span>'+t+'</span>'; });
       html += '</div>';
+      /* ECG illustration */
+      const illustType = ILLUST_MAP[r.abbr];
+      if (illustType) {
+        const svg = ecgIllust(illustType);
+        if (svg) {
+          html += '<div class="ecg-strip-container">';
+          html += '<div class="ecg-strip">'+svg+'</div>';
+          html += '</div>';
+        }
+      }
       html += '</td>';
       /* Clinical */
       html += '<td class="param-clinical">'+r.clinical+'</td>';
@@ -1997,15 +3839,30 @@ function renderPathoTab() {
     html += '</div></div>';
     html += '<div class="collapse-body"><div class="collapse-body-inner">';
     html += '<div class="cond-grid">';
-    cat.conditions.forEach(c => {
-      html += '<div class="cond-card">';
-      html += '<div class="cond-head">';
-      html += '<div class="cond-name">'+c.name+'</div>';
+    cat.conditions.forEach((c, condIdx) => {
+      const condId = cat.id + '-' + condIdx;
+      html += '<div class="cond-card" data-cond-id="'+condId+'">';
+      /* Small clickable head */
+      html += '<div class="cond-card-head" data-toggle-cond="'+condId+'">';
+      html += '<span class="cond-name">'+c.name+'</span>';
       if (c.territory) html += '<span class="badge badge-grey">'+c.territory+'</span>';
+      html += '<span class="chevron">▾</span>';
       html += '</div>';
+      /* Expandable body */
+      html += '<div class="cond-body"><div class="cond-body-inner">';
       if (c.mech) html += '<div class="cond-mech">'+c.mech+'</div>';
+      /* ECG illustration */
+      const pathoIllustType = PATHO_ILLUST_MAP[c.name];
+      if (pathoIllustType) {
+        const svg = ecgIllust(pathoIllustType);
+        if (svg) {
+          html += '<div class="ecg-strip-container">';
+          html += '<div class="ecg-strip">'+svg+'</div>';
+          html += '</div>';
+        }
+      }
       if (c.criteriaTable) {
-        html += '<table class="cond-criteria-table"><thead><tr>';
+        html += '<div class="cond-table-wrap"><table class="cond-criteria-table"><thead><tr>';
         c.criteriaTable.header.forEach(h => { html += '<th>'+h+'</th>'; });
         html += '</tr></thead><tbody>';
         c.criteriaTable.rows.forEach(row => {
@@ -2015,7 +3872,7 @@ function renderPathoTab() {
           });
           html += '</tr>';
         });
-        html += '</tbody></table>';
+        html += '</tbody></table></div>';
       }
       if (c.clinical) {
         html += '<div class="cond-clinical-block">';
@@ -2031,6 +3888,7 @@ function renderPathoTab() {
       }
       if (c.pitfall) html += '<div class="note-box note-yellow"><strong>Pitfall:</strong> '+c.pitfall+'</div>';
       if (c.pearl) html += '<div class="note-box note-moss"><strong>Pearl:</strong> '+c.pearl+'</div>';
+      html += '</div></div>';
       html += '</div>';
     });
     html += '</div>';
@@ -2120,8 +3978,11 @@ function renderInterp(result) {
         d.supports.forEach(sup => { html += '<li>'+sup+'</li>'; });
         html += '</ul>';
       }
+      if (d.source) {
+        html += '<span class="dx-source">📚 '+d.source+'</span>';
+      }
       if (d.link) {
-        html += '<button class="dx-link" data-link="'+d.link+'">→ Pelajari di Patofisiologi</button>';
+        html += '<button class="dx-link" data-link="'+d.link+'" data-dxname="'+d.name.replace(/"/g,'&quot;')+'">→ Pelajari di Patofisiologi</button>';
       }
       html += '</div>';
     });
@@ -2386,9 +4247,20 @@ document.addEventListener("click", function(e) {
     return;
   }
 
-  /* Dx link → switch to Tab 2 and scroll to category */
+  /* Collapse toggle (Tab 2 — sub-card / cond-card) */
+  if (e.target.closest("[data-toggle-cond]")) {
+    const head = e.target.closest("[data-toggle-cond]");
+    const card = head.parentElement;
+    card.classList.toggle("open");
+    const chevron = head.querySelector(".chevron");
+    if (chevron) chevron.classList.toggle("open");
+    return;
+  }
+
+  /* Dx link → switch to Tab 2, open category, open matching sub-card */
   if (e.target.classList.contains("dx-link")) {
     const link = e.target.dataset.link;
+    const dxName = e.target.dataset.dxname || "";
     if (!link) return;
     switchTab("patho");
     setTimeout(() => {
@@ -2397,12 +4269,36 @@ document.addEventListener("click", function(e) {
         /* Open the category */
         const header = cat.querySelector(".collapse-header");
         const body = cat.querySelector(".collapse-body");
-        const chevron = cat.querySelector(".chevron");
+        const chevron = header.querySelector(".chevron");
         body.classList.add("open");
         header.classList.add("open");
         if (chevron) chevron.classList.add("open");
-        /* Scroll */
-        cat.scrollIntoView({behavior:"smooth", block:"start"});
+        /* Try to open matching sub-card by name */
+        let targetSubCard = null;
+        if (dxName) {
+          const subCards = cat.querySelectorAll(".cond-card");
+          const dxLower = dxName.toLowerCase();
+          subCards.forEach(sc => {
+            const subName = sc.querySelector(".cond-name");
+            if (subName) {
+              const txt = subName.textContent.toLowerCase();
+              /* Match on key keyword */
+              const dxKey = dxLower.split(/[\s—()]/).filter(w => w.length > 3)[0] || "";
+              if (dxKey && txt.includes(dxKey)) {
+                if (!targetSubCard) targetSubCard = sc;
+              }
+            }
+          });
+          if (targetSubCard) {
+            targetSubCard.classList.add("open");
+            const subChev = targetSubCard.querySelector(".cond-card-head .chevron");
+            if (subChev) subChev.classList.add("open");
+          }
+        }
+        /* Scroll to target sub-card or category */
+        setTimeout(() => {
+          (targetSubCard || cat).scrollIntoView({behavior:"smooth", block:"start"});
+        }, 350);
       }
     }, 100);
     return;
