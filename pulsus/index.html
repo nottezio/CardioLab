@@ -53,11 +53,14 @@ table { border-collapse: collapse; width: 100%; }
 .tab-btn.active { background: var(--moss-dim); border-color: var(--moss);
   color: var(--moss-bright); font-weight: 500; }
 
-/* Main + tab panel transitions */
-.main { margin-top: 56px; padding: 24px; min-height: calc(100vh - 56px - 40px); position: relative; }
-.tab-panel { opacity: 0; pointer-events: none; position: absolute;
-  inset: 24px 24px auto 24px; transition: opacity .2s ease; }
-.tab-panel.active { opacity: 1; pointer-events: auto; position: relative; inset: auto; }
+/* Main + tab panel — inactive panels removed from layout entirely */
+.main { margin-top: 56px; padding: 24px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: tabFadeIn .2s ease; }
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 /* WIP footer */
 .wip-footer { position: fixed; bottom: 0; left: 0; right: 0; height: 40px;
@@ -205,13 +208,17 @@ table { border-collapse: collapse; width: 100%; }
 .cat-count { font-family: 'JetBrains Mono', monospace; font-size: 10px;
   color: var(--text-muted); background: var(--bg-surface); border: 1px solid var(--border);
   border-radius: 4px; padding: 1px 6px; }
-.cond-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.cond-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+  align-items: start; }
 @media (max-width: 980px) { .cond-grid { grid-template-columns: 1fr; } }
 .cond-card { background: var(--bg-elevated); border: 1px solid var(--border);
   border-radius: 10px; overflow: hidden;
   transition: border-color .2s ease; }
 .cond-card:hover { border-color: var(--border-bright); }
-.cond-card.open { border-color: var(--moss-dim); }
+/* Opened card spans the full row; closed siblings keep their compact column form.
+   No grid-auto-flow:dense, so cards stay in natural document order. */
+.cond-card.open { border-color: var(--moss-dim); grid-column: 1 / -1; }
+@media (max-width: 980px) { .cond-card.open { grid-column: auto; } }
 .cond-card-head { display: flex; align-items: center; justify-content: space-between;
   padding: 12px 16px; cursor: pointer; gap: 10px;
   transition: background .15s ease; }
@@ -233,6 +240,9 @@ table { border-collapse: collapse; width: 100%; }
 .cond-head { display: none; }
 .cond-mech { font-style: italic; font-size: 12px; color: var(--text-secondary);
   margin-bottom: 12px; line-height: 1.55; }
+.cond-ref { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border-bright);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: var(--text-muted); letter-spacing: .02em; line-height: 1.5; }
 .cond-criteria-table { margin: 10px 0; font-size: 11px; }
 .cond-table-wrap { margin: 10px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .cond-table-wrap .cond-criteria-table { margin: 0; min-width: 100%; }
@@ -255,9 +265,15 @@ table { border-collapse: collapse; width: 100%; }
 
 /* TAB 3 — Algoritma */
 .algo-grid { display: grid; grid-template-columns: 55% 45%; gap: 20px;
-  height: calc(100vh - 56px - 40px - 48px); }
-@media (max-width: 980px) { .algo-grid { grid-template-columns: 1fr; height: auto; } }
-.algo-col { overflow-y: auto; padding-right: 4px; }
+  align-items: start; }
+@media (max-width: 980px) { .algo-grid { grid-template-columns: 1fr; } }
+.algo-col { padding-right: 4px; }
+.algo-col-interp { position: sticky; top: 72px;
+  max-height: calc(100vh - 96px); overflow-y: auto;
+  scrollbar-width: thin; }
+@media (max-width: 980px) {
+  .algo-col-interp { position: static; max-height: none; overflow: visible; }
+}
 .algo-col-head { display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 16px; gap: 12px; }
 .algo-col-title { font-family: 'Cormorant Garamond', serif; font-size: 18px;
@@ -361,7 +377,6 @@ table { border-collapse: collapse; width: 100%; }
   .tabs::-webkit-scrollbar { display: none; }
   .tab-btn { padding: 6px 14px; font-size: 11px; min-height: 32px; }
   .main { margin-top: 52px; padding: 12px; }
-  .tab-panel { inset: 12px 12px auto 12px; }
 
   /* Tab 1 — block layout for table rows */
   .col-param, .col-value, .col-range, .col-clin { width: auto; }
@@ -391,7 +406,6 @@ table { border-collapse: collapse; width: 100%; }
   .form-row-label { font-size: 12px; }
 
   /* Algo column: full height stack, no overflow constraint */
-  .algo-col { overflow-y: visible; }
   .algo-col-title { font-size: 16px; }
 
   /* Cond criteria table — scroll horizontally if wide */
@@ -432,7 +446,6 @@ table { border-collapse: collapse; width: 100%; }
   .tab-btn { padding: 5px 12px; font-size: 10px; }
   .navbar { padding: 0 10px; height: 50px; }
   .main { margin-top: 50px; padding: 10px; }
-  .tab-panel { inset: 10px 10px auto 10px; }
   .collapse-title { font-size: 15px; }
   .cat-letter { font-size: 16px; }
   .cond-criteria-table { font-size: 9px; }
@@ -444,7 +457,7 @@ table { border-collapse: collapse; width: 100%; }
 @media print {
   body { background: #fff; color: #000; }
   .navbar, .wip-footer, .tab1-controls, .algo-grid { display: none !important; }
-  .tab-panel { opacity: 1 !important; position: relative !important; inset: auto !important; pointer-events: auto !important; }
+  .tab-panel { display: block !important; animation: none !important; }
   .tab-panel[data-tab="algo"] { display: none !important; }
   .collapse-body { max-height: none !important; }
   .collapse-body, .collapse-header { background: #fff !important; color: #000 !important; border-color: #ccc !important; }
@@ -491,7 +504,7 @@ table { border-collapse: collapse; width: 100%; }
         </div>
         <div id="algoForm"></div>
       </div>
-      <div class="algo-col" id="algoInterpCol">
+      <div class="algo-col algo-col-interp" id="algoInterpCol">
         <div class="algo-col-head">
           <div class="algo-col-title interp">Interpretasi</div>
         </div>
@@ -752,7 +765,7 @@ PATHO_CATEGORIES.push({
   id:"acs", letter:"A", title:"Sindrom Koroner Akut (ACS)",
   urgency:"emergency", urgencyLabel:"EMERGENCY",
   conditions:[
-    {name:"STEMI Klasik — Lokalisasi Teritorial", territory:"12-lead",
+    {name:"STEMI Klasik — Lokalisasi Teritorial", territory:"12-lead", ref:"ESC 2023 ACS Guidelines; Goldberger's Clinical ECG 9e",
      mech:"Oklusi total koroner epikardial → transmural ischemia → ST elevation di lead overlying area infark dengan reciprocal STD di lead opposite.",
      criteriaTable:{
        header:["Lokasi","Lead STE","Reciprocal STD","Arteri"],
@@ -778,7 +791,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Pericarditis, LVH dengan strain, BER (early repolarization), LBBB, Brugada, hyperkalemia, takotsubo — semua bisa mimic STE. Konteks klinis + serial ECG + biomarker.",
      pearl:"<strong>Reciprocal change</strong> = pendukung kuat STEMI (>90% spesifisitas). Jika tidak ada, pertimbangkan mimic. <strong>aVR STE >1mm + diffuse STD</strong> → LMCA/3VD; aktivasi cath lab segera."
     },
-    {name:"Sgarbossa Criteria (LBBB / Paced)", territory:"LBBB",
+    {name:"Sgarbossa Criteria (LBBB / Paced)", territory:"LBBB", ref:"Sgarbossa 1996 NEJM; Smith 2012 Ann Emerg Med",
      mech:"LBBB/paced obscure traditional STEMI patterns. Sgarbossa criteria mendeteksi STE konkordant atau diskordant ekstrem yang menandakan AMI di balik LBBB.",
      clinical:{title:"Sgarbossa Original 1996",
        rows:[
@@ -799,7 +812,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Sgarbossa tidak rule out AMI — sensitivitas terbatas. Jika klinis kuat dan Sgarbossa negatif, pertimbangkan hs-troponin serial dan echocardiogram wall motion.",
      pearl:"Pada paced rhythm, kriteria sama. Hindari analisa STE pada beat dipace; gunakan beat sinus jika ada (intermittent pacing)."
     },
-    {name:"STEMI Equivalents", territory:"non-classic",
+    {name:"STEMI Equivalents", territory:"non-classic", ref:"de Zwaan 1989; de Winter 2008 NEJM; ESC 2023",
      mech:"Pola EKG yang merepresentasikan oklusi koroner total/subtotal akut namun tidak memenuhi kriteria STE klasik. Memerlukan reperfusi urgent.",
      criteriaTable:{
        header:["Pola","Lead","Temuan Khas"],
@@ -825,7 +838,7 @@ PATHO_CATEGORIES.push({
      pitfall:"<strong>De Winter:</strong> klasifikasi formal bukan STEMI, namun studi menunjukkan oklusi total LAD ~95% kasus. <em>⚠ Klasifikasi sebagai true STEMI-equivalent masih diskusi guideline.</em>",
      pearl:"Pasien Wellens TIDAK boleh stress test — bisa precipitate complete occlusion. Langsung angiografi."
     },
-    {name:"NSTEMI / Unstable Angina", territory:"subendocardial",
+    {name:"NSTEMI / Unstable Angina", territory:"subendocardial", ref:"ESC 2023 NSTE-ACS Guidelines",
      mech:"Subtotal occlusion atau supply-demand mismatch → subendocardial ischemia → STD horizontal/downsloping atau dynamic T inversion. Troponin positif (NSTEMI) atau negatif (UA).",
      criteriaTable:{
        header:["Temuan","Threshold","Catatan"],
@@ -846,7 +859,7 @@ PATHO_CATEGORIES.push({
   id:"arr", letter:"B", title:"Aritmia",
   urgency:"emergency", urgencyLabel:"EMERGENCY / URGENT",
   conditions:[
-    {name:"Sinus Bradycardia / Tachycardia", territory:"sinus",
+    {name:"Sinus Bradycardia / Tachycardia", territory:"sinus", ref:"Goldberger's Clinical ECG 9e",
      mech:"Sinus node firing di luar range normal 60–100. Bradycardia <60; tachycardia >100. Sebagian besar fisiologis/sekunder.",
      criteriaTable:{
        header:["Parameter","Bradycardia","Tachycardia"],
@@ -860,7 +873,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Sinus tachy dengan P tersembunyi di T bisa terlihat seperti SVT. Cek pada rate ≤150 dan respons terhadap maneuver vagal.",
      pearl:"Treat penyebab, bukan rate. Sinus tachy adalah respons fisiologis — tidak pernah primary diagnosis pada pasien dengan demam/syok."
     },
-    {name:"Atrial Fibrillation (AF)", territory:"atrial",
+    {name:"Atrial Fibrillation (AF)", territory:"atrial", ref:"AHA/ACC/HRS 2023 AF Guideline; Marriott's 12e",
      mech:"Multiple re-entry circuits di atria → aktivitas atrium chaotic 350–600/min. AVN filter → ventricular response irregular irregular.",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -874,7 +887,7 @@ PATHO_CATEGORIES.push({
      pitfall:"AF dengan rate sangat cepat (>180) + QRS lebar → curiga WPW antegrade via accessory pathway. <strong>JANGAN beri AVN blocker</strong> (adenosine, BB, CCB, digoksin) — bisa mempercepat konduksi → VF.",
      pearl:"AF + WPW + unstable → kardioversi DC. Stable → procainamide atau ibutilide IV."
     },
-    {name:"Atrial Flutter (AFL)", territory:"atrial",
+    {name:"Atrial Flutter (AFL)", territory:"atrial", ref:"Marriott's Practical ECG 12e",
      mech:"Macroreentrant circuit di atrium kanan (typical) atau kiri (atypical). Atrial rate ~300/min; AV block sering 2:1 → ventricular rate ~150.",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -888,7 +901,7 @@ PATHO_CATEGORIES.push({
      pitfall:"AFL 2:1 → ventricular rate ~150 bpm → sering misdiagnose sebagai sinus tachy atau SVT. Maneuver vagal/adenosine akan unmask flutter waves.",
      pearl:"Sawtooth paling jelas di II atau V1. Jika ragu, lihat Lewis lead atau lead esofagus."
     },
-    {name:"SVT (AVNRT / AVRT)", territory:"supraventricular",
+    {name:"SVT (AVNRT / AVRT)", territory:"supraventricular", ref:"Marriott's 12e; AHA/ACC/HRS 2015 SVT",
      mech:"AVNRT: re-entry di AV node menggunakan fast & slow pathway. AVRT: re-entry menggunakan accessory pathway (WPW). Trigger biasanya PAC.",
      criteriaTable:{
        header:["Kriteria","AVNRT","AVRT (ortho)"],
@@ -902,7 +915,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Antidromic AVRT (jarang) → konduksi antegrade via accessory pathway → QRS LEBAR, mimic VT. Manage as wide-complex tachycardia.",
      pearl:"Maneuver vagal lalu adenosine 6 mg IV push. AF/AFL akan unmask; SVT akan terminate atau slow."
     },
-    {name:"Multifocal Atrial Tachycardia (MAT)", territory:"atrial",
+    {name:"Multifocal Atrial Tachycardia (MAT)", territory:"atrial", ref:"Goldberger's Clinical ECG 9e",
      mech:"Multiple atrial ectopic foci → ≥3 morfologi P berbeda di same lead, rate >100. Klasik pada COPD eksaserbasi.",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -916,7 +929,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Wandering atrial pacemaker = sama pattern tapi rate <100. MAT sering dikira AF — cek isoelectric baseline antara P.",
      pearl:"Penyebab utama: COPD, hipoksia, hipokalemia, hipomagnesemia, teofilin. Treat underlying cause."
     },
-    {name:"Junctional Rhythm", territory:"AV junction",
+    {name:"Junctional Rhythm", territory:"AV junction", ref:"Marriott's Practical ECG 12e",
      mech:"Escape (40–60) atau accelerated (60–100) atau tachycardia (>100) dari AV junction. P retrograde — terbalik di II/III/aVF.",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -930,7 +943,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Accelerated junctional rhythm (60–100) sering pada digoxin toxicity. Cek dosis dan electrolyte status.",
      pearl:"Escape junctional di pasien CHB → indikasi pacing temporer/permanen jika simptomatik."
     },
-    {name:"Ventricular Tachycardia — Brugada Algorithm", territory:"ventrikel",
+    {name:"Ventricular Tachycardia — Brugada Algorithm", territory:"ventrikel", ref:"Brugada 1991 Circulation; Marriott's 12e",
      mech:"Re-entry atau triggered activity di ventrikel. Wide-complex tachycardia (QRS ≥120 ms) dengan rate >100.",
      clinical:{title:"Brugada 4-Step Algorithm (1991)",
        rows:[
@@ -962,7 +975,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Saat ragu VT vs SVT-aberrancy pada pasien tidak stabil: <strong>treat as VT</strong>. Procainamide/amiodarone untuk stable; kardioversi sinkron untuk unstable.",
      pearl:"Pasien dengan riwayat MI atau CHF, WCT regular adalah VT >90% kasus. Adenosine boleh dicoba pada stable WCT regular."
     },
-    {name:"Ventricular Fibrillation (VF)", territory:"ventrikel",
+    {name:"Ventricular Fibrillation (VF)", territory:"ventrikel", ref:"AHA ACLS 2020; Marriott's 12e",
      mech:"Multiple chaotic re-entry circuits di ventrikel → tidak ada coordinated contraction → cardiac arrest.",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -976,7 +989,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Fine VF bisa terlihat seperti asistol di lead tertentu — cek ≥2 lead. Movement artifact bisa mimic VF.",
      pearl:"Defibrilasi segera, unsynchronized. Prioritas: kompresi dada berkualitas. Setiap menit terlambat → survival drop ~10%."
     },
-    {name:"Torsades de Pointes (TdP)", territory:"ventrikel polimorfik",
+    {name:"Torsades de Pointes (TdP)", territory:"ventrikel polimorfik", ref:"Drew 2010 AHA Scientific Statement",
      mech:"Polymorphic VT dalam setting QT prolongation. QRS twist around isoelectric line. Sering inisiasi oleh PVC pada T (R-on-T).",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -998,7 +1011,7 @@ PATHO_CATEGORIES.push({
   id:"cond", letter:"C", title:"Gangguan Konduksi",
   urgency:"monitor", urgencyLabel:"MONITOR / URGENT",
   conditions:[
-    {name:"AV Block — 1° / 2° / 3°", territory:"AV node / HPS",
+    {name:"AV Block — 1° / 2° / 3°", territory:"AV node / HPS", ref:"AHA/ACC/HRS 2018 Bradycardia Guideline",
      mech:"Gangguan konduksi atrium → ventrikel di AVN (proximal) atau His-Purkinje (distal). Distal blocks lebih berbahaya — narrow escape, risiko progresi ke CHB.",
      criteriaTable:{
        header:["Tipe","Kriteria EKG","Lokasi & Risk"],
@@ -1027,7 +1040,7 @@ PATHO_CATEGORIES.push({
      pitfall:"2:1 AVB sulit klasifikasi — gunakan PR baseline dan QRS width sebagai clue. QRS lebar → cenderung Mobitz II.",
      pearl:"CHB + QRS sempit + rate 40–60 → escape junctional, stable. CHB + QRS lebar + rate <40 → escape ventricular, unstable. Both need pacing."
     },
-    {name:"Right Bundle Branch Block (RBBB)", territory:"RBB",
+    {name:"Right Bundle Branch Block (RBBB)", territory:"RBB", ref:"AHA/ACC/HRS 2009 Part III (Surawicz)",
      mech:"Konduksi blok di RBB → ventrikel kanan depolarized lambat via septal kemudian late retrograde dari LV.",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -1042,7 +1055,7 @@ PATHO_CATEGORIES.push({
      pitfall:"RBBB tidak menghalangi diagnosa STEMI — STE harus tetap dianalisis. RBBB juga bisa mengaburkan posterior MI.",
      pearl:"RBBB baru pada PE → marker right heart strain. RBBB chronic seringkali benign tanpa penyakit struktural."
     },
-    {name:"Left Bundle Branch Block (LBBB)", territory:"LBB",
+    {name:"Left Bundle Branch Block (LBBB)", territory:"LBB", ref:"AHA/ACC/HRS 2009 Part III (Surawicz)",
      mech:"Blok di LBB main → septum depolarized R→L (reversed), aktivasi LV via slow muscle-to-muscle. Selalu repolarization secondary abnormal.",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -1057,7 +1070,7 @@ PATHO_CATEGORIES.push({
      pitfall:"LBBB membuat diagnosa STEMI sulit. Gunakan Sgarbossa atau Modified Sgarbossa. New LBBB + chest pain pernah dianggap STEMI equivalent (lama).",
      pearl:"LBBB chronic + EF rendah → kandidat CRT (cardiac resynchronization) jika QRS ≥150 ms dan LBBB true morphology."
     },
-    {name:"Left Anterior Fascicular Block (LAFB)", territory:"fascicle anterior LBB",
+    {name:"Left Anterior Fascicular Block (LAFB)", territory:"fascicle anterior LBB", ref:"AHA/ACC/HRS 2009 Part III (Surawicz)",
      mech:"Blok di fasikel anterior LBB → aktivasi LV initial via posterior fascicle, lalu late activation anterior wall.",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -1072,7 +1085,7 @@ PATHO_CATEGORIES.push({
      pitfall:"LAD juga bisa karena obesitas, ascites, kehamilan, inferior MI lama, WPW. LAFB membutuhkan EXCLUSION.",
      pearl:"LAFB bersifat benign isolated. LAFB + RBBB = bifascicular block — risiko CHB meningkat dengan PR memanjang."
     },
-    {name:"Left Posterior Fascicular Block (LPFB)", territory:"fascicle posterior",
+    {name:"Left Posterior Fascicular Block (LPFB)", territory:"fascicle posterior", ref:"AHA/ACC/HRS 2009 Part III (Surawicz)",
      mech:"Blok di fasikel posterior LBB. Sangat jarang isolated (fasikel posterior tebal, dual blood supply).",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -1087,7 +1100,7 @@ PATHO_CATEGORIES.push({
      pitfall:"LPFB diagnosis of exclusion — singkirkan RVH (jauh lebih umum), PE, lateral MI, dextrocardia. Jarang berdiri sendiri.",
      pearl:"LPFB baru pada konteks acute → marker high-risk lesion (proximal RCA/LCx). Cek serial ECG."
     },
-    {name:"Bifascicular / Trifascicular Block", territory:"multi-fascicle",
+    {name:"Bifascicular / Trifascicular Block", territory:"multi-fascicle", ref:"AHA/ACC/HRS 2018 Bradycardia Guideline",
      mech:"Blok di ≥2 dari 3 fascicle. Bifascicular = RBBB + LAFB atau RBBB + LPFB. Trifascicular = bifascicular + PR memanjang.",
      criteriaTable:{
        header:["Tipe","Kriteria","Risk"],
@@ -1101,7 +1114,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Istilah 'trifascicular' kontroversial — PR memanjang bisa karena AVN disease, bukan fascicular. Banyak ahli cardiologi menghindari istilah ini.",
      pearl:"Bifascicular asymptomatic + 1° AVB: monitor; tidak otomatis pacing. Syncope tanpa explained → pacing indicated (Class IIa)."
     },
-    {name:"WPW Syndrome (Wolff-Parkinson-White)", territory:"pre-excitation",
+    {name:"WPW Syndrome (Wolff-Parkinson-White)", territory:"pre-excitation", ref:"AHA/ACC/HRS 2015 SVT Guideline; Marriott's 12e",
      mech:"Accessory pathway (bundle of Kent) menghubungkan atrium ke ventrikel, bypassing AV node. Anterograde via pathway → early activation → delta wave.",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -1135,17 +1148,20 @@ PATHO_CATEGORIES.push({
   id:"hyp", letter:"D", title:"Hipertrofi & Atrial Enlargement",
   urgency:"structural", urgencyLabel:"STRUCTURAL",
   conditions:[
-    {name:"Left Ventricular Hypertrophy (LVH)", territory:"LV",
+    {name:"Left Ventricular Hypertrophy (LVH)", territory:"LV", ref:"AHA/ACC/HRS 2009 Part V (Hancock); Sokolow 1949",
      mech:"Penebalan dinding LV → peningkatan vektor LV → tall R di lateral, deep S di anterior. Sering disertai strain pattern.",
      clinical:{title:"LVH Voltage Criteria",
        rows:[
-         "1. Sokolow-Lyon:           S V1 + R V5/V6 ≥ 35 mm (♂); ≥ 30 mm (♀)",
+         "1. Sokolow-Lyon (universal, tanpa pembagian sex):",
+         "   S V1 + R V5/V6 ≥ 35 mm (≥30 thn);  ≥40 mm (20-30 thn)",
          "",
-         "2. Cornell voltage:        R aVL + S V3 ≥ 28 mm (♂); ≥ 20 mm (♀)",
+         "2. Cornell voltage (sex-specific):",
+         "   R aVL + S V3 ≥ 28 mm (♂)",
+         "   R aVL + S V3 ≥ 20 mm (♀)",
          "",
-         "3. Cornell product:        (R aVL + S V3) × QRS dur > 2440 mm·ms",
+         "3. Cornell product:  (R aVL + S V3) × QRS dur > 2440 mm·ms",
          "",
-         "4. R aVL ≥ 11 mm   (single-lead, simple)"
+         "4. R aVL ≥ 11 mm  (single-lead, simple)"
        ]},
      clinical2:{title:"Romhilt-Estes Point Score (≥5 = LVH; 4 = probable)",
        rows:[
@@ -1160,7 +1176,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Voltage criteria: sensitivitas rendah (~25–40%), spesifisitas tinggi (~95%). Pada usia <35 atau atlet, voltage tinggi tanpa strain = sering benign. Echo gold-standard.",
      pearl:"Strain pattern (STD + TWI lateral) menandakan LVH lanjut dengan adverse prognosis. Mimic STD ischemia tetapi sifatnya chronic dan asimetris."
     },
-    {name:"Right Ventricular Hypertrophy (RVH)", territory:"RV",
+    {name:"Right Ventricular Hypertrophy (RVH)", territory:"RV", ref:"AHA/ACC/HRS 2009 Part V (Hancock)",
      mech:"Penebalan dinding RV → vektor terbalik ke kanan/anterior → dominant R di V1, deep S lateral, RAD.",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -1176,7 +1192,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Dominant R V1 juga bisa karena posterior MI, WPW type A, RBBB, dextrocardia, normal varian. Klinis + echo untuk konfirmasi.",
      pearl:"RVH + RAD + P pulmonale = klasik chronic cor pulmonale. Akut RV strain (PE) → S1Q3T3 ± RBBB baru ± TWI inferior/anterior."
     },
-    {name:"Left Atrial Enlargement (P mitrale)", territory:"LA",
+    {name:"Left Atrial Enlargement (P mitrale)", territory:"LA", ref:"AHA/ACC/HRS 2009 Part III (Surawicz)",
      mech:"Pembesaran atrium kiri → durasi P memanjang dan terminal force negatif di V1 (komponen LA dominan).",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -1190,7 +1206,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Bifid P juga bisa interatrial block (Bayés syndrome). Bayés P >120 ms + biphasic terminal inferior → predictor AF.",
      pearl:"P mitrale + mitral stenosis = klasik (rheumatic). Modern era: lebih sering hipertensi, HFpEF, atau AF chronic."
     },
-    {name:"Right Atrial Enlargement (P pulmonale)", territory:"RA",
+    {name:"Right Atrial Enlargement (P pulmonale)", territory:"RA", ref:"AHA/ACC/HRS 2009 Part III (Surawicz)",
      mech:"Pembesaran atrium kanan → peak P meningkat (RA depolarized di awal, dominasi bagian awal P).",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -1211,7 +1227,7 @@ PATHO_CATEGORIES.push({
   id:"elec", letter:"E", title:"Elektrolit & Metabolik",
   urgency:"urgent", urgencyLabel:"URGENT",
   conditions:[
-    {name:"Hyperkalemia — Progressive Changes", territory:"global",
+    {name:"Hyperkalemia — Progressive Changes", territory:"global", ref:"Surawicz & Knilans, Chou's Electrocardiography 6e",
      mech:"K⁺ ekstraseluler ↑ → membrane resting potential less negative → konduksi terganggu progresif. Repol fase-3 dipercepat → T peaked. Lalu Na-channel inactivation → konduksi melambat → P hilang, QRS lebar, sinusoid.",
      clinical:{title:"Perubahan EKG by K⁺ Level (perkiraan)",
        rows:[
@@ -1226,7 +1242,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Peaked T hyperkalemia ≠ hyperacute T STEMI. Hyperkalemia: peaked, narrow base, simetris. Hyperacute: tall + broad base + asymmetric.",
      pearl:"Treatment urut: calcium gluconate (stabilize membrane, onset menit), insulin+glucose, β2-agonist (intraselular), kayexalate/lokelma + dialysis (eliminate)."
     },
-    {name:"Hypokalemia", territory:"global",
+    {name:"Hypokalemia", territory:"global", ref:"Surawicz & Knilans, Chou's Electrocardiography 6e",
      mech:"K⁺ ↓ → hyperpolarization parsial + perlambatan repolarisasi → ST flattening, T flat/inverted, U prominent. Mekanisme U masih kontroversial.",
      criteriaTable:{
        header:["K⁺ Level","Temuan EKG"],
@@ -1240,7 +1256,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Pengukuran QT pada hipokalemia sulit — yang 'long QT' sebenarnya long QU. Gunakan lead tanpa U prominent untuk akurasi.",
      pearl:"Hipokalemia + hypomagnesemia sering coexist dan keduanya predispose TdP. Selalu koreksi keduanya bersamaan."
     },
-    {name:"Hypercalcemia", territory:"global",
+    {name:"Hypercalcemia", territory:"global", ref:"Goldberger's Clinical ECG 9e",
      mech:"Ca²⁺ ↑ → memperpendek fase 2 plateau → QT pendek, terutama segmen ST.",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -1254,7 +1270,7 @@ PATHO_CATEGORIES.push({
      pitfall:"QT pendek juga muncul pada digoxin effect, hipertermia, short QT syndrome. Konteks klinis penting.",
      pearl:"Short QT + hypercalcemia + symptoms (renal stones, bone pain, abdominal pain, psych) = think hyperparathyroidism, malignancy."
     },
-    {name:"Hypocalcemia", territory:"global",
+    {name:"Hypocalcemia", territory:"global", ref:"Goldberger's Clinical ECG 9e",
      mech:"Ca²⁺ ↓ → memperpanjang fase 2 plateau → ST memanjang → QT memanjang (terutama komponen ST, T tetap normal width).",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -1268,7 +1284,7 @@ PATHO_CATEGORIES.push({
      pitfall:"QT memanjang hypocalcemia = ST elongation dengan T normal-width. LQTS = T melebar/abnormal. Differensiasi penting.",
      pearl:"Severe hypocalcemia + QT panjang + Trousseau/Chvostek → consider hipoparatiroidisme post-thyroidectomy, vitamin D deficiency, CKD, sepsis."
     },
-    {name:"Hypothermia — Osborn (J) Wave", territory:"global",
+    {name:"Hypothermia — Osborn (J) Wave", territory:"global", ref:"Goldberger's Clinical ECG 9e",
      mech:"Penurunan suhu tubuh inti → perlambatan semua phase potensial aksi. Osborn wave (J wave) = deflection positif terminal QRS / awal ST, paling jelas di lateral leads.",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -1283,7 +1299,7 @@ PATHO_CATEGORIES.push({
      pitfall:"J wave bisa juga early repolarization, hypercalcemia, SAH, Brugada — konteks suhu penting. Hipotermia J wave umum di lateral; Brugada di V1–V2.",
      pearl:"Re-warming gradual (0.5–1°C/jam). Hindari manipulasi kasar — myocardium hipotermik mudah VF. Tidak deklarasi mati sampai re-warmed ≥32°C."
     },
-    {name:"Digitalis Effect vs Toxicity", territory:"global",
+    {name:"Digitalis Effect vs Toxicity", territory:"global", ref:"Marriott's Practical ECG 12e",
      mech:"Efek terapeutik: inhibisi Na/K-ATPase → ↑Ca²⁺ intrasel → inotropi + perlambatan AV. Toxic: triggered activity dan automaticity meningkat → segala aritmia.",
      criteriaTable:{
        header:["Kategori","Temuan EKG"],
@@ -1303,7 +1319,7 @@ PATHO_CATEGORIES.push({
   id:"peri", letter:"F", title:"Perikarditis & Miokarditis",
   urgency:"urgent", urgencyLabel:"URGENT",
   conditions:[
-    {name:"Acute Pericarditis — Spodick Stages", territory:"diffuse",
+    {name:"Acute Pericarditis — Spodick Stages", territory:"diffuse", ref:"Spodick 2003 NEJM; Ginzton-Laks 1982",
      mech:"Inflamasi perikard → arus listrik 'borrowed' dari epicardium → diffuse STE concave-up + PR depression. Tidak ada reciprocal STD (kecuali aVR dan V1).",
      clinical:{title:"Spodick Stages",
        rows:[
@@ -1328,7 +1344,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Early repolarization mimic pericarditis stage I (keduanya concave STE). BER: lebih fokal precordial, tidak ada PR depression, J-point notch.",
      pearl:"Pericarditis + ST elevation regional → curiga STEMI bersamaan atau myo-pericarditis. Troponin positif menyarankan myocardial involvement."
     },
-    {name:"Myocarditis", territory:"regional/diffuse",
+    {name:"Myocarditis", territory:"regional/diffuse", ref:"ESC 2013 Myocarditis Position Statement",
      mech:"Inflamasi miokard → variable patterns. Bisa mimic STEMI (regional STE), pericarditis (diffuse), atau hanya nonspesifik.",
      criteriaTable:{
        header:["Temuan","Detail"],
@@ -1351,7 +1367,7 @@ PATHO_CATEGORIES.push({
   id:"her", letter:"G", title:"Sindrom Hereditas / Channelopathy",
   urgency:"urgent", urgencyLabel:"URGENT",
   conditions:[
-    {name:"Brugada Syndrome", territory:"V1–V2",
+    {name:"Brugada Syndrome", territory:"V1–V2", ref:"Brugada 1992; HRS/EHRA/APHRS 2013 Consensus",
      mech:"SCN5A mutation (Na channel loss-of-function, ~30%) → repolarization heterogeneity RVOT epicardium → coved STE V1–V2 + risiko VF idiopathic.",
      criteriaTable:{
        header:["Type","Morfologi","Diagnostic"],
@@ -1374,7 +1390,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Brugada phenocopy: kondisi reversible yang produce Type 1 (fever, hipokalemia, iskemia RV, obat, mekanikal kompresi RVOT). Re-evaluasi setelah koreksi.",
      pearl:"Fever-induced Brugada Type 1 sering. Edukasi pasien untuk antipiretik agresif saat demam. ICD untuk symptomatic atau aborted SCD."
     },
-    {name:"Long QT Syndrome (LQTS)", territory:"global",
+    {name:"Long QT Syndrome (LQTS)", territory:"global", ref:"Schwartz 2011 Circulation; HRS/EHRA 2013",
      mech:"Channelopathy yang memperpanjang repolarization → QT prolongation + risiko TdP. >15 subtype; LQT1–3 paling umum.",
      criteriaTable:{
        header:["Subtype","Gene","T Morfologi","Trigger Klasik"],
@@ -1408,7 +1424,7 @@ PATHO_CATEGORIES.push({
      pitfall:"QTc bisa fluctuate; gunakan multiple ECGs dan exercise/Holter. Family screening important — autosomal dominant.",
      pearl:"BB (nadolol/propranolol) untuk LQT1/2. LQT3 less responsive to BB; mexiletine atau ICD. Avoid QT-prolonging drugs untuk semua subtypes."
     },
-    {name:"Short QT Syndrome", territory:"global",
+    {name:"Short QT Syndrome", territory:"global", ref:"Gussak 2000; HRS/EHRA/APHRS 2013",
      mech:"Channelopathy gain-of-function (KCNH2, KCNQ1, KCNJ2) → repolarisasi cepat → QTc <340 ms + risiko VF/AF.",
      criteriaTable:{
        header:["Kriteria","Detail"],
@@ -1423,7 +1439,7 @@ PATHO_CATEGORIES.push({
      pitfall:"QTc pendek juga karena digoxin, hypercalcemia, hipertermia. Eksklusi sebelum diagnosa genetik.",
      pearl:"ICD untuk symptomatic atau resuscitated VF. Quinidine bisa memperpanjang QT pada kasus tertentu."
     },
-    {name:"Hypertrophic Cardiomyopathy (HCM)", territory:"LV",
+    {name:"Hypertrophic Cardiomyopathy (HCM)", territory:"LV", ref:"AHA/ACC 2020 HCM Guideline; Yamaguchi 1979",
      mech:"Mutasi sarcomere → hipertrofi LV asimetris (klasik septum) → obstruksi LVOT, mitral regurg, microvascular ischemia, arrhythmia. Apical variant (Yamaguchi) = giant TWI anterior.",
      criteriaTable:{
        header:["Pola","Temuan"],
@@ -1438,7 +1454,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Septal Q di HCM bisa diinterpretasikan sebagai lateral MI lama. Konteks: usia muda, family history, echo wajib.",
      pearl:"HCM = penyebab terbesar SCD pada atlet muda. Screening pre-participation dengan EKG sensitif tetapi spesifisitas rendah — perlu echo."
     },
-    {name:"ARVC", territory:"RV",
+    {name:"ARVC", territory:"RV", ref:"Marcus 2010 Task Force Criteria (Circulation)",
      mech:"Penggantian myocardium RV oleh jaringan fibrofatty → re-entry circuits → VT. Genetic (desmoplakin, plakophilin, dll).",
      criteriaTable:{
        header:["Kriteria EKG (Task Force 2010 — Major)","Detail"],
@@ -1459,7 +1475,7 @@ PATHO_CATEGORIES.push({
   id:"old", letter:"H", title:"Iskemia Kronis & Infark Lama",
   urgency:"structural", urgencyLabel:"STRUCTURAL",
   conditions:[
-    {name:"Pathological Q Waves", territory:"regional",
+    {name:"Pathological Q Waves", territory:"regional", ref:"AHA/ACC/HRS 2009 Part VI (Wagner)",
      mech:"Loss of viable myocardium di territorial coronarian → tidak ada vektor depolarisasi → Q wave permanen di lead overlying area infark.",
      criteriaTable:{
        header:["Kriteria","Threshold"],
@@ -1482,7 +1498,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Tidak setiap Q = infark lama. WPW (delta), HCM (septal Q lateral), LBBB (Q V5–V6 absent), dextrocardia (Q I).",
      pearl:"Echo untuk konfirmasi wall motion abnormality berkorelasi dengan Q territorial. Q persisten + akinesis = old infark."
     },
-    {name:"Ventricular Aneurysm (Persistent STE)", territory:"regional",
+    {name:"Ventricular Aneurysm (Persistent STE)", territory:"regional", ref:"Goldberger's Clinical ECG 9e",
      mech:"Setelah transmural MI, area akinesis/dyskinesis → persistent STE >6 minggu post-event. Klasik post-anterior MI.",
      criteriaTable:{
        header:["Kriteria","Temuan"],
@@ -1497,7 +1513,7 @@ PATHO_CATEGORIES.push({
      pitfall:"STE persisten + nyeri dada baru = sulit membedakan re-infarction dari stable aneurysm. Bandingkan EKG lama; serial troponin; echo wall motion baru.",
      pearl:"Risiko mural thrombus pada LV aneurysm signifikan → antikoagulasi sering diindikasikan terutama pada 3–6 bulan pertama dengan apical akinesis."
     },
-    {name:"Poor R Wave Progression (PRWP)", territory:"anterior",
+    {name:"Poor R Wave Progression (PRWP)", territory:"anterior", ref:"Marriott's Practical ECG 12e",
      mech:"Loss R wave di precordial anterior. Penyebab: anterior MI lama, LVH, LBBB, COPD (rotational), dextroposition.",
      criteriaTable:{
        header:["Kriteria","Definisi"],
@@ -1510,7 +1526,7 @@ PATHO_CATEGORIES.push({
      pitfall:"Lead misplacement (V1/V2 terlalu tinggi) = sering menyebabkan PRWP artifactual. Verifikasi placement ICS 4.",
      pearl:"PRWP + Q anterior + akinesis apical pada echo = anterior MI lama. PRWP tanpa Q dan voltage LV tinggi → cenderung LVH."
     },
-    {name:"Resting T Inversion (Post-ischemic)", territory:"regional",
+    {name:"Resting T Inversion (Post-ischemic)", territory:"regional", ref:"AHA/ACC/HRS 2009 Part VI (Wagner)",
      mech:"Cardiac memory dan/atau partial ischemia kronis menyebabkan TWI persisten di lead territorial post-MI.",
      criteriaTable:{
        header:["Kriteria","Detail"],
@@ -2952,13 +2968,27 @@ function ecgIllust(type) {
       break;
     }
     case 'de-winter': {
-      /* Upsloping ST depression + tall symmetric peaked T (anterior) */
-      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 2, rDur: 2, rAmp: 10, sDur: 3, sAmp: 4, stDur: 10, stOffset: 3, stShape: 'upsloping', tDur: 18, tAmp: 10, tShape: 'hyperacute', base: 30});
-      const b2 = ecgBeat(130, {pDur: 8, pAmp: 2, prSeg: 2, rDur: 2, rAmp: 10, sDur: 3, sAmp: 4, stDur: 10, stOffset: 3, stShape: 'upsloping', tDur: 18, tAmp: 10, tShape: 'hyperacute', base: 30});
-      body = '<path d="'+b1.path+'" '+WAVE_A+'/>'
-           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
-           + '<text x="20" y="10" '+LBL_A+'>V2-V4: Upsloping STD + tall T</text>'
-           + '<text x="20" y="55" '+LBL_A+'>De Winter (LAD occlusion)</text>';
+      /* Upsloping STD at J-point + tall symmetric T waves (anterior) */
+      const base = 34;
+      function dwBeat(x) {
+        let p = "M "+x+" "+base;
+        p += " Q "+(x+4)+" "+(base-3)+" "+(x+9)+" "+base;   /* P */
+        p += " L "+(x+11)+" "+base;                          /* PR */
+        p += " L "+(x+12)+" "+(base+2);                      /* q */
+        p += " L "+(x+15)+" "+(base-9);                      /* R */
+        p += " L "+(x+18)+" "+(base+6);                      /* S (deepish) */
+        /* J-point DEPRESSED, then upsloping STD rising into tall T */
+        p += " L "+(x+20)+" "+(base+5);                      /* J-point still depressed */
+        p += " L "+(x+28)+" "+(base-2);                      /* upsloping ST (rises) */
+        /* tall symmetric T */
+        p += " Q "+(x+36)+" "+(base-18)+" "+(x+44)+" "+base; /* tall symmetric peaked T */
+        return p;
+      }
+      body = '<path d="'+dwBeat(20)+'" '+WAVE_A+'/>'
+           + '<path d="'+dwBeat(130)+'" '+WAVE_A+'/>'
+           + '<circle cx="40" cy="'+(base+5)+'" r="3.5" fill="none" stroke="#E87060" stroke-width="0.8"/>'
+           + '<text x="20" y="11" '+LBL_A+'>J-point STD upsloping → tall symmetric T</text>'
+           + '<text x="20" y="55" '+LBL_A+'>De Winter (oklusi total LAD)</text>';
       break;
     }
     case 'nstemi-pattern': {
@@ -3047,15 +3077,22 @@ function ecgIllust(type) {
       break;
     }
     case 'svt-pattern': {
-      /* Narrow, regular, fast — P hidden in T */
+      /* Narrow, regular, fast. No discernible P. Clean QRS-T complexes. */
+      const base = 34;
       let waves = '';
-      [15, 50, 85, 120, 155, 190].forEach(x => {
-        const b = ecgBeat(x, {pDur: 0, pAmp: 0, pShape: 'absent', prSeg: 0, rDur: 1, rAmp: 14, sDur: 1, sAmp: 3, stDur: 4, tDur: 12, tAmp: 4, base: 32});
-        waves += '<path d="'+b.path+'" '+WAVE_A+'/>';
+      [18, 52, 86, 120, 154, 188].forEach(x => {
+        let p = "M "+x+" "+base;
+        p += " L "+(x+2)+" "+base;          /* baseline (no P) */
+        p += " L "+(x+3)+" "+(base+2);       /* tiny q */
+        p += " L "+(x+5)+" "+(base-13);      /* R narrow tall */
+        p += " L "+(x+7)+" "+(base+3);       /* S */
+        p += " L "+(x+9)+" "+base;           /* return */
+        p += " Q "+(x+15)+" "+(base-5)+" "+(x+21)+" "+base;  /* T upright smooth */
+        waves += '<path d="'+p+'" '+WAVE_A+'/>';
       });
       body = waves
-           + '<text x="20" y="10" '+LBL_A+'>Narrow regular, P absent/retro</text>'
-           + '<text x="20" y="55" '+LBL_A+'>SVT (AVNRT / AVRT)</text>';
+           + '<text x="18" y="11" '+LBL_A+'>Narrow QRS, regular, P tak terlihat</text>'
+           + '<text x="18" y="55" '+LBL_A+'>SVT (AVNRT / AVRT) — rate 150-250</text>';
       break;
     }
     case 'mat-pattern': {
@@ -3200,59 +3237,64 @@ function ecgIllust(type) {
       break;
     }
     case 'rbbb-pattern': {
-      /* V1: rSR' (rabbit ears, M-shape); V6: wide slurred S */
-      /* Top: V1 */
-      let v1 = "M 8 18";
-      v1 += " Q 14 16 18 18";  /* small P */
-      v1 += " L 22 18";  /* PR */
-      v1 += " L 23 19";  /* tiny q */
-      v1 += " L 25 12";  /* r */
-      v1 += " L 28 22";  /* S */
-      v1 += " L 30 14";  /* R' (rabbit ear 2) */
-      v1 += " L 33 18";  /* return */
-      v1 += " Q 38 22 44 18";  /* T inverted */
-      v1 += " L 100 18";
-      /* Bottom: V6 */
-      let v6 = "M 8 45";
-      v6 += " Q 14 43 18 45";
-      v6 += " L 22 45";
-      v6 += " L 24 46";  /* q */
-      v6 += " L 28 34";  /* R */
-      v6 += " Q 32 35 40 52";  /* wide slurred S */
-      v6 += " L 45 47";
-      v6 += " Q 50 44 56 45";
-      v6 += " L 100 45";
+      /* V1: rSR' — clear M-shape (rabbit ears). V6: wide slurred S wave */
+      const base1 = 20;
+      let v1 = "M 8 "+base1;
+      v1 += " Q 13 "+(base1-3)+" 17 "+base1;          /* small P */
+      v1 += " L 21 "+base1;                            /* PR seg */
+      v1 += " L 23 "+(base1+2);                        /* r small down→ baseline start */
+      v1 += " L 26 "+(base1-9);                        /* R (first rabbit ear) */
+      v1 += " L 29 "+(base1+1);                        /* S notch (dips toward baseline) */
+      v1 += " L 32 "+(base1-11);                       /* R' (second rabbit ear, taller) */
+      v1 += " L 35 "+(base1+3);                        /* down */
+      v1 += " L 37 "+base1;                            /* return */
+      v1 += " Q 43 "+(base1+5)+" 50 "+base1;           /* T inverted (discordant) */
+      v1 += " L 110 "+base1;
+      const base6 = 46;
+      let v6 = "M 8 "+base6;
+      v6 += " Q 13 "+(base6-3)+" 17 "+base6;           /* P */
+      v6 += " L 21 "+base6;                            /* PR */
+      v6 += " L 23 "+(base6+1);                        /* tiny q */
+      v6 += " L 26 "+(base6-10);                       /* R tall narrow */
+      v6 += " L 29 "+(base6+2);                        /* descend */
+      v6 += " L 34 "+(base6+8);                        /* wide slurred S (broad, slow) */
+      v6 += " Q 39 "+(base6+9)+" 44 "+base6;           /* slow return — slurred */
+      v6 += " Q 50 "+(base6-3)+" 56 "+base6;           /* T upright */
+      v6 += " L 110 "+base6;
       body = '<path d="'+v1+'" '+WAVE_Y+'/>'
            + '<path d="'+v6+'" '+WAVE_Y+'/>'
-           + '<text x="105" y="20" '+LBL_Y+'>V1: rSR&#39; (M-shape)</text>'
-           + '<text x="105" y="47" '+LBL_Y+'>V6: wide S</text>'
-           + '<text x="10" y="11" '+LBL_Y+'>Right Bundle Branch Block</text>';
+           + '<text x="113" y="'+(base1+2)+'" '+LBL_Y+'>V1: rSR&#39; (M-shape)</text>'
+           + '<text x="113" y="'+(base6+2)+'" '+LBL_Y+'>V6: wide slurred S</text>'
+           + '<text x="10" y="11" '+LBL_Y+'>Right Bundle Branch Block — QRS ≥120ms</text>';
       break;
     }
     case 'lbbb-pattern': {
-      /* V1: deep QS or wide rS; V6: broad monophasic R, no Q */
-      let v1 = "M 8 18";
-      v1 += " Q 13 16 17 18";
-      v1 += " L 21 18";
-      v1 += " L 24 24";  /* small r */
-      v1 += " Q 28 27 34 32";  /* deep wide S/QS */
-      v1 += " L 38 24";
-      v1 += " Q 44 22 50 18";  /* T positive (discordant) */
-      v1 += " L 100 18";
-      /* V6: broad monophasic R */
-      let v6 = "M 8 48";
-      v6 += " Q 13 46 17 48";
-      v6 += " L 21 48";  /* no Q */
-      v6 += " Q 25 47 30 32";  /* slow upstroke */
-      v6 += " L 38 32";  /* broad R top */
-      v6 += " Q 44 36 50 48";  /* slow downstroke */
-      v6 += " Q 56 52 62 50";  /* T inverted (discordant) */
-      v6 += " L 100 48";
+      /* V1: broad deep QS (predominantly negative). V6: broad notched monophasic R, no Q */
+      const base1 = 18;
+      let v1 = "M 8 "+base1;
+      v1 += " Q 13 "+(base1-3)+" 17 "+base1;       /* P */
+      v1 += " L 22 "+base1;                         /* PR baseline */
+      v1 += " Q 27 "+(base1+13)+" 32 "+(base1+17);  /* broad slow descent to deep nadir (QS) */
+      v1 += " Q 37 "+(base1+14)+" 42 "+(base1+1);   /* slow broad return */
+      v1 += " L 45 "+base1;
+      v1 += " Q 51 "+(base1-5)+" 57 "+base1;        /* T upright (discordant) */
+      v1 += " L 110 "+base1;
+      const base6 = 48;
+      let v6 = "M 8 "+base6;
+      v6 += " Q 13 "+(base6-3)+" 17 "+base6;        /* P */
+      v6 += " L 21 "+base6;                          /* PR — NO q wave */
+      v6 += " Q 25 "+(base6-6)+" 28 "+(base6-13);    /* slow upstroke */
+      v6 += " L 31 "+(base6-13);                     /* R top part 1 */
+      v6 += " L 33 "+(base6-10);                     /* notch (mid-QRS slurring) */
+      v6 += " L 35 "+(base6-13);                     /* R top part 2 (notched plateau) */
+      v6 += " Q 40 "+(base6-11)+" 44 "+base6;        /* slow downstroke */
+      v6 += " Q 50 "+(base6+5)+" 56 "+base6;         /* T inverted (discordant) */
+      v6 += " L 110 "+base6;
       body = '<path d="'+v1+'" '+WAVE_Y+'/>'
            + '<path d="'+v6+'" '+WAVE_Y+'/>'
-           + '<text x="105" y="20" '+LBL_Y+'>V1: QS / rS dalam</text>'
-           + '<text x="105" y="50" '+LBL_Y+'>V6: broad R, no Q</text>'
-           + '<text x="10" y="11" '+LBL_Y+'>Left Bundle Branch Block</text>';
+           + '<text x="113" y="'+(base1+4)+'" '+LBL_Y+'>V1: broad QS</text>'
+           + '<text x="113" y="'+(base6-2)+'" '+LBL_Y+'>V6: notched R, no Q</text>'
+           + '<text x="10" y="11" '+LBL_Y+'>Left Bundle Branch Block — QRS ≥120ms</text>';
       break;
     }
     case 'lafb-pattern': {
@@ -3324,20 +3366,26 @@ function ecgIllust(type) {
       break;
     }
     case 'wpw-pattern': {
-      /* Short PR + delta wave (slurred upstroke) + wide QRS */
-      const x = 50, base = 35;
-      let p = "M "+x+" "+base;
-      p += " Q "+(x+5)+" "+(base-3)+" "+(x+12)+" "+base;  /* P */
-      p += " L "+(x+14)+" "+base;  /* very short PR */
-      /* Delta wave: slurred upstroke starting from baseline */
-      p += " L "+(x+22)+" "+(base-6);  /* delta slope */
-      p += " L "+(x+27)+" "+(base-15);  /* R peak */
-      p += " L "+(x+30)+" "+(base+4);
-      p += " L "+(x+33)+" "+base;
-      p += " Q "+(x+40)+" "+(base-4)+" "+(x+48)+" "+base;
-      body = '<path d="'+p+'" '+WAVE_Y+'/>'
-           + '<circle cx="'+(x+18)+'" cy="'+(base-3)+'" r="5" fill="none" stroke="#D4A860" stroke-width="0.8"/>'
-           + '<text x="20" y="11" '+LBL_Y+'>PR &lt;120 + Delta wave (slurred)</text>'
+      /* 2 beats: short PR + delta wave (slurred upstroke) + wide QRS */
+      const base = 36;
+      function wpwBeat(x) {
+        let p = "M "+x+" "+base;
+        p += " Q "+(x+5)+" "+(base-4)+" "+(x+11)+" "+base;   /* P wave */
+        p += " L "+(x+13)+" "+base;                          /* very short PR */
+        /* Delta wave: slow slurred upstroke from baseline */
+        p += " L "+(x+20)+" "+(base-7);                      /* delta slur */
+        p += " L "+(x+26)+" "+(base-16);                     /* R peak */
+        p += " L "+(x+30)+" "+(base+5);                      /* S */
+        p += " L "+(x+33)+" "+base;                          /* return */
+        p += " Q "+(x+40)+" "+(base+4)+" "+(x+48)+" "+base;  /* T (often discordant) */
+        return p;
+      }
+      body = '<path d="'+wpwBeat(20)+'" '+WAVE_Y+'/>'
+           + '<path d="'+wpwBeat(130)+'" '+WAVE_Y+'/>'
+           /* annotate delta on first beat */
+           + '<line x1="33" y1="'+base+'" x2="40" y2="'+(base-7)+'" stroke="#D4A860" stroke-width="1.5"/>'
+           + '<text x="42" y="'+(base-8)+'" '+LBL_Y+' style="font-size:7px;">delta</text>'
+           + '<text x="20" y="11" '+LBL_Y+'>PR &lt;120ms + delta wave (slurred upstroke)</text>'
            + '<text x="20" y="55" '+LBL_Y+'>WPW (Wolff-Parkinson-White)</text>';
       break;
     }
@@ -3553,13 +3601,24 @@ function ecgIllust(type) {
       break;
     }
     case 'hcm-yamaguchi-pattern': {
-      /* Giant TWI in V3-V5 — apical HCM */
-      const b1 = ecgBeat(20, {pDur: 6, pAmp: 1.5, prSeg: 2, qDur: 1, qAmp: 1, rDur: 2, rAmp: 16, sDur: 2, sAmp: 4, stDur: 6, stOffset: 2, tDur: 14, tAmp: 14, tShape: 'deep-inv', base: 22});
-      const b2 = ecgBeat(130, {pDur: 6, pAmp: 1.5, prSeg: 2, qDur: 1, qAmp: 1, rDur: 2, rAmp: 16, sDur: 2, sAmp: 4, stDur: 6, stOffset: 2, tDur: 14, tAmp: 14, tShape: 'deep-inv', base: 22});
-      body = '<path d="'+b1.path+'" '+WAVE_A+'/>'
-           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
-           + '<text x="20" y="11" '+LBL_A+'>V3-V5: Giant TWI ≥10mm</text>'
-           + '<text x="20" y="55" '+LBL_A+'>Yamaguchi (Apical HCM)</text>';
+      /* Tall R (LVH voltage) + GIANT deep symmetric T inversion V3-V5 */
+      const base = 26;
+      function yamBeat(x) {
+        let p = "M "+x+" "+base;
+        p += " Q "+(x+4)+" "+(base-3)+" "+(x+9)+" "+base;   /* P */
+        p += " L "+(x+11)+" "+base;                          /* PR */
+        p += " L "+(x+12)+" "+(base+1);                      /* q */
+        p += " L "+(x+16)+" "+(base-16);                     /* tall R (LVH) */
+        p += " L "+(x+20)+" "+(base+4);                      /* S */
+        p += " L "+(x+22)+" "+base;                          /* J */
+        /* Giant deep symmetric T inversion */
+        p += " Q "+(x+32)+" "+(base+26)+" "+(x+42)+" "+base; /* deep symmetric inverted T */
+        return p;
+      }
+      body = '<path d="'+yamBeat(20)+'" '+WAVE_A+'/>'
+           + '<path d="'+yamBeat(130)+'" '+WAVE_A+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>V3-V5: R tinggi + Giant TWI ≥10mm</text>'
+           + '<text x="20" y="57" '+LBL_A+'>Yamaguchi (Apical HCM)</text>';
       break;
     }
     case 'arvc-epsilon-pattern': {
@@ -3888,6 +3947,7 @@ function renderPathoTab() {
       }
       if (c.pitfall) html += '<div class="note-box note-yellow"><strong>Pitfall:</strong> '+c.pitfall+'</div>';
       if (c.pearl) html += '<div class="note-box note-moss"><strong>Pearl:</strong> '+c.pearl+'</div>';
+      if (c.ref) html += '<div class="cond-ref">📚 Referensi: '+c.ref+'</div>';
       html += '</div></div>';
       html += '</div>';
     });
@@ -4334,6 +4394,17 @@ function switchTab(target) {
   /* Panels */
   document.querySelectorAll(".tab-panel").forEach(p => {
     p.classList.toggle("active", p.dataset.tab === target);
+  });
+  /* Reset scroll to top — do it on next frame after DOM updates,
+     and again after layout settles, so user doesn't land in empty space */
+  requestAnimationFrame(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    requestAnimationFrame(() => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+    });
   });
   /* Persist */
   try { sessionStorage.setItem("pulsus-tab", target); } catch (e) { /* ignore */ }
