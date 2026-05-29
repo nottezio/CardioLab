@@ -2640,6 +2640,7 @@ const LBL_A = 'fill="#E87060" font-family="JetBrains Mono,monospace" font-size="
 const LBL_Y = 'fill="#D4A860" font-family="JetBrains Mono,monospace" font-size="8"';
 const MARK = 'stroke="rgba(212,175,106,0.7)" stroke-width="0.8" stroke-dasharray="2,2" fill="none"';
 const DIM = 'stroke="rgba(160,160,160,0.5)" stroke-width="0.6" fill="none"';
+const WAVE_GREY = 'stroke="#A0A09E" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"';
 
 function svgWrap(body, w, h) {
   return '<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">'+body+'</svg>';
@@ -3042,38 +3043,31 @@ function ecgIllust(type) {
 
     /* ─── TECHNICAL ─── */
     case 'hr-large-box': {
-      /* 3 beats spaced at ~80px = ~4 large boxes apart */
-      let waves = '';
-      const positions = [20, 100, 180];
-      positions.forEach((x, i) => {
-        const b = ecgBeat(x, {pDur: 6, pAmp: 2, prSeg: 2, rAmp: 16, sAmp: 3, stDur: 6, tDur: 12, tAmp: 3, base: 32});
-        waves += '<path d="'+b.path+'" '+WAVE_N+'/>';
-      });
-      /* Mark RR with 4 large boxes count */
-      waves += '<text x="55" y="14" '+LBL_Y+'>4 kotak besar = 300/4 = 75 bpm</text>';
-      body = waves;
+      /* Continuous strip — beats spaced ~4 large boxes apart */
+      const base = 32;
+      const beat = { pShape:'normal', pDur:6, pAmp:2, prSeg:2, qDur:1, qAmp:1,
+                     rDur:2.5, rAmp:16, sDur:2, sAmp:3, stDur:6, tDur:12, tAmp:3 };
+      const d = ecgStrip({ base, beats:[beat,beat,beat], startX:20, gap:42 });
+      body = '<path d="'+d+'" '+WAVE_N+'/>'
+           + '<text x="55" y="14" '+LBL_Y+'>4 kotak besar = 300/4 = 75 bpm</text>';
       break;
     }
     case 'hr-small-box': {
-      let waves = '';
-      const positions = [40, 145];
-      positions.forEach((x) => {
-        const b = ecgBeat(x, {pDur: 6, pAmp: 2, prSeg: 2, rAmp: 18, sAmp: 4, stDur: 6, tDur: 12, tAmp: 3, base: 32});
-        waves += '<path d="'+b.path+'" '+WAVE_N+'/>';
-      });
-      waves += '<text x="42" y="14" '+LBL_Y+'>1500 / kotak kecil = HR</text>';
-      body = waves;
+      const base = 32;
+      const beat = { pShape:'normal', pDur:6, pAmp:2, prSeg:2, qDur:1, qAmp:1,
+                     rDur:2.5, rAmp:18, sDur:2, sAmp:4, stDur:6, tDur:12, tAmp:3 };
+      const d = ecgStrip({ base, beats:[beat,beat], startX:40, gap:80 });
+      body = '<path d="'+d+'" '+WAVE_N+'/>'
+           + '<text x="42" y="14" '+LBL_Y+'>1500 / kotak kecil = HR</text>';
       break;
     }
     case 'hr-6s': {
-      let waves = '';
-      /* 6 beats in strip = HR 60 if 6 sec */
-      for (let i = 0; i < 7; i++) {
-        const b = ecgBeat(10 + i*32, {pDur: 5, pAmp: 2, prSeg: 1, qDur: 1, qAmp: 1, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 5, tDur: 9, tAmp: 3, base: 32});
-        waves += '<path d="'+b.path+'" '+WAVE_N+'/>';
-      }
-      waves += '<text x="20" y="14" '+LBL_Y+'>QRS dalam 6 detik × 10 = HR</text>';
-      body = waves;
+      const base = 32;
+      const beat = { pShape:'normal', pDur:5, pAmp:2, prSeg:1, qDur:1, qAmp:1,
+                     rDur:2, rAmp:14, sDur:2, sAmp:3, stDur:5, tDur:9, tAmp:3 };
+      const d = ecgStrip({ base, beats:Array(7).fill(beat), startX:10, gap:7 });
+      body = '<path d="'+d+'" '+WAVE_N+'/>'
+           + '<text x="20" y="14" '+LBL_Y+'>QRS dalam 6 detik × 10 = HR</text>';
       break;
     }
     case 'paper-speed': {
@@ -3123,21 +3117,22 @@ function ecgIllust(type) {
 
     /* ─── PATHO: ACS ─── */
     case 'stemi-inferior': {
-      /* 2 beats showing convex STE inferior pattern */
-      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 2, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 10, stOffset: -5, stShape: 'convex-up', tDur: 14, tAmp: 4, base: 34});
-      const b2 = ecgBeat(130, {pDur: 8, pAmp: 2, prSeg: 2, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 10, stOffset: -5, stShape: 'convex-up', tDur: 14, tAmp: 4, base: 34});
-      body = '<path d="'+b1.path+'" '+WAVE_A+'/>'
-           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
-           + '<text x="20" y="10" '+LBL_A+'>Lead II — STE convex 3-5mm</text>'
+      const base = 34;
+      const beat = { pShape:'normal', pDur:8, pAmp:2, prSeg:2, qDur:1, qAmp:1, rDur:2, rAmp:14,
+                     sDur:2, sAmp:3, stDur:10, stOffset:-5, stShape:'convex-up', tDur:14, tAmp:4 };
+      const d = ecgStrip({ base, beats:[beat,beat], startX:18, gap:34 });
+      body = '<path d="'+d+'" '+WAVE_A+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>Lead II — STE convex 3-5mm</text>'
            + '<text x="20" y="55" '+LBL_A+'>STEMI Inferior (RCA/LCx)</text>';
       break;
     }
     case 'stemi-anterior': {
-      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 2, qDur: 2, qAmp: 1, rDur: 2, rAmp: 8, sDur: 3, sAmp: 8, stDur: 10, stOffset: -6, stShape: 'convex-up', tDur: 14, tAmp: 5, base: 32});
-      const b2 = ecgBeat(130, {pDur: 8, pAmp: 2, prSeg: 2, qDur: 2, qAmp: 1, rDur: 2, rAmp: 10, sDur: 3, sAmp: 6, stDur: 10, stOffset: -6, stShape: 'convex-up', tDur: 14, tAmp: 5, base: 32});
-      body = '<path d="'+b1.path+'" '+WAVE_A+'/>'
-           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
-           + '<text x="20" y="10" '+LBL_A+'>V1-V4 — STE tinggi + tombstone</text>'
+      const base = 32;
+      const beat = { pShape:'normal', pDur:8, pAmp:2, prSeg:2, qDur:2, qAmp:1, rDur:2, rAmp:9,
+                     sDur:3, sAmp:7, stDur:10, stOffset:-6, stShape:'convex-up', tDur:14, tAmp:5 };
+      const d = ecgStrip({ base, beats:[beat,beat], startX:18, gap:34 });
+      body = '<path d="'+d+'" '+WAVE_A+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>V1-V4 — STE tinggi + tombstone</text>'
            + '<text x="20" y="55" '+LBL_A+'>STEMI Anterior (LAD)</text>';
       break;
     }
@@ -3183,35 +3178,35 @@ function ecgIllust(type) {
       break;
     }
     case 'nstemi-pattern': {
-      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 2, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 10, stOffset: 4, stShape: 'downsloping', tDur: 14, tAmp: 5, tShape: 'inverted', base: 28});
-      const b2 = ecgBeat(130, {pDur: 8, pAmp: 2, prSeg: 2, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 10, stOffset: 4, stShape: 'downsloping', tDur: 14, tAmp: 5, tShape: 'inverted', base: 28});
-      body = '<path d="'+b1.path+'" '+WAVE_A+'/>'
-           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
-           + '<text x="20" y="9" '+LBL_A+'>STD downsloping + T inv</text>'
+      const base = 28;
+      const beat = { pShape:'normal', pDur:8, pAmp:2, prSeg:2, qDur:1, qAmp:1, rDur:2, rAmp:12,
+                     sDur:2, sAmp:3, stDur:10, stOffset:4, stShape:'downsloping', tDur:14, tAmp:5, tShape:'inverted' };
+      const d = ecgStrip({ base, beats:[beat,beat], startX:18, gap:34 });
+      body = '<path d="'+d+'" '+WAVE_A+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>STD downsloping + T inversi</text>'
            + '<text x="20" y="55" '+LBL_A+'>NSTEMI / Subendocardial</text>';
       break;
     }
 
     /* ─── PATHO: ARITMIA ─── */
     case 'sinus-brady-pattern': {
-      let waves = '';
-      [30, 130].forEach(x => {
-        const b = ecgBeat(x, {pDur: 10, pAmp: 3, prSeg: 4, rDur: 2, rAmp: 14, sDur: 2, sAmp: 4, stDur: 8, tDur: 14, tAmp: 4, base: 32});
-        waves += '<path d="'+b.path+'" '+WAVE_N+'/>';
-      });
-      body = waves
-           + '<text x="20" y="10" '+LBL_N+'>Rate &lt;60, P normal 1:1</text>'
+      const base = 32;
+      const beat = { pShape:'normal', pDur:10, pAmp:3, prSeg:4, qDur:1, qAmp:1, rDur:2, rAmp:14,
+                     sDur:2, sAmp:4, stDur:8, tDur:14, tAmp:4 };
+      const d = ecgStrip({ base, beats:[beat,beat], startX:24, gap:70 });
+      body = '<path d="'+d+'" '+WAVE_N+'/>'
+           + '<text x="20" y="11" '+LBL_N+'>Rate &lt;60, P normal 1:1</text>'
            + '<text x="20" y="55" '+LBL_N+'>Sinus Bradycardia</text>';
       break;
     }
     case 'sinus-tachy-pattern': {
-      let waves = '';
-      [10, 55, 100, 145, 190].forEach(x => {
-        const b = ecgBeat(x, {pDur: 6, pAmp: 2, prSeg: 1, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 5, tDur: 10, tAmp: 3, base: 32});
-        waves += '<path d="'+b.path+'" '+WAVE_Y+'/>';
-      });
-      body = waves
-           + '<text x="20" y="10" '+LBL_Y+'>Rate &gt;100, P normal 1:1</text>'
+      /* Continuous rhythm strip — regular fast, P 1:1, isoelectric bridges */
+      const base = 32;
+      const beat = { pShape:'normal', pDur:6, pAmp:2, prSeg:2, qDur:1, qAmp:1,
+                     rDur:2, rAmp:12, sDur:2, sAmp:3, stDur:5, tDur:10, tAmp:3 };
+      const d = ecgStrip({ base, beats:[beat,beat,beat,beat,beat], startX:12, gap:10 });
+      body = '<path d="'+d+'" '+WAVE_Y+'/>'
+           + '<text x="20" y="11" '+LBL_Y+'>Rate &gt;100, P normal 1:1</text>'
            + '<text x="20" y="55" '+LBL_Y+'>Sinus Tachycardia</text>';
       break;
     }
@@ -3255,48 +3250,58 @@ function ecgIllust(type) {
       break;
     }
     case 'svt-pattern': {
-      /* Narrow, regular, fast. No discernible P. Clean QRS-T complexes. */
+      /* Continuous: narrow, regular, fast, no discernible P */
       const base = 34;
-      let waves = '';
-      [18, 52, 86, 120, 154, 188].forEach(x => {
-        let p = "M "+x+" "+base;
-        p += " L "+(x+2)+" "+base;          /* baseline (no P) */
-        p += " L "+(x+3)+" "+(base+2);       /* tiny q */
-        p += " L "+(x+5)+" "+(base-13);      /* R narrow tall */
-        p += " L "+(x+7)+" "+(base+3);       /* S */
-        p += " L "+(x+9)+" "+base;           /* return */
-        p += " Q "+(x+15)+" "+(base-5)+" "+(x+21)+" "+base;  /* T upright smooth */
-        waves += '<path d="'+p+'" '+WAVE_A+'/>';
-      });
-      body = waves
+      const beat = { pShape:'absent', pDur:0, prSeg:0, qDur:1, qAmp:1,
+                     rDur:2, rAmp:14, sDur:1.5, sAmp:3, stDur:4, tDur:11, tAmp:3.5 };
+      const d = ecgStrip({ base, beats:[beat,beat,beat,beat,beat,beat], startX:14, gap:9 });
+      body = '<path d="'+d+'" '+WAVE_A+'/>'
            + '<text x="18" y="11" '+LBL_A+'>Narrow QRS, regular, P tak terlihat</text>'
            + '<text x="18" y="55" '+LBL_A+'>SVT (AVNRT / AVRT) — rate 150-250</text>';
       break;
     }
     case 'mat-pattern': {
-      /* 3 different P morphologies */
-      const b1 = ecgBeat(15, {pDur: 8, pAmp: 3, pShape: 'normal', base: 33, rAmp: 12, sAmp: 3, tDur: 10, tAmp: 3});
-      const b2 = ecgBeat(95, {pDur: 8, pAmp: 5, pShape: 'peaked', base: 33, rAmp: 12, sAmp: 3, tDur: 10, tAmp: 3});
-      const b3 = ecgBeat(175, {pDur: 10, pAmp: 3, pShape: 'bifid', base: 33, rAmp: 12, sAmp: 3, tDur: 10, tAmp: 3});
-      body = '<path d="'+b1.path+'" '+WAVE_A+'/>'
-           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
-           + '<path d="'+b3.path+'" '+WAVE_A+'/>'
-           + '<text x="20" y="10" '+LBL_A+'>≥3 P morfologi berbeda, rate &gt;100</text>'
+      /* Continuous strip — ≥3 different P morphologies, irregular rate */
+      const base = 33;
+      const mk = (pShape, pAmp) => ({ pShape, pDur:8, pAmp, prSeg:4, qDur:1, qAmp:1,
+                     rDur:2, rAmp:12, sDur:2, sAmp:3, stDur:5, tDur:10, tAmp:3 });
+      const seg = []; const pen = _mkPen(0, base);
+      seg.push("M 0 "+r1(base));
+      bridge(seg, pen, base, 12, 'flat');
+      const beats = [mk('normal',3), mk('peaked',5), mk('bifid',3), mk('inverted',3)];
+      const gaps = [16, 24, 14];
+      beats.forEach((b, i) => {
+        beatSeg(seg, pen, base, b);
+        bridge(seg, pen, base, (i<beats.length-1 ? pen.x + gaps[i] : 240), 'flat');
+      });
+      if (pen.x < 240) bridge(seg, pen, base, 240, 'flat');
+      body = '<path d="'+seg.join(" ")+'" '+WAVE_A+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>≥3 P morfologi berbeda, rate &gt;100</text>'
            + '<text x="20" y="55" '+LBL_A+'>MAT (COPD klasik)</text>';
       break;
     }
     case 'junctional-pattern': {
-      /* Inverted P after QRS or absent */
-      let waves = '';
-      [30, 110, 190].forEach(x => {
-        const b = ecgBeat(x, {pDur: 0, pAmp: 0, pShape: 'absent', prSeg: 0, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 4, tDur: 12, tAmp: 4, base: 32});
-        waves += '<path d="'+b.path+'" '+WAVE_Y+'/>';
-        /* Add retrograde inverted P after QRS */
-        const pX = x + 12;
-        waves += '<path d="M '+pX+' 32 Q '+(pX+3)+' 37 '+(pX+6)+' 32" '+WAVE_Y+'/>';
+      /* Continuous: narrow QRS, retrograde inverted P AFTER each QRS, regular */
+      const base = 32;
+      const seg = []; const pen = _mkPen(0, base);
+      seg.push("M 0 "+r1(base));
+      bridge(seg, pen, base, 18, 'flat');
+      function junctBeat() {
+        penQRS(seg, pen, base, {qDur:1,qAmp:1,rDur:2,rAmp:14,sDur:2,sAmp:3});
+        const y = penST(seg, pen, base, {stDur:4,stOffset:0,stShape:'flat'});
+        /* retrograde inverted P right after QRS (small negative deflection) */
+        penLineTo(seg, pen, pen.x + 3, base);
+        penP(seg, pen, base, 7, 2.5, 'inverted');
+        penLineTo(seg, pen, pen.x + 2, base);
+        penT(seg, pen, base, base, {tDur:11,tAmp:3.5,tShape:'normal'});
+      }
+      [0,1,2].forEach(i => {
+        junctBeat();
+        bridge(seg, pen, base, (i<2 ? pen.x + 18 : 240), 'flat');
       });
-      body = waves
-           + '<text x="20" y="10" '+LBL_Y+'>P inverted post-QRS / absent</text>'
+      if (pen.x < 240) bridge(seg, pen, base, 240, 'flat');
+      body = '<path d="'+seg.join(" ")+'" '+WAVE_Y+'/>'
+           + '<text x="20" y="11" '+LBL_Y+'>P inversi retrograd post-QRS / absent</text>'
            + '<text x="20" y="55" '+LBL_Y+'>Junctional Rhythm</text>';
       break;
     }
@@ -3589,25 +3594,27 @@ function ecgIllust(type) {
       break;
     }
     case 'wpw-pattern': {
-      /* 2 beats: short PR + delta wave (slurred upstroke) + wide QRS */
+      /* Continuous 2-beat strip: short PR + delta (slurred upstroke) + wide QRS */
       const base = 36;
-      function wpwBeat(x) {
-        let p = "M "+x+" "+base;
-        p += " Q "+(x+5)+" "+(base-4)+" "+(x+11)+" "+base;   /* P wave */
-        p += " L "+(x+13)+" "+base;                          /* very short PR */
-        /* Delta wave: slow slurred upstroke from baseline */
-        p += " L "+(x+20)+" "+(base-7);                      /* delta slur */
-        p += " L "+(x+26)+" "+(base-16);                     /* R peak */
-        p += " L "+(x+30)+" "+(base+5);                      /* S */
-        p += " L "+(x+33)+" "+base;                          /* return */
-        p += " Q "+(x+40)+" "+(base+4)+" "+(x+48)+" "+base;  /* T (often discordant) */
-        return p;
+      const seg = []; const pen = _mkPen(0, base);
+      seg.push("M 0 "+r1(base));
+      bridge(seg, pen, base, 16, 'flat');
+      function wpwBeat() {
+        penP(seg, pen, base, 10, 3, 'normal');           /* P */
+        penLineTo(seg, pen, pen.x + 2, base);             /* very short PR */
+        /* delta wave: slow slurred upstroke (cubic, gentle) */
+        penCubic(seg, pen, pen.x+3, base-2, pen.x+6, base-6, pen.x+8, base-8);
+        penLineTo(seg, pen, pen.x + 6, base-16);          /* into R peak */
+        penLineTo(seg, pen, pen.x + 4, base+5);           /* S */
+        penLineTo(seg, pen, pen.x + 3, base);             /* return */
+        penT(seg, pen, base, base, {tDur:14, tAmp:4, tShape:'inverted'}); /* discordant T */
       }
-      body = '<path d="'+wpwBeat(20)+'" '+WAVE_Y+'/>'
-           + '<path d="'+wpwBeat(130)+'" '+WAVE_Y+'/>'
-           /* annotate delta on first beat */
-           + '<line x1="33" y1="'+base+'" x2="40" y2="'+(base-7)+'" stroke="#D4A860" stroke-width="1.5"/>'
-           + '<text x="42" y="'+(base-8)+'" '+LBL_Y+' style="font-size:7px;">delta</text>'
+      wpwBeat();
+      const deltaX = 33;                                  /* approx delta location beat 1 */
+      bridge(seg, pen, base, pen.x + 28, 'flat');
+      wpwBeat();
+      if (pen.x < 240) bridge(seg, pen, base, 240, 'flat');
+      body = '<path d="'+seg.join(" ")+'" '+WAVE_Y+'/>'
            + '<text x="20" y="11" '+LBL_Y+'>PR &lt;120ms + delta wave (slurred upstroke)</text>'
            + '<text x="20" y="55" '+LBL_Y+'>WPW (Wolff-Parkinson-White)</text>';
       break;
@@ -3615,41 +3622,42 @@ function ecgIllust(type) {
 
     /* ─── PATHO: HYPERTROFI ─── */
     case 'lvh-strain-pattern': {
-      /* Tall R V5/V6 + STD asymmetric TWI lateral (strain) */
-      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 2, qDur: 1, qAmp: 1, rDur: 3, rAmp: 22, sDur: 2, sAmp: 2, stDur: 8, stOffset: 3, stShape: 'downsloping', tDur: 14, tAmp: 6, tShape: 'inverted', base: 28});
-      const b2 = ecgBeat(140, {pDur: 8, pAmp: 2, prSeg: 2, qDur: 1, qAmp: 1, rDur: 3, rAmp: 22, sDur: 2, sAmp: 2, stDur: 8, stOffset: 3, stShape: 'downsloping', tDur: 14, tAmp: 6, tShape: 'inverted', base: 28});
-      body = '<path d="'+b1.path+'" '+WAVE_Y+'/>'
-           + '<path d="'+b2.path+'" '+WAVE_Y+'/>'
-           + '<text x="20" y="9" '+LBL_Y+'>V5/V6: Tall R + strain (STD + TWI asim)</text>'
+      const base = 28;
+      const beat = { pShape:'normal', pDur:8, pAmp:2, prSeg:2, qDur:1, qAmp:1, rDur:3, rAmp:22,
+                     sDur:2, sAmp:2, stDur:8, stOffset:3, stShape:'downsloping', tDur:14, tAmp:6, tShape:'inverted' };
+      const d = ecgStrip({ base, beats:[beat,beat], startX:20, gap:42 });
+      body = '<path d="'+d+'" '+WAVE_Y+'/>'
+           + '<text x="20" y="11" '+LBL_Y+'>V5/V6: Tall R + strain (STD + TWI asim)</text>'
            + '<text x="20" y="55" '+LBL_Y+'>LVH dengan Strain Pattern</text>';
       break;
     }
     case 'rvh-pattern': {
-      /* V1: dominant R wave (R/S >1), RAD */
-      const b1 = ecgBeat(20, {pDur: 8, pAmp: 4, pShape: 'peaked', prSeg: 2, qDur: 1, qAmp: 1, rDur: 3, rAmp: 16, sDur: 2, sAmp: 3, stDur: 8, stOffset: 2, stShape: 'downsloping', tDur: 12, tAmp: 4, tShape: 'inverted', base: 30});
-      const b2 = ecgBeat(130, {pDur: 8, pAmp: 4, pShape: 'peaked', prSeg: 2, qDur: 1, qAmp: 1, rDur: 3, rAmp: 16, sDur: 2, sAmp: 3, stDur: 8, stOffset: 2, stShape: 'downsloping', tDur: 12, tAmp: 4, tShape: 'inverted', base: 30});
-      body = '<path d="'+b1.path+'" '+WAVE_Y+'/>'
-           + '<path d="'+b2.path+'" '+WAVE_Y+'/>'
-           + '<text x="20" y="9" '+LBL_Y+'>V1: dominant R + P pulmonale</text>'
+      const base = 30;
+      const beat = { pShape:'peaked', pDur:8, pAmp:4, prSeg:2, qDur:1, qAmp:1, rDur:3, rAmp:16,
+                     sDur:2, sAmp:3, stDur:8, stOffset:2, stShape:'downsloping', tDur:12, tAmp:4, tShape:'inverted' };
+      const d = ecgStrip({ base, beats:[beat,beat], startX:20, gap:40 });
+      body = '<path d="'+d+'" '+WAVE_Y+'/>'
+           + '<text x="20" y="11" '+LBL_Y+'>V1: dominant R + P pulmonale</text>'
            + '<text x="20" y="55" '+LBL_Y+'>RVH + Cor Pulmonale</text>';
       break;
     }
     case 'lae-pattern': {
-      /* P mitrale — bifid notched P, >120 ms */
-      const b1 = ecgBeat(20, {pDur: 24, pAmp: 3, pShape: 'bifid', prSeg: 4, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 6, tDur: 12, tAmp: 4, base: 35});
-      const b2 = ecgBeat(140, {pDur: 24, pAmp: 3, pShape: 'bifid', prSeg: 4, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 6, tDur: 12, tAmp: 4, base: 35});
-      body = '<path d="'+b1.path+'" '+WAVE_Y+'/>'
-           + '<path d="'+b2.path+'" '+WAVE_Y+'/>'
-           + '<text x="20" y="9" '+LBL_Y+'>Lead II: bifid, durasi &gt;120ms</text>'
+      const base = 35;
+      const beat = { pShape:'bifid', pDur:24, pAmp:3, prSeg:4, qDur:1, qAmp:1, rDur:2, rAmp:12,
+                     sDur:2, sAmp:3, stDur:6, tDur:12, tAmp:4 };
+      const d = ecgStrip({ base, beats:[beat,beat], startX:18, gap:34 });
+      body = '<path d="'+d+'" '+WAVE_Y+'/>'
+           + '<text x="20" y="11" '+LBL_Y+'>Lead II: bifid, durasi &gt;120ms</text>'
            + '<text x="20" y="55" '+LBL_Y+'>LAE (P mitrale)</text>';
       break;
     }
     case 'rae-pattern': {
-      const b1 = ecgBeat(20, {pDur: 10, pAmp: 6, pShape: 'peaked', prSeg: 4, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 6, tDur: 12, tAmp: 4, base: 35});
-      const b2 = ecgBeat(140, {pDur: 10, pAmp: 6, pShape: 'peaked', prSeg: 4, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 6, tDur: 12, tAmp: 4, base: 35});
-      body = '<path d="'+b1.path+'" '+WAVE_Y+'/>'
-           + '<path d="'+b2.path+'" '+WAVE_Y+'/>'
-           + '<text x="20" y="9" '+LBL_Y+'>Lead II/III/aVF: P &gt;2.5mm peaked</text>'
+      const base = 35;
+      const beat = { pShape:'peaked', pDur:10, pAmp:6, prSeg:4, qDur:1, qAmp:1, rDur:2, rAmp:12,
+                     sDur:2, sAmp:3, stDur:6, tDur:12, tAmp:4 };
+      const d = ecgStrip({ base, beats:[beat,beat], startX:18, gap:38 });
+      body = '<path d="'+d+'" '+WAVE_Y+'/>'
+           + '<text x="20" y="11" '+LBL_Y+'>Lead II/III/aVF: P &gt;2.5mm peaked</text>'
            + '<text x="20" y="55" '+LBL_Y+'>RAE (P pulmonale)</text>';
       break;
     }
@@ -3699,34 +3707,42 @@ function ecgIllust(type) {
       break;
     }
     case 'hypothermia-osborn-pattern': {
-      /* Slow rate + Osborn J wave (positive hump at end of QRS) */
-      let waves = '';
-      [30, 150].forEach(x => {
-        let p = "M "+x+" 32";
-        p += " Q "+(x+3)+" 30 "+(x+8)+" 32";  /* P */
-        p += " L "+(x+12)+" 32";  /* PR */
-        p += " L "+(x+14)+" 33";  /* q */
-        p += " L "+(x+17)+" 18";  /* R */
-        p += " L "+(x+20)+" 38";  /* S */
-        /* Osborn J wave — positive hump */
-        p += " Q "+(x+22)+" 24 "+(x+26)+" 32";
-        p += " L "+(x+34)+" 32";  /* ST */
-        p += " Q "+(x+40)+" 28 "+(x+50)+" 32";  /* T */
-        waves += '<path d="'+p+'" '+WAVE_Y+'/>';
-        /* Circle the J wave */
-        waves += '<circle cx="'+(x+23)+'" cy="27" r="4.5" fill="none" stroke="#D4A860" stroke-width="0.8"/>';
-      });
-      body = waves
+      /* Continuous — slow rate; Osborn J wave (positive hump at end of QRS) */
+      const base = 32;
+      const seg = []; const pen = _mkPen(0, base);
+      seg.push("M 0 "+r1(base));
+      bridge(seg, pen, base, 26, 'flat');
+      const jXs = [];
+      function osbBeat() {
+        penP(seg, pen, base, 8, 2.5, 'normal');
+        penLineTo(seg, pen, pen.x + 4, base);             /* PR */
+        penLineTo(seg, pen, pen.x + 2, base+1);           /* q */
+        penLineTo(seg, pen, pen.x + 3, base-14);          /* R */
+        penLineTo(seg, pen, pen.x + 3, base+6);           /* S */
+        /* Osborn J wave — positive rounded hump at J point */
+        jXs.push(pen.x + 2);
+        penCubic(seg, pen, pen.x+1, base-8, pen.x+3, base-8, pen.x+6, base);
+        penLineTo(seg, pen, pen.x + 8, base);             /* ST */
+        penT(seg, pen, base, base, {tDur:12, tAmp:3.5, tShape:'normal'});
+      }
+      osbBeat();
+      bridge(seg, pen, base, pen.x + 70, 'flat');         /* long pause (bradycardia) */
+      osbBeat();
+      if (pen.x < 240) bridge(seg, pen, base, 240, 'flat');
+      let circles = jXs.map(jx => '<circle cx="'+r1(jx)+'" cy="'+(base-6)+'" r="4.5" fill="none" stroke="#D4A860" stroke-width="0.8"/>').join("");
+      body = '<path d="'+seg.join(" ")+'" '+WAVE_Y+'/>'
+           + circles
            + '<text x="20" y="11" '+LBL_Y+'>J wave (notch terminal QRS)</text>'
            + '<text x="20" y="55" '+LBL_Y+'>Hipotermia (Osborn wave)</text>';
       break;
     }
     case 'digitalis-effect-pattern': {
-      /* Scooped ST depression — 'Salvador Dali' */
-      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 4, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 12, stOffset: 2, stShape: 'concave-up', tDur: 12, tAmp: 2, tShape: 'flat', base: 28});
-      const b2 = ecgBeat(140, {pDur: 8, pAmp: 2, prSeg: 4, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 12, stOffset: 2, stShape: 'concave-up', tDur: 12, tAmp: 2, tShape: 'flat', base: 28});
-      body = '<path d="'+b1.path+'" '+WAVE_Y+'/>'
-           + '<path d="'+b2.path+'" '+WAVE_Y+'/>'
+      /* Scooped ST depression — 'Salvador Dali moustache' */
+      const base = 28;
+      const beat = { pShape:'normal', pDur:8, pAmp:2, prSeg:4, qDur:1, qAmp:1, rDur:2, rAmp:14,
+                     sDur:2, sAmp:3, stDur:12, stOffset:2, stShape:'concave-up', tDur:12, tAmp:2, tShape:'flat' };
+      const d = ecgStrip({ base, beats:[beat,beat], startX:20, gap:40 });
+      body = '<path d="'+d+'" '+WAVE_Y+'/>'
            + '<text x="20" y="11" '+LBL_Y+'>Scooped STD ("Salvador Dali")</text>'
            + '<text x="20" y="55" '+LBL_Y+'>Digitalis Effect</text>';
       break;
@@ -3734,46 +3750,42 @@ function ecgIllust(type) {
 
     /* ─── PATHO: PERICARDITIS ─── */
     case 'pericarditis-pattern': {
-      /* Diffuse concave STE + PR depression */
-      const x = 50, base = 35;
-      let p = "M "+x+" "+base;
-      p += " Q "+(x+5)+" "+(base-3)+" "+(x+12)+" "+base;  /* P */
-      /* PR DEPRESSION — segment dips below baseline */
-      p += " L "+(x+14)+" "+(base+2);
-      p += " L "+(x+18)+" "+(base+2);  /* PR depressed */
-      /* QRS */
-      p += " L "+(x+20)+" "+(base+3);
-      p += " L "+(x+23)+" "+(base-12);
-      p += " L "+(x+26)+" "+(base+4);
-      /* CONCAVE STE — smiles up */
-      p += " L "+(x+28)+" "+(base-3);  /* J point elevated */
-      p += " Q "+(x+36)+" "+(base-2)+" "+(x+44)+" "+(base-3);  /* concave shape */
-      /* T positive */
-      p += " Q "+(x+52)+" "+(base-6)+" "+(x+60)+" "+base;
-      const p2 = p.replaceAll(' '+x+' ', ' '+(x+90)+' ').replace(/M \d+/, "M "+(x+90));
-      /* Simpler: redraw at offset */
-      let p3 = "M "+(x+90)+" "+base;
-      p3 += " Q "+(x+95)+" "+(base-3)+" "+(x+102)+" "+base;
-      p3 += " L "+(x+104)+" "+(base+2);
-      p3 += " L "+(x+108)+" "+(base+2);
-      p3 += " L "+(x+110)+" "+(base+3);
-      p3 += " L "+(x+113)+" "+(base-12);
-      p3 += " L "+(x+116)+" "+(base+4);
-      p3 += " L "+(x+118)+" "+(base-3);
-      p3 += " Q "+(x+126)+" "+(base-2)+" "+(x+134)+" "+(base-3);
-      p3 += " Q "+(x+142)+" "+(base-6)+" "+(x+150)+" "+base;
-      body = '<path d="'+p+'" '+WAVE_Y+'/>'
-           + '<path d="'+p3+'" '+WAVE_Y+'/>'
+      /* Continuous strip — diffuse concave STE + PR depression, 2 beats */
+      const base = 35;
+      const seg = []; const pen = _mkPen(0, base);
+      seg.push("M 0 "+r1(base));
+      bridge(seg, pen, base, 24, 'flat');
+      function periBeat() {
+        penP(seg, pen, base, 10, 3, 'normal');            /* P */
+        /* PR DEPRESSION — segment dips below baseline */
+        penLineTo(seg, pen, pen.x + 2, base+2.5);
+        penLineTo(seg, pen, pen.x + 5, base+2.5);
+        /* QRS */
+        penLineTo(seg, pen, pen.x + 2, base+3);            /* tiny q */
+        penLineTo(seg, pen, pen.x + 3, base-12);           /* R */
+        penLineTo(seg, pen, pen.x + 3, base+4);            /* S */
+        /* concave (smiley) STE from elevated J */
+        penLineTo(seg, pen, pen.x + 2, base-3);            /* J elevated */
+        penCubic(seg, pen, pen.x+8, base-1.5, pen.x+12, base-2, pen.x+16, base-3);
+        /* upright T */
+        penT(seg, pen, base, base-3, {tDur:12, tAmp:5, tShape:'normal'});
+      }
+      periBeat();
+      bridge(seg, pen, base, pen.x + 30, 'flat');
+      periBeat();
+      if (pen.x < 240) bridge(seg, pen, base, 240, 'flat');
+      body = '<path d="'+seg.join(" ")+'" '+WAVE_Y+'/>'
            + '<text x="20" y="11" '+LBL_Y+'>STE difus concave + PR depresi</text>'
            + '<text x="20" y="55" '+LBL_Y+'>Pericarditis Akut (Spodick I)</text>';
       break;
     }
     case 'myocarditis-pattern': {
-      /* Variable — show STE + Q wave + TWI mixed */
-      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 4, qDur: 3, qAmp: 4, rDur: 2, rAmp: 10, sDur: 2, sAmp: 3, stDur: 8, stOffset: -3, stShape: 'concave-up', tDur: 14, tAmp: 4, tShape: 'inverted', base: 32});
-      const b2 = ecgBeat(130, {pDur: 8, pAmp: 2, prSeg: 4, qDur: 3, qAmp: 4, rDur: 2, rAmp: 10, sDur: 2, sAmp: 3, stDur: 8, stOffset: -3, stShape: 'concave-up', tDur: 14, tAmp: 4, tShape: 'inverted', base: 32});
-      body = '<path d="'+b1.path+'" '+WAVE_Y+'/>'
-           + '<path d="'+b2.path+'" '+WAVE_Y+'/>'
+      /* Variable — STE + Q + TWI mixed */
+      const base = 32;
+      const beat = { pShape:'normal', pDur:8, pAmp:2, prSeg:4, qDur:3, qAmp:4, rDur:2, rAmp:10,
+                     sDur:2, sAmp:3, stDur:8, stOffset:-3, stShape:'concave-up', tDur:14, tAmp:4, tShape:'inverted' };
+      const d = ecgStrip({ base, beats:[beat,beat], startX:20, gap:36 });
+      body = '<path d="'+d+'" '+WAVE_Y+'/>'
            + '<text x="20" y="11" '+LBL_Y+'>STE regional + Q + TWI (variable)</text>'
            + '<text x="20" y="55" '+LBL_Y+'>Myocarditis (cardiac MRI dx)</text>';
       break;
@@ -3838,20 +3850,10 @@ function ecgIllust(type) {
     case 'hcm-yamaguchi-pattern': {
       /* Tall R (LVH voltage) + GIANT deep symmetric T inversion V3-V5 */
       const base = 26;
-      function yamBeat(x) {
-        let p = "M "+x+" "+base;
-        p += " Q "+(x+4)+" "+(base-3)+" "+(x+9)+" "+base;   /* P */
-        p += " L "+(x+11)+" "+base;                          /* PR */
-        p += " L "+(x+12)+" "+(base+1);                      /* q */
-        p += " L "+(x+16)+" "+(base-16);                     /* tall R (LVH) */
-        p += " L "+(x+20)+" "+(base+4);                      /* S */
-        p += " L "+(x+22)+" "+base;                          /* J */
-        /* Giant deep symmetric T inversion */
-        p += " Q "+(x+32)+" "+(base+26)+" "+(x+42)+" "+base; /* deep symmetric inverted T */
-        return p;
-      }
-      body = '<path d="'+yamBeat(20)+'" '+WAVE_A+'/>'
-           + '<path d="'+yamBeat(130)+'" '+WAVE_A+'/>'
+      const beat = { pShape:'normal', pDur:8, pAmp:2, prSeg:3, qDur:1, qAmp:1.5, rDur:3, rAmp:16,
+                     sDur:2, sAmp:4, stDur:6, stOffset:1, tDur:16, tAmp:13, tShape:'deep-inv' };
+      const d = ecgStrip({ base, beats:[beat,beat], startX:20, gap:40 });
+      body = '<path d="'+d+'" '+WAVE_A+'/>'
            + '<text x="20" y="11" '+LBL_A+'>V3-V5: R tinggi + Giant TWI ≥10mm</text>'
            + '<text x="20" y="57" '+LBL_A+'>Yamaguchi (Apical HCM)</text>';
       break;
@@ -3882,21 +3884,23 @@ function ecgIllust(type) {
 
     /* ─── PATHO: OLD INFARCT ─── */
     case 'q-pathological-pattern': {
-      /* Deep Q in inferior */
-      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 4, qDur: 4, qAmp: 9, rDur: 2, rAmp: 6, sDur: 2, sAmp: 3, stDur: 8, tDur: 14, tAmp: 3, base: 28});
-      const b2 = ecgBeat(140, {pDur: 8, pAmp: 2, prSeg: 4, qDur: 4, qAmp: 9, rDur: 2, rAmp: 6, sDur: 2, sAmp: 3, stDur: 8, tDur: 14, tAmp: 3, base: 28});
-      body = '<path d="'+b1.path+'" stroke="#A0A09E" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
-           + '<path d="'+b2.path+'" stroke="#A0A09E" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+      /* Deep pathological Q in inferior leads */
+      const base = 28;
+      const beat = { pShape:'normal', pDur:8, pAmp:2, prSeg:4, qDur:4, qAmp:9, rDur:2, rAmp:6,
+                     sDur:2, sAmp:3, stDur:8, tDur:14, tAmp:3 };
+      const d = ecgStrip({ base, beats:[beat,beat], startX:20, gap:40 });
+      body = '<path d="'+d+'" '+WAVE_GREY+'/>'
            + '<text x="20" y="11" '+LBL+'>Q &gt;40ms / &gt;25% R, di II/III/aVF</text>'
            + '<text x="20" y="55" '+LBL+'>Old MI (Q patologis)</text>';
       break;
     }
     case 'ventricular-aneurysm-pattern': {
       /* Q wave + persistent STE */
-      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 4, qDur: 4, qAmp: 8, rDur: 2, rAmp: 4, sDur: 2, sAmp: 2, stDur: 10, stOffset: -4, stShape: 'convex-up', tDur: 12, tAmp: 3, base: 30});
-      const b2 = ecgBeat(130, {pDur: 8, pAmp: 2, prSeg: 4, qDur: 4, qAmp: 8, rDur: 2, rAmp: 4, sDur: 2, sAmp: 2, stDur: 10, stOffset: -4, stShape: 'convex-up', tDur: 12, tAmp: 3, base: 30});
-      body = '<path d="'+b1.path+'" stroke="#A0A09E" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
-           + '<path d="'+b2.path+'" stroke="#A0A09E" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+      const base = 30;
+      const beat = { pShape:'normal', pDur:8, pAmp:2, prSeg:4, qDur:4, qAmp:8, rDur:2, rAmp:4,
+                     sDur:2, sAmp:2, stDur:10, stOffset:-4, stShape:'convex-up', tDur:12, tAmp:3 };
+      const d = ecgStrip({ base, beats:[beat,beat], startX:20, gap:36 });
+      body = '<path d="'+d+'" '+WAVE_GREY+'/>'
            + '<text x="20" y="11" '+LBL+'>Q + STE persisten &gt;6 minggu</text>'
            + '<text x="20" y="55" '+LBL+'>LV Aneurysm</text>';
       break;
@@ -3922,10 +3926,11 @@ function ecgIllust(type) {
     }
     case 'resting-twi-pattern': {
       /* TWI in lateral leads, regional, not dynamic */
-      const b1 = ecgBeat(20, {pDur: 8, pAmp: 2, prSeg: 4, qDur: 1, qAmp: 1, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 6, tDur: 14, tAmp: 5, tShape: 'inverted', base: 28});
-      const b2 = ecgBeat(140, {pDur: 8, pAmp: 2, prSeg: 4, qDur: 1, qAmp: 1, rDur: 2, rAmp: 14, sDur: 2, sAmp: 3, stDur: 6, tDur: 14, tAmp: 5, tShape: 'inverted', base: 28});
-      body = '<path d="'+b1.path+'" stroke="#A0A09E" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
-           + '<path d="'+b2.path+'" stroke="#A0A09E" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+      const base = 28;
+      const beat = { pShape:'normal', pDur:8, pAmp:2, prSeg:4, qDur:1, qAmp:1, rDur:2, rAmp:14,
+                     sDur:2, sAmp:3, stDur:6, tDur:14, tAmp:5, tShape:'inverted' };
+      const d = ecgStrip({ base, beats:[beat,beat], startX:20, gap:40 });
+      body = '<path d="'+d+'" '+WAVE_GREY+'/>'
            + '<text x="20" y="11" '+LBL+'>TWI regional, non-dynamic</text>'
            + '<text x="20" y="55" '+LBL+'>Resting T Inversion (post-isk)</text>';
       break;
