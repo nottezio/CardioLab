@@ -888,6 +888,258 @@ input { font-family: inherit; }
 }
 .disclaimer.wip strong { color: var(--warning); }
 
+
+/* ═══ INTERACTION CHECKER ═══ */
+/* select checkbox on drug head */
+.drug-select {
+  display:flex; align-items:center; justify-content:center;
+  width:22px; height:22px; flex-shrink:0;
+  border:1.5px solid var(--border-strong); border-radius:3px;
+  background:var(--bg); cursor:pointer; transition:all .15s;
+  position:relative;
+}
+.drug-select:hover { border-color:var(--gold-soft); }
+.drug-select.checked { background:var(--gold); border-color:var(--gold); }
+.drug-select.checked::after {
+  content:''; position:absolute; left:7px; top:3px;
+  width:5px; height:10px; border:solid var(--bg);
+  border-width:0 2px 2px 0; transform:rotate(45deg);
+}
+
+/* selection tray */
+.ix-tray {
+  position:fixed; left:0; right:0; bottom:42px; z-index:60;
+  background:var(--surface); border-top:1px solid var(--border-strong);
+  box-shadow:0 -6px 24px rgba(0,0,0,.4);
+  transform:translateY(120%); transition:transform .28s cubic-bezier(.2,.8,.2,1);
+  padding:14px 24px;
+}
+.ix-tray.visible { transform:translateY(0); }
+.ix-tray-inner { max-width:1400px; margin:0 auto; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.ix-tray-label {
+  font-family:var(--f-mono); font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--text-faint); white-space:nowrap;
+}
+.ix-chips { display:flex; gap:8px; flex-wrap:wrap; flex:1; min-width:0; }
+.ix-chip {
+  display:inline-flex; align-items:center; gap:7px;
+  background:var(--surface-2); border:1px solid var(--border-strong);
+  border-radius:14px; padding:5px 6px 5px 12px;
+  font-size:12.5px; color:var(--text);
+}
+.ix-chip-x {
+  cursor:pointer; width:16px; height:16px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--border); color:var(--text-muted); font-size:11px; line-height:1;
+  transition:all .15s;
+}
+.ix-chip-x:hover { background:var(--danger); color:#fff; }
+.ix-tray-actions { display:flex; gap:10px; }
+.ix-btn {
+  font-family:var(--f-body); font-size:13px; font-weight:600;
+  padding:9px 18px; border-radius:5px; cursor:pointer; border:1px solid;
+  transition:all .15s; white-space:nowrap;
+}
+.ix-btn-check { background:var(--gold); color:var(--bg); border-color:var(--gold); }
+.ix-btn-check:hover { background:var(--gold-soft); }
+.ix-btn-check:disabled { background:var(--border); color:var(--text-faint); border-color:var(--border); cursor:not-allowed; }
+.ix-btn-clear { background:transparent; color:var(--text-muted); border-color:var(--border-strong); }
+.ix-btn-clear:hover { color:var(--text); border-color:var(--text-muted); }
+
+/* modal */
+.ix-modal-overlay {
+  position:fixed; inset:0; z-index:200; background:rgba(6,9,13,.78);
+  backdrop-filter:blur(3px); display:none; align-items:flex-start; justify-content:center;
+  padding:40px 20px; overflow-y:auto;
+}
+.ix-modal-overlay.visible { display:flex; }
+.ix-modal {
+  background:var(--surface); border:1px solid var(--border-strong);
+  border-top:3px solid var(--gold); border-radius:8px;
+  max-width:860px; width:100%; margin:auto;
+}
+.ix-modal-head {
+  display:flex; align-items:baseline; justify-content:space-between; gap:16px;
+  padding:22px 26px 16px; border-bottom:1px solid var(--border);
+}
+.ix-modal-title { font-family:var(--f-display); font-size:26px; color:var(--gold); font-weight:600; }
+.ix-modal-sub { font-family:var(--f-mono); font-size:10px; letter-spacing:.1em; color:var(--text-faint); text-transform:uppercase; }
+.ix-modal-close {
+  font-size:24px; color:var(--text-muted); cursor:pointer; line-height:1;
+  background:none; border:none; padding:4px 8px; transition:color .15s;
+}
+.ix-modal-close:hover { color:var(--text); }
+.ix-modal-body { padding:22px 26px 26px; }
+.ix-section-label {
+  font-family:var(--f-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--text-faint); margin:20px 0 12px; padding-bottom:6px;
+  border-bottom:1px solid var(--border);
+}
+.ix-section-label:first-child { margin-top:0; }
+
+/* finding card */
+.ix-find {
+  border:1px solid var(--border); border-left-width:3px;
+  background:var(--surface-2); border-radius:5px; padding:14px 16px; margin-bottom:12px;
+}
+.ix-find.sev-contra   { border-left-color:var(--danger); }
+.ix-find.sev-major    { border-left-color:#e07b39; }
+.ix-find.sev-moderate { border-left-color:var(--warning); }
+.ix-find.sev-info     { border-left-color:#4a7a9c; }
+.ix-find-head { display:flex; align-items:center; gap:10px; margin-bottom:9px; flex-wrap:wrap; }
+.ix-sev-badge {
+  font-family:var(--f-mono); font-size:9px; font-weight:700; letter-spacing:.08em;
+  padding:3px 8px; border-radius:3px; text-transform:uppercase; white-space:nowrap;
+}
+.sev-contra .ix-sev-badge   { background:var(--danger-soft); color:#e8675a; border:1px solid rgba(192,57,43,.4); }
+.sev-major .ix-sev-badge    { background:rgba(224,123,57,.15); color:#e8915a; border:1px solid rgba(224,123,57,.4); }
+.sev-moderate .ix-sev-badge { background:var(--warning-soft); color:var(--warning); border:1px solid rgba(212,166,74,.4); }
+.sev-info .ix-sev-badge     { background:rgba(74,122,156,.15); color:#79a8c8; border:1px solid rgba(74,122,156,.4); }
+.ix-find-pair { font-size:15px; font-weight:600; color:var(--text); }
+.ix-find-title { font-size:15px; font-weight:600; color:var(--text); }
+.ix-find-members {
+  font-family:var(--f-mono); font-size:10.5px; color:var(--text-muted);
+  margin-top:2px; width:100%;
+}
+.ix-find-row { display:flex; gap:8px; margin-top:7px; font-size:13px; line-height:1.5; }
+.ix-find-key {
+  font-family:var(--f-mono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--text-faint); flex-shrink:0; width:74px; padding-top:2px;
+}
+.ix-find-val { color:var(--text); flex:1; }
+.ix-find-val.mgmt { color:var(--gold); }
+.ix-find-ref { font-size:10.5px; color:var(--text-faint); font-style:italic; margin-top:8px; }
+
+/* none-found */
+.ix-none {
+  text-align:center; padding:26px; color:var(--success);
+  background:var(--success-soft); border:1px solid rgba(39,174,96,.3); border-radius:5px;
+}
+.ix-none-title { font-size:16px; font-weight:600; margin-bottom:4px; }
+.ix-none-sub { font-size:12.5px; color:var(--text-muted); }
+
+/* dosing recommendation boxes */
+.ix-dose-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.ix-dose-card {
+  border:1px solid var(--border); border-top:2px solid var(--gold-soft);
+  background:var(--bg); border-radius:5px; padding:13px 15px;
+}
+.ix-dose-name { font-family:var(--f-display); font-size:18px; color:var(--gold); font-weight:600; }
+.ix-dose-generic { font-size:11px; color:var(--text-faint); font-style:italic; margin-bottom:8px; }
+.ix-dose-ind { font-size:11px; color:var(--text-muted); margin-bottom:4px; }
+.ix-dose-line { font-size:13px; color:var(--text); line-height:1.5; }
+.ix-dose-tag {
+  font-family:var(--f-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--text-faint); margin-right:5px;
+}
+.ix-dose-foot {
+  font-size:10.5px; color:var(--text-faint); margin-top:9px; padding-top:8px;
+  border-top:1px solid var(--border); font-style:italic;
+}
+.ix-modal-disclaimer {
+  margin-top:20px; padding:12px 14px; background:var(--warning-soft);
+  border:1px solid rgba(212,166,74,.3); border-radius:5px;
+  font-size:11.5px; color:var(--warning); line-height:1.5;
+}
+@media (max-width:680px){
+  .ix-dose-grid { grid-template-columns:1fr; }
+  .ix-tray-inner { gap:10px; }
+}
+
+
+/* ═══ NON-CARDIAC PANEL + DOSE DROPDOWN + MOBILE ═══ */
+.ix-section-hint { font-family:var(--f-body); font-size:10px; color:var(--text-faint); text-transform:none; letter-spacing:0; font-style:italic; }
+
+.ix-nc-panel {
+  display:flex; flex-direction:column; gap:12px; margin-bottom:8px;
+  padding:14px; background:var(--bg); border:1px solid var(--border); border-radius:6px;
+}
+.ix-nc-group { display:flex; flex-direction:column; gap:6px; }
+.ix-nc-group-label {
+  font-family:var(--f-mono); font-size:9px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--text-faint);
+}
+.ix-nc-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.ix-nc-chip {
+  font-family:var(--f-body); font-size:12px; color:var(--text-muted);
+  background:var(--surface-2); border:1px solid var(--border-strong); border-radius:14px;
+  padding:5px 12px; cursor:pointer; transition:all .15s; line-height:1.2;
+}
+.ix-nc-chip:hover { border-color:var(--gold-soft); color:var(--text); }
+.ix-nc-chip.on {
+  background:var(--gold-dim); border-color:var(--gold); color:var(--gold); font-weight:600;
+}
+
+/* dose dropdown */
+.ix-dose-select {
+  width:100%; margin:2px 0 9px; padding:7px 9px;
+  font-family:var(--f-body); font-size:12px; color:var(--text);
+  background:var(--surface-2); border:1px solid var(--border-strong); border-radius:4px;
+  cursor:pointer; appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%23d4af6a' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");
+  background-repeat:no-repeat; background-position:right 10px center; padding-right:28px;
+}
+.ix-dose-select:focus { outline:none; border-color:var(--gold-soft); }
+.ix-dose-select option { background:var(--surface); color:var(--text); }
+.ix-dose-route {
+  font-family:var(--f-mono); font-size:9px; letter-spacing:.05em; color:var(--text-faint);
+  border:1px solid var(--border-strong); border-radius:3px; padding:1px 5px; vertical-align:middle;
+}
+.ix-dose-lines { margin-top:2px; }
+.ix-dose-empty { color:var(--text-faint); font-style:italic; }
+
+/* non-cardiac finding subtitle */
+.ix-find-subtitle { font-size:13px; font-weight:600; color:var(--text); margin:2px 0 4px; }
+
+/* ═══════════ MOBILE RESPONSIVE (Interaction Checker) ═══════════ */
+@media (max-width: 860px) {
+  /* drug-select checkbox sits left even when head wraps */
+  .drug-select { order:-1; }
+
+  /* tray becomes vertical, full-width, above footer */
+  .ix-tray { bottom:0; padding:10px 14px calc(10px + env(safe-area-inset-bottom)); }
+  .ix-tray-inner { flex-direction:column; align-items:stretch; gap:9px; }
+  .ix-tray-label { display:none; }
+  .ix-chips { max-height:84px; overflow-y:auto; }
+  .ix-tray-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .ix-btn { padding:11px 12px; font-size:13px; text-align:center; }
+
+  /* keep tray clear of the WIP footer by lifting footer above tray on mobile?
+     Footer is fixed bottom:0 too — stack: footer hidden visually behind tray.
+     Solution: when tray visible, footer still readable above tray via margin. */
+  .ix-tray.visible ~ .disclaimer.wip { display:none; } /* avoid overlap while selecting */
+
+  /* modal: near-fullscreen sheet */
+  .ix-modal-overlay { padding:0; align-items:stretch; overflow:hidden; }
+  .ix-modal {
+    max-width:100%; height:100%; max-height:100%; border-radius:0; border-left:none; border-right:none;
+    display:flex; flex-direction:column; margin:0;
+  }
+  .ix-modal-head {
+    flex:0 0 auto; background:var(--surface); z-index:2; padding:16px 18px 12px;
+  }
+  .ix-modal-title { font-size:21px; }
+  .ix-modal-body { flex:1 1 auto; padding:16px 18px 28px; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:0; }
+
+  /* findings: stack key/val vertically for narrow width */
+  .ix-find-row { flex-direction:column; gap:1px; }
+  .ix-find-key { width:auto; padding-top:0; }
+
+  /* dose grid single column (already at 680 but ensure) */
+  .ix-dose-grid { grid-template-columns:1fr; }
+
+  /* bigger touch targets for nc chips */
+  .ix-nc-chip { padding:8px 14px; font-size:13px; }
+}
+
+@media (max-width: 480px) {
+  .ix-modal-title { font-size:19px; }
+  .ix-find { padding:12px 13px; }
+  .ix-find-pair, .ix-find-title { font-size:14px; }
+  .ix-dose-name { font-size:16px; }
+  .ix-sev-badge { font-size:8.5px; padding:2px 6px; }
+}
+
 </style>
 </head>
 <body>
@@ -945,6 +1197,32 @@ input { font-family: inherit; }
     </div>
     <div id="drugList"></div>
   </main>
+</div>
+
+<!-- ━━━ INTERACTION CHECKER TRAY ━━━ -->
+<div class="ix-tray" id="ixTray">
+  <div class="ix-tray-inner">
+    <span class="ix-tray-label">Obat dipilih</span>
+    <div class="ix-chips" id="ixChips"></div>
+    <div class="ix-tray-actions">
+      <button class="ix-btn ix-btn-clear" id="ixClear">Kosongkan</button>
+      <button class="ix-btn ix-btn-check" id="ixCheck">Periksa Interaksi</button>
+    </div>
+  </div>
+</div>
+
+<!-- ━━━ INTERACTION RESULT MODAL ━━━ -->
+<div class="ix-modal-overlay" id="ixModal" role="dialog" aria-modal="true">
+  <div class="ix-modal">
+    <div class="ix-modal-head">
+      <div>
+        <div class="ix-modal-title">Analisis Interaksi Obat</div>
+        <div class="ix-modal-sub" id="ixModalSub"></div>
+      </div>
+      <button class="ix-modal-close" id="ixModalClose" aria-label="Tutup">&times;</button>
+    </div>
+    <div class="ix-modal-body" id="ixModalBody"></div>
+  </div>
 </div>
 
 <div class="disclaimer wip">
@@ -3318,6 +3596,7 @@ function renderDrugCard(drug) {
   return `
     <article class="drug-card ${isOpen ? 'open' : ''}" data-drug="${drug.id}">
       <header class="drug-head">
+        <div class="drug-select" data-select="${drug.id}" role="checkbox" aria-checked="false" title="Pilih untuk cek interaksi"></div>
         <div class="drug-id">
           <span class="drug-name">${escapeHtml(drug.name)}</span>
           <span class="drug-generic">${escapeHtml(drug.generic)}</span>
@@ -3378,7 +3657,8 @@ function renderDrugs() {
   // Attach event handlers
   container.querySelectorAll('.drug-card').forEach(card => {
     const id = card.dataset.drug;
-    card.querySelector('.drug-head').addEventListener('click', () => {
+    card.querySelector('.drug-head').addEventListener('click', (e) => {
+      if (e.target.closest('.drug-select')) return;  // ignore checkbox clicks
       if (state.openCards.has(id)) state.openCards.delete(id);
       else state.openCards.add(id);
       card.classList.toggle('open');
@@ -3408,6 +3688,825 @@ document.getElementById('search').addEventListener('input', (e) => {
   state.search = e.target.value;
   renderDrugs();
 });
+
+/* ═══════════════════════════════════════════════════════════ */
+/* INTERACTION CHECKER — UI logic                                */
+/* ═══════════════════════════════════════════════════════════ */
+const IX_DOSING = {"amiodarone": [{"ind": "VT/VF tanpa nadi (henti jantung)", "load": "300 mg IV/IO bolus, dapat diulang 150 mg", "maint": "Lanjutkan infus jika ROSC: 1 mg/min × 6 jam", "route": "IV", "setting": "icu"}, {"ind": "VT stabil / SVT refrakter", "load": "150 mg IV dalam 10 menit", "maint": "1 mg/min × 6 jam, lalu 0.5 mg/min × 18 jam (total 1 g / 24 jam)", "route": "IV", "setting": "icu"}, {"ind": "Konversi AF / pemeliharaan irama sinus", "load": "800–1.600 mg/hari PO terbagi × 1–3 minggu", "maint": "200–400 mg/hari PO sekali sehari", "route": "PO", "setting": "rj"}], "lidocaine": [{"ind": "VT/VF refrakter pasca-defibrilasi", "load": "1–1.5 mg/kg IV bolus, ulang 0.5–0.75 mg/kg q5–10 min (maks 3 mg/kg)", "maint": "1–4 mg/min infus kontinu", "route": "IV", "setting": "icu"}, {"ind": "VT pasca-MI / aritmia ventrikel", "load": "1 mg/kg IV bolus", "maint": "2 mg/min, titrasi 1–4 mg/min", "route": "IV", "setting": "icu"}], "adenosine": [{"ind": "SVT / PSVT — konversi ke sinus", "load": "6 mg IV rapid push (1–2 detik) via vena besar, diikuti flush NaCl 20 mL", "maint": "Jika gagal: 12 mg IV setelah 1–2 menit, dapat diulang 1× lagi", "route": "IV", "setting": "icu"}, {"ind": "Diagnosis takiaritmia kompleks-lebar", "load": "6 mg IV push (sama protokol)", "maint": "Hanya jika hemodinamik stabil", "route": "IV", "setting": "icu"}], "digoxin": [{"ind": "AF kronik — rate control", "load": "PO: 0.5 mg, lalu 0.25 mg q6h × 2 dosis (total 1 mg)", "maint": "0.125–0.25 mg PO sekali sehari", "route": "PO", "setting": "rj"}, {"ind": "AF rapid ventricular response (akut)", "load": "IV: 0.25–0.5 mg, lalu 0.25 mg q6h × 2 dosis (maks 1.5 mg / 24 jam)", "maint": "0.125–0.25 mg IV/PO sekali sehari", "route": "IV", "setting": "icu"}, {"ind": "HFrEF simtomatik (NYHA II–IV) sebagai add-on", "load": "Tidak perlu loading", "maint": "0.125 mg PO sekali sehari (0.0625 mg pada lansia/CKD)", "route": "PO", "setting": "rj"}], "verapamil": [{"ind": "SVT / AF rate control akut", "load": "2.5–5 mg IV pelan dalam 2 menit; ulang 5–10 mg setelah 15–30 min (maks 20–30 mg)", "maint": "5 mcg/kg/min infus", "route": "IV", "setting": "icu"}, {"ind": "AF kronik / HTN", "load": "Tidak perlu", "maint": "120–360 mg/hari PO terbagi 2–3× (immediate-release) atau sekali (SR)", "route": "PO", "setting": "rj"}], "metoprolol": [{"ind": "AF rate control / STEMI akut", "load": "IV: 2.5–5 mg dalam 2 menit, ulang q5min (maks 15 mg)", "maint": "Transisi ke PO 25–50 mg q6–12h setelah 15 menit dosis terakhir IV", "route": "IV", "setting": "icu"}, {"ind": "HFrEF (succinate / XL)", "load": "Mulai 12.5–25 mg/hari", "maint": "Titrasi dobel q2 minggu → target 200 mg/hari", "route": "PO", "setting": "rj"}, {"ind": "HTN / angina", "load": "–", "maint": "50–100 mg PO 2× sehari (tartrate) atau 50–200 mg sekali sehari (succinate)", "route": "PO", "setting": "rj"}], "sotalol": [{"ind": "AF / AFL — pemeliharaan irama sinus", "load": "Mulai 80 mg PO 2× sehari", "maint": "Titrasi tiap 3 hari (selama rawat inap) → 120–160 mg 2× sehari", "route": "PO", "setting": "icu"}, {"ind": "VT — terapi supresif", "load": "Mulai 80 mg 2× sehari", "maint": "160–320 mg/hari terbagi 2×", "route": "PO", "setting": "icu"}], "flecainide": [{"ind": "AF paroksismal — pemeliharaan sinus / pill-in-pocket", "load": "Pill-in-pocket: 200–300 mg PO dosis tunggal saat episode (BB >70 kg)", "maint": "Pemeliharaan: 50–150 mg 2× sehari", "route": "PO", "setting": "rj"}, {"ind": "SVT / PVC simtomatik", "load": "Mulai 50 mg 2× sehari", "maint": "Titrasi q4 hari → maks 300 mg/hari", "route": "PO", "setting": "rj"}], "atropine": [{"ind": "Bradikardia simtomatik / blok AV (ACLS)", "load": "0.5–1 mg IV bolus, ulang q3–5 min", "maint": "–", "route": "IV", "setting": "icu"}, {"ind": "Asistol / PEA — tidak lagi direkomendasikan rutin (ACLS 2010+)", "load": "Tidak direkomendasikan rutin", "maint": "–", "route": "IV", "setting": "icu"}, {"ind": "Intoksikasi organofosfat", "load": "1–3 mg IV, dobel q5 min sampai atropinisasi (sekresi kering, HR >80, pupil dilatasi)", "maint": "Lanjutkan q5–15 min sampai stabil", "route": "IV", "setting": "icu"}], "heparin-ufh": [{"ind": "STEMI / NSTEMI", "load": "60 U/kg IV bolus (maks 4.000 U)", "maint": "12 U/kg/jam (maks 1.000 U/jam) — target aPTT 1.5–2.5× kontrol (50–75 detik)", "route": "IV", "setting": "icu"}, {"ind": "VTE — DVT / PE", "load": "80 U/kg IV bolus", "maint": "18 U/kg/jam, titrasi per aPTT (target 1.5–2.5×)", "route": "IV", "setting": "icu"}, {"ind": "Profilaksis VTE", "load": "–", "maint": "5.000 U SC 2–3× sehari", "route": "SC", "setting": "rj"}], "enoxaparin": [{"ind": "STEMI (usia <75 thn)", "load": "30 mg IV bolus + 1 mg/kg SC", "maint": "1 mg/kg SC q12h (maks 100 mg per dosis 2 dosis pertama)", "route": "SC+IV", "setting": "icu"}, {"ind": "NSTEMI / UA", "load": "–", "maint": "1 mg/kg SC q12h", "route": "SC", "setting": "icu"}, {"ind": "VTE — terapi (DVT/PE)", "load": "–", "maint": "1 mg/kg SC q12h atau 1.5 mg/kg SC q24h", "route": "SC", "setting": "rj"}, {"ind": "VTE — profilaksis", "load": "–", "maint": "40 mg SC q24h (atau 30 mg SC q12h pasca-bedah ortopedi)", "route": "SC", "setting": "rj"}], "fondaparinux": [{"ind": "NSTEMI / UA", "load": "–", "maint": "2.5 mg SC q24h", "route": "SC", "setting": "icu"}, {"ind": "STEMI (non-PCI)", "load": "2.5 mg IV bolus dosis pertama", "maint": "2.5 mg SC q24h × 8 hari", "route": "SC+IV", "setting": "icu"}, {"ind": "VTE — terapi", "load": "–", "maint": "BB <50 kg: 5 mg / 50–100 kg: 7.5 mg / >100 kg: 10 mg SC q24h", "route": "SC", "setting": "rj"}, {"ind": "VTE — profilaksis", "load": "–", "maint": "2.5 mg SC q24h", "route": "SC", "setting": "rj"}], "warfarin": [{"ind": "AF non-valvular (CHA₂DS₂-VASc ≥2)", "load": "Mulai 2.5–5 mg/hari (lansia/sensitif: 2 mg)", "maint": "2–10 mg/hari sesuai INR", "route": "PO", "setting": "rj"}, {"ind": "Katup mekanik mitral / aortik high-risk", "load": "5 mg/hari", "maint": "Sesuai INR — target 2.5–3.5 (mekanik mitral) atau 2.0–3.0 (aortik bileaflet)", "route": "PO", "setting": "rj"}, {"ind": "VTE (DVT/PE)", "load": "Mulai 5–10 mg × 2 hari pertama", "maint": "Sesuai INR — target 2.0–3.0 × 3–6 bulan", "route": "PO", "setting": "rj"}], "aspirin": [{"ind": "ACS akut (STEMI/NSTEMI/UA)", "load": "162–325 mg PO (kunyah, non-enteric)", "maint": "75–100 mg/hari indefinitely", "route": "PO", "setting": "icu"}, {"ind": "Pasca-PCI / DAPT", "load": "Sudah loading saat ACS", "maint": "75–100 mg/hari, durasi DAPT 6–12 bulan (atau lebih per risiko)", "route": "PO", "setting": "rj"}, {"ind": "Prevensi sekunder CVD", "load": "–", "maint": "75–100 mg/hari indefinitely", "route": "PO", "setting": "rj"}, {"ind": "Prevensi primer CVD", "load": "–", "maint": "Tidak direkomendasikan rutin (ARRIVE, ASCEND, ASPREE)", "route": "PO", "setting": "rj"}], "clopidogrel": [{"ind": "STEMI primary PCI", "load": "600 mg PO", "maint": "75 mg/hari × 12 bulan (DAPT dengan aspirin)", "route": "PO", "setting": "icu"}, {"ind": "STEMI fibrinolitik / NSTEMI / UA", "load": "300 mg PO (≤75 thn) atau 75 mg (>75 thn, tanpa loading)", "maint": "75 mg/hari × 12 bulan", "route": "PO", "setting": "icu"}, {"ind": "Pasca-PCI elektif (stent)", "load": "600 mg PO sebelum prosedur", "maint": "75 mg/hari × ≥6 bulan (DES) atau ≥1 bulan (BMS)", "route": "PO", "setting": "rj"}, {"ind": "Stroke iskemik / TIA / PAD", "load": "–", "maint": "75 mg/hari indefinitely", "route": "PO", "setting": "rj"}], "ticagrelor": [{"ind": "ACS (STEMI/NSTEMI/UA) — PCI atau medis", "load": "180 mg PO", "maint": "90 mg PO 2× sehari × 12 bulan, lalu 60 mg 2× sehari (jika risiko trombosis tinggi)", "route": "PO", "setting": "icu"}, {"ind": "Prevensi sekunder pasca-MI (>1 tahun)", "load": "–", "maint": "60 mg 2× sehari (PEGASUS-TIMI 54)", "route": "PO", "setting": "rj"}], "prasugrel": [{"ind": "ACS dengan PCI (preferensi STEMI primary PCI)", "load": "60 mg PO", "maint": "10 mg/hari × 12 bulan", "route": "PO", "setting": "icu"}, {"ind": "Pasien BB <60 kg", "load": "60 mg", "maint": "5 mg/hari × 12 bulan", "route": "PO", "setting": "icu"}], "bivalirudin": [{"ind": "PCI (STEMI/NSTEMI/elektif)", "load": "0.75 mg/kg IV bolus", "maint": "1.75 mg/kg/jam infus selama PCI; lanjutkan ≤4 jam pasca-PCI per pertimbangan", "route": "IV", "setting": "icu"}, {"ind": "HIT (heparin-induced thrombocytopenia)", "load": "0.15 mg/kg/jam (tanpa bolus rutin)", "maint": "Titrasi per aPTT (target 1.5–2.5×)", "route": "IV", "setting": "icu"}], "norepinephrine": [{"ind": "Syok septik / distributif — vasopresor lini-1", "load": "Tidak perlu loading", "maint": "Mulai 0.05 mcg/kg/min, titrasi q5–15 min → target MAP ≥65 mmHg", "route": "IV", "setting": "icu"}, {"ind": "Syok kardiogenik dengan hipotensi", "load": "–", "maint": "0.05–0.5 mcg/kg/min", "route": "IV", "setting": "icu"}], "epinephrine": [{"ind": "Henti jantung (VF/VT tanpa nadi, asistol, PEA)", "load": "1 mg IV/IO q3–5 min", "maint": "Selama RJP", "route": "IV", "setting": "icu"}, {"ind": "Anafilaksis", "load": "0.3–0.5 mg IM (1:1.000) paha lateral, ulang q5–15 min", "maint": "Infus 0.05–0.1 mcg/kg/min jika refrakter", "route": "IM/IV", "setting": "icu"}, {"ind": "Syok kardiogenik / refrakter", "load": "–", "maint": "0.01–0.1 mcg/kg/min, titrasi", "route": "IV", "setting": "icu"}, {"ind": "Bradikardia simtomatik (post-atropin)", "load": "–", "maint": "2–10 mcg/min titrasi", "route": "IV", "setting": "icu"}], "dopamine": [{"ind": "Hipotensi / syok kardiogenik (lini-2)", "load": "–", "maint": "5–20 mcg/kg/min titrasi", "route": "IV", "setting": "icu"}, {"ind": "Bradikardia simtomatik (post-atropin)", "load": "–", "maint": "5–20 mcg/kg/min", "route": "IV", "setting": "icu"}], "dobutamine": [{"ind": "Syok kardiogenik / HF dekompensasi dengan low output", "load": "–", "maint": "Mulai 2.5 mcg/kg/min, titrasi 2.5–20 mcg/kg/min", "route": "IV", "setting": "icu"}, {"ind": "Stress echo / nuclear", "load": "–", "maint": "5 → 10 → 20 → 30–40 mcg/kg/min × 3 menit per tahap", "route": "IV", "setting": "rj"}], "vasopressin": [{"ind": "Syok septik refrakter (add-on NE)", "load": "–", "maint": "0.01–0.04 U/min (FIXED, jangan dititrasi tinggi)", "route": "IV", "setting": "icu"}, {"ind": "Syok pasca-CPB / vasoplegia", "load": "–", "maint": "0.01–0.06 U/min", "route": "IV", "setting": "icu"}, {"ind": "Henti jantung (alternatif epinefrin)", "load": "40 U IV/IO dosis tunggal", "maint": "Hanya sekali, tidak diulang", "route": "IV", "setting": "icu"}], "phenylephrine": [{"ind": "Hipotensi intraoperatif / induksi anestesi", "load": "50–200 mcg IV bolus q1–2 min", "maint": "–", "route": "IV", "setting": "icu"}, {"ind": "Vasopresor infus (alternatif NE)", "load": "–", "maint": "0.1–0.5 mcg/kg/min atau 40–200 mcg/min titrasi", "route": "IV", "setting": "icu"}, {"ind": "SVT — refleks vagal (hipertensi → bradikardia)", "load": "100–500 mcg IV bolus", "maint": "–", "route": "IV", "setting": "icu"}], "milrinone": [{"ind": "HF dekompensasi / syok kardiogenik (inodilator)", "load": "50 mcg/kg IV dalam 10 menit (sering DIOMIT karena hipotensi)", "maint": "0.375–0.75 mcg/kg/min infus", "route": "IV", "setting": "icu"}, {"ind": "HF refraktori / bridge to transplant", "load": "Tidak perlu", "maint": "0.25–0.75 mcg/kg/min jangka panjang", "route": "IV", "setting": "icu"}], "levosimendan": [{"ind": "HF dekompensasi berat / syok kardiogenik", "load": "6–12 mcg/kg dalam 10 menit (lewati jika SBP <100)", "maint": "0.05–0.2 mcg/kg/min × 24 jam", "route": "IV", "setting": "icu"}], "labetalol": [{"ind": "Krisis hipertensi / HTN urgensi", "load": "10–20 mg IV bolus dalam 2 menit, ulang dobel q10 min (maks 300 mg total)", "maint": "Infus 0.5–2 mg/min, titrasi sampai target", "route": "IV", "setting": "icu"}, {"ind": "HTN kehamilan / preeklampsia", "load": "20 mg IV, ulang dobel q10 min (maks 80 mg/dosis, 300 mg total)", "maint": "Atau 100–400 mg PO q8–12h", "route": "IV/PO", "setting": "icu"}, {"ind": "HTN kronik", "load": "–", "maint": "100 mg PO 2× sehari, titrasi q2–3 hari → 200–800 mg 2× sehari", "route": "PO", "setting": "rj"}], "nicardipine": [{"ind": "Krisis hipertensi / HTN urgensi", "load": "Mulai 5 mg/jam IV, titrasi +2.5 mg/jam q5–15 min", "maint": "Maintenance 3–15 mg/jam", "route": "IV", "setting": "icu"}, {"ind": "HTN intraoperatif / post-bedah jantung", "load": "5 mg/jam IV", "maint": "3–15 mg/jam", "route": "IV", "setting": "icu"}, {"ind": "HTN kronik (jarang)", "load": "–", "maint": "20–40 mg PO 3× sehari", "route": "PO", "setting": "rj"}], "nitroprusside": [{"ind": "Emergensi hipertensi (terutama dissection aorta)", "load": "–", "maint": "Mulai 0.3 mcg/kg/min, titrasi q1–2 min → 0.5–3 mcg/kg/min", "route": "IV", "setting": "icu"}], "nitroglycerin": [{"ind": "Angina akut / ACS", "load": "SL: 0.4–0.6 mg q5 min × 3 dosis", "maint": "Lanjutkan ke IV jika nyeri persisten", "route": "SL", "setting": "icu"}, {"ind": "STEMI / iskemia akut / HF + HTN", "load": "–", "maint": "IV mulai 5–10 mcg/min, titrasi +5–10 mcg/min q3–5 min → 50–200 mcg/min", "route": "IV", "setting": "icu"}, {"ind": "Edema paru akut + HTN", "load": "0.4 mg SL atau 10–20 mcg/min IV", "maint": "Titrasi cepat sampai 100–200 mcg/min", "route": "IV/SL", "setting": "icu"}], "hydralazine": [{"ind": "HTN kehamilan / preeklampsia berat", "load": "5–10 mg IV bolus dalam 1–2 menit, ulang q20–30 min (maks 20 mg)", "maint": "Lanjut PO 25–50 mg q6h jika perlu", "route": "IV", "setting": "icu"}, {"ind": "HFrEF + nitrat (kombinasi HYD/ISDN — preferensi African-American)", "load": "–", "maint": "37.5 mg + ISDN 20 mg PO 3× sehari, titrasi → 75 mg + 40 mg 3× sehari", "route": "PO", "setting": "rj"}, {"ind": "HTN refrakter (tambahan)", "load": "–", "maint": "10–25 mg PO 3–4× sehari, titrasi → maks 300 mg/hari", "route": "PO", "setting": "rj"}], "amlodipine": [{"ind": "HTN", "load": "–", "maint": "Mulai 5 mg/hari, titrasi → 10 mg/hari (maks)", "route": "PO", "setting": "rj"}, {"ind": "Angina kronis / vasospastik (Prinzmetal)", "load": "–", "maint": "5–10 mg/hari", "route": "PO", "setting": "rj"}], "ramipril": [{"ind": "HTN / pasca-MI / HFrEF / nefropati DM", "load": "Ramipril: mulai 2.5 mg/hari (1.25 mg jika lansia/HF)", "maint": "Titrasi q2 minggu → target 10 mg/hari (5 mg 2× sehari)", "route": "PO", "setting": "rj"}, {"ind": "HFrEF (semua EF rendah)", "load": "Ramipril 1.25–2.5 mg/hari", "maint": "Dobel q2 minggu → target 10 mg/hari", "route": "PO", "setting": "rj"}, {"ind": "Pasca-STEMI", "load": "Mulai dalam 24 jam (HEART OUTCOMES, AIRE)", "maint": "Ramipril titrasi → 10 mg/hari", "route": "PO", "setting": "rj"}], "bisoprolol": [{"ind": "HFrEF (lini-1 beta-blocker HF)", "load": "–", "maint": "Mulai 1.25 mg/hari, titrasi dobel q2 minggu → target 10 mg/hari", "route": "PO", "setting": "rj"}, {"ind": "HTN / angina", "load": "–", "maint": "5–10 mg/hari (maks 20 mg)", "route": "PO", "setting": "rj"}, {"ind": "AF rate control", "load": "–", "maint": "2.5–10 mg/hari", "route": "PO", "setting": "rj"}], "candesartan": [{"ind": "HTN", "load": "–", "maint": "Mulai 4–8 mg/hari, titrasi → 16–32 mg/hari", "route": "PO", "setting": "rj"}, {"ind": "HFrEF (CHARM-Alternative/Added)", "load": "Mulai 4 mg/hari", "maint": "Dobel q2 minggu → target 32 mg/hari", "route": "PO", "setting": "rj"}], "spironolactone": [{"ind": "HFrEF (NYHA II–IV, EF ≤35%) — MRA", "load": "–", "maint": "Mulai 12.5–25 mg/hari, titrasi → 25–50 mg/hari", "route": "PO", "setting": "rj"}, {"ind": "HTN resisten (lini-4 PATHWAY-2)", "load": "–", "maint": "12.5–50 mg/hari", "route": "PO", "setting": "rj"}, {"ind": "Hiperaldosteronisme primer", "load": "–", "maint": "50–400 mg/hari", "route": "PO", "setting": "rj"}, {"ind": "Sirosis dengan asites", "load": "–", "maint": "Mulai 100 mg/hari (kombinasi dengan furosemid 40 mg ratio 100:40)", "route": "PO", "setting": "rj"}], "furosemide": [{"ind": "Edema paru akut / HF dekompensasi", "load": "40–80 mg IV bolus (jika diuretik-naive); 2.5× dosis oral biasa jika kronik user", "maint": "Ulang q2–4 jam atau infus 5–20 mg/jam", "route": "IV", "setting": "icu"}, {"ind": "HF kronik", "load": "–", "maint": "20–80 mg PO 1–2× sehari, titrasi sampai euvolemia", "route": "PO", "setting": "rj"}, {"ind": "Edema refrakter / continuous infusion (DOSE trial)", "load": "40 mg IV bolus", "maint": "Infus 10–40 mg/jam atau 2× dosis oral terbagi IV", "route": "IV", "setting": "icu"}], "torsemide": [{"ind": "HF kronik (TRANSFORM-HF: setara furosemid)", "load": "–", "maint": "Mulai 10–20 mg/hari, titrasi → 200 mg/hari maks", "route": "PO", "setting": "rj"}, {"ind": "Edema renal / hepatik", "load": "–", "maint": "5–10 mg/hari, titrasi", "route": "PO", "setting": "rj"}], "bumetanide": [{"ind": "HF / edema refrakter", "load": "0.5–1 mg IV bolus, ulang q2–3 jam", "maint": "Total 1–10 mg/hari", "route": "IV", "setting": "icu"}, {"ind": "HF kronik", "load": "–", "maint": "0.5–2 mg PO 1–2× sehari (maks 10 mg/hari)", "route": "PO", "setting": "rj"}], "hctz": [{"ind": "HTN", "load": "–", "maint": "12.5–25 mg/hari (maks 50 mg, tapi efek antihipertensi plateau ~25 mg)", "route": "PO", "setting": "rj"}, {"ind": "Edema ringan", "load": "–", "maint": "25–50 mg/hari", "route": "PO", "setting": "rj"}], "metolazone": [{"ind": "HF refrakter — sequential nephron blockade", "load": "–", "maint": "2.5–5 mg/hari 30 menit sebelum loop diuretik, 3× seminggu (mulai)", "route": "PO", "setting": "rj"}, {"ind": "HTN refrakter", "load": "–", "maint": "2.5–10 mg/hari", "route": "PO", "setting": "rj"}], "eplerenone": [{"ind": "HFrEF NYHA II / pasca-MI dengan EF ≤40%", "load": "Mulai 25 mg/hari", "maint": "Titrasi → 50 mg/hari dalam 4 minggu", "route": "PO", "setting": "rj"}, {"ind": "HTN", "load": "–", "maint": "50–100 mg/hari", "route": "PO", "setting": "rj"}], "alteplase": [{"ind": "STEMI (jika PCI tidak tersedia <120 min)", "load": "15 mg IV bolus", "maint": "0.75 mg/kg dalam 30 menit (maks 50 mg) → 0.5 mg/kg dalam 60 menit (maks 35 mg). Total maks 100 mg dalam 90 menit", "route": "IV", "setting": "icu"}, {"ind": "PE massif / submassif dengan instabilitas", "load": "Tidak ada bolus terpisah", "maint": "100 mg IV dalam 2 jam (regimen standar)", "route": "IV", "setting": "icu"}, {"ind": "Stroke iskemik akut (<4.5 jam)", "load": "0.9 mg/kg IV (maks 90 mg)", "maint": "10% bolus, 90% infus dalam 60 menit", "route": "IV", "setting": "icu"}], "streptokinase": [{"ind": "STEMI", "load": "–", "maint": "1.5 juta IU IV dalam 60 menit", "route": "IV", "setting": "icu"}, {"ind": "PE massif", "load": "250.000 IU dalam 30 menit", "maint": "100.000 IU/jam × 24 jam", "route": "IV", "setting": "icu"}], "tenecteplase": [{"ind": "STEMI — bolus tunggal (preferred trombolitik)", "load": "Bolus tunggal IV dalam 5 detik, weight-based:", "maint": "<60 kg: 30 mg / 60–69 kg: 35 mg / 70–79 kg: 40 mg / 80–89 kg: 45 mg / ≥90 kg: 50 mg", "route": "IV", "setting": "icu"}, {"ind": "PE (off-label tapi praktek umum)", "load": "Bolus tunggal weight-based sama protokol", "maint": "Atau setengah dosis (PEITHO-3)", "route": "IV", "setting": "icu"}], "urokinase": [{"ind": "PE — catheter-directed thrombolysis (CDT)", "load": "4.400 IU/kg IV dalam 10 menit", "maint": "4.400 IU/kg/jam × 12–24 jam", "route": "IV/CDT", "setting": "icu"}, {"ind": "Trombosis kateter / akses vaskular", "load": "–", "maint": "5.000–10.000 IU instil ke kateter, retensi 30–60 min", "route": "Lokal", "setting": "rj"}], "procainamide": [{"ind": "WPW + AF (pilihan utama) / VT stabil dengan nadi", "load": "20–50 mg/menit IV sampai aritmia berhenti, hipotensi, QRS melebar >50%, atau 17 mg/kg", "maint": "1–4 mg/menit infus kontinu", "route": "IV", "setting": "icu"}], "propafenone": [{"ind": "AF/AFL — konversi sinus (pill-in-pocket)", "load": "450 mg BB <70 kg atau 600 mg BB ≥70 kg PO dosis tunggal", "maint": "150–300 mg 3× sehari", "route": "PO", "setting": "rj"}, {"ind": "Pemeliharaan irama sinus / SVT", "load": "–", "maint": "150–300 mg 3×/hari; SR: 225–425 mg 2×/hari", "route": "PO", "setting": "rj"}], "dronedarone": [{"ind": "AF paroksismal/persisten — pencegahan rekurensi & rate+rhythm control", "load": "–", "maint": "400 mg 2× sehari bersama makan pagi & makan malam", "route": "PO", "setting": "rj"}], "ibutilide": [{"ind": "Kardioversi AF/AFL onset <48 jam (farmakologis)", "load": "BB ≥60 kg: 1 mg IV dalam 10 menit; BB <60 kg: 0.01 mg/kg IV dalam 10 menit", "maint": "Jika tidak konversi setelah 10 menit: ulangi dosis sama 1×", "route": "IV", "setting": "icu"}], "apixaban": [{"ind": "AF non-valvular — pencegahan stroke/SE", "load": "–", "maint": "5 mg BID standar. Reduce ke 2.5 mg BID jika ≥2 dari: usia ≥80 th, BB ≤60 kg, SCr ≥1.5 mg/dL", "route": "PO", "setting": "rj"}, {"ind": "DVT/PE — terapi", "load": "10 mg BID × 7 hari", "maint": "5 mg BID (min 3 bulan); extended: 2.5 mg BID", "route": "PO", "setting": "rj"}], "rivaroxaban": [{"ind": "AF non-valvular — pencegahan stroke/SE", "load": "–", "maint": "20 mg OD bersama makan malam. CrCl 15–49: 15 mg OD bersama makan", "route": "PO", "setting": "rj"}, {"ind": "DVT/PE — terapi akut", "load": "15 mg BID × 21 hari (bersama makan)", "maint": "20 mg OD (bersama makan)", "route": "PO", "setting": "rj"}], "dabigatran": [{"ind": "AF non-valvular — pencegahan stroke/SE", "load": "–", "maint": "150 mg BID standar. 110 mg BID jika: ≥80 th, risiko perdarahan tinggi, CrCl 30–50 + ≥75 th, atau verapamil", "route": "PO", "setting": "rj"}, {"ind": "DVT/PE — terapi (setelah 5–10 hari parenteral)", "load": "WAJIB parenteral 5–10 hari", "maint": "150 mg BID", "route": "PO", "setting": "rj"}], "edoxaban": [{"ind": "AF non-valvular — pencegahan stroke/SE", "load": "–", "maint": "60 mg OD. Reduce ke 30 mg OD jika: CrCl 15–50, BB ≤60 kg, atau P-gp inhibitor (siklosporin, dronedarone, eritromisin, ketokonazol)", "route": "PO", "setting": "rj"}, {"ind": "DVT/PE — terapi (setelah ≥5 hari parenteral)", "load": "WAJIB parenteral minimal 5 hari", "maint": "60 mg OD (atau 30 mg)", "route": "PO", "setting": "rj"}], "argatroban": [{"ind": "HIT (Heparin-Induced Thrombocytopenia) — antikoagulasi pengganti", "load": "–", "maint": "2 mcg/kg/menit infus kontinu. Target aPTT 1.5–3× baseline (tidak >100 detik). Cek aPTT 2 jam setelah mulai", "route": "IV", "setting": "icu"}, {"ind": "PCI pada pasien HIT", "load": "350 mcg/kg IV bolus dalam 3–5 menit", "maint": "25 mcg/kg/menit; target ACT 300–450 detik", "route": "IV", "setting": "icu"}], "eptifibatide": [{"ind": "NSTEMI — terapi medis high-risk / PCI emergensi", "load": "180 mcg/kg IV bolus", "maint": "2 mcg/kg/menit infus 18–96 jam (hentikan 4 jam setelah PCI)", "route": "IV", "setting": "icu"}, {"ind": "PCI elektif / emergensi — proteksi peri-prosedural", "load": "180 mcg/kg + bolus kedua 180 mcg/kg dalam 10 menit", "maint": "2 mcg/kg/menit × 18–24 jam", "route": "IV", "setting": "icu"}], "tirofiban": [{"ind": "NSTEMI/UA + PCI high-risk (high-dose bolus regimen — preferred)", "load": "25 mcg/kg IV dalam 3 menit", "maint": "0.15 mcg/kg/menit × 18–24 jam", "route": "IV", "setting": "icu"}], "isoproterenol": [{"ind": "Bradikardia / blok AV — bridge sebelum pacemaker", "load": "–", "maint": "2–10 mcg/menit IV infus; titrasi sampai HR target", "route": "IV", "setting": "icu"}, {"ind": "Torsades de pointes refrakter (bradikardia dependent)", "load": "–", "maint": "2–10 mcg/menit; titrasi untuk HR 90–100 bpm", "route": "IV", "setting": "icu"}, {"ind": "Blok jantung pasca-transplantasi (denervated heart)", "load": "–", "maint": "0.01–0.1 mcg/kg/menit; titrasi terhadap HR", "route": "IV", "setting": "icu"}], "terlipressin": [{"ind": "Sindrom Hepatorenal Tipe 1 / AKI (HRS-AKI) — vasokonstriktor splanknik", "load": "0.5–1 mg IV bolus tiap 4–6 jam", "maint": "Titrasi sampai 2 mg/bolus q4-6h jika SCr tidak turun ≥25% dalam 48 jam. Target SCr <1.5 mg/dL", "route": "IV", "setting": "icu"}, {"ind": "Varises esofagus — perdarahan akut", "load": "2 mg IV bolus; lalu 1–2 mg tiap 4–6 jam", "maint": "1–2 mg tiap 4–6 jam × 5 hari", "route": "IV", "setting": "icu"}], "clevidipine": [{"ind": "Hipertensi emergensi — kontrol TD IV presisi", "load": "–", "maint": "Mulai 1–2 mg/jam. Gandakan tiap 90 detik. Biasanya efektif 4–6 mg/jam. Maks: 32 mg/jam; <1000 mL/hari (lipid)", "route": "IV", "setting": "icu"}], "carvedilol": [{"ind": "HFrEF — penurunan mortalitas (COPERNICUS)", "load": "Mulai 3.125 mg BID × 2 minggu", "maint": "Titrasi: 3.125 → 6.25 → 12.5 → 25 mg BID (maks 50 mg jika BB >85 kg)", "route": "PO", "setting": "rj"}, {"ind": "Hipertensi", "load": "6.25 mg BID × 7–14 hari", "maint": "12.5–25 mg BID", "route": "PO", "setting": "rj"}], "clonidine": [{"ind": "Hipertensi urgensi (tanpa kerusakan organ target)", "load": "0.1–0.2 mg PO; dapat diulang tiap jam", "maint": "Maks total 0.6 mg dalam episode akut; lanjut 0.1–0.2 mg 2–3×/hari", "route": "PO", "setting": "rj"}, {"ind": "Sedasi ajuvan ICU / sindrom putus opioid", "load": "–", "maint": "0.1–0.3 mg 3–4×/hari PO; atau 1–2 mcg/kg/jam IV", "route": "PO/IV", "setting": "icu"}], "enalaprilat": [{"ind": "Hipertensi emergensi — terutama HF hipertensif / flash pulmonary edema", "load": "–", "maint": "1.25 mg IV dalam 5 menit, tiap 6 jam. Titrasi 1.25–5 mg tiap 6 jam", "route": "IV", "setting": "icu"}], "acetazolamide": [{"ind": "Resistensi diuretik pada ADHF (sequential nephron blockade)", "load": "–", "maint": "500 mg IV atau PO sekali; atau 250 mg 2×/hari × 2–3 hari bersama loop diuretik", "route": "IV/PO", "setting": "icu"}, {"ind": "Alkalosis metabolik ICU (pasca loop diuretik)", "load": "–", "maint": "500 mg IV tiap 6–8 jam; titrasi pH/HCO3", "route": "IV", "setting": "icu"}], "reteplase": [{"ind": "STEMI — fibrinolisis (jika PCI primer tidak tersedia <120 menit)", "load": "10 unit IV bolus selama 2 menit", "maint": "10 unit IV bolus kedua setelah 30 menit", "route": "IV", "setting": "icu"}], "sacubitril-valsartan": [{"ind": "HFrEF (EF ≤40%) — penurunan mortalitas & hospitalisasi (PARADIGM-HF)", "load": "Naif/dosis rendah ACEI/ARB: 24/26 mg BID. Toleran dosis sedang-tinggi: 49/51 mg BID", "maint": "Target 97/103 mg BID. Titrasi tiap 2–4 minggu", "route": "PO", "setting": "rj"}, {"ind": "HFpEF / HFmrEF (EF ≥45%) — PARAGON-HF (Class IIb)", "load": "Sama", "maint": "24/26 mg – 97/103 mg BID", "route": "PO", "setting": "rj"}], "ivabradine": [{"ind": "HFrEF (EF ≤35%, irama sinus, HR ≥70 bpm, NYHA II–III)", "load": "–", "maint": "Mulai 5 mg BID (3× sehari jika >75 th). Minggu ke-2: jika HR >60, naikkan ke 7.5 mg BID. Jika HR <50: turun ke 2.5 mg BID", "route": "PO", "setting": "rj"}, {"ind": "Angina stabil — kontrol gejala", "load": "–", "maint": "5–7.5 mg BID; target HR istirahat 55–60 bpm", "route": "PO", "setting": "rj"}], "dapagliflozin-hf": [{"ind": "HFrEF (EF ≤40%) — DAPA-HF; dengan atau tanpa DM", "load": "–", "maint": "10 mg OD pagi hari. Tidak perlu titrasi", "route": "PO", "setting": "rj"}, {"ind": "HFpEF / HFmrEF (EF ≥40%) — DELIVER", "load": "–", "maint": "10 mg OD", "route": "PO", "setting": "rj"}, {"ind": "CKD proteinurik (non-DM) — renoproteksi (DAPA-CKD)", "load": "–", "maint": "10 mg OD; efektif sampai eGFR ≥25", "route": "PO", "setting": "rj"}], "empagliflozin-hf": [{"ind": "HFrEF (EF ≤40%) — EMPEROR-Reduced; dengan/tanpa DM", "load": "–", "maint": "10 mg OD. Mulai bahkan dari rawat inap (EMPULSE)", "route": "PO", "setting": "rj"}, {"ind": "HFpEF / HFmrEF (EF ≥40%) — EMPEROR-Preserved", "load": "–", "maint": "10 mg OD", "route": "PO", "setting": "rj"}], "tolvaptan": [{"ind": "ADHF dengan hiponatremia euvolemik / hipervolemik refrakter (Na <125 mEq/L atau gejala berat)", "load": "–", "maint": "Mulai 15 mg OD. Setelah ≥8 jam: naikkan ke 30 mg lalu 60 mg OD sesuai respons Na. MULAI DI RS", "route": "PO", "setting": "icu"}], "vericiguat": [{"ind": "HFrEF simtomatik (NYHA II–IV, EF <45%) pasca-worsening HF event", "load": "–", "maint": "Mulai 2.5 mg OD × 2 minggu. Titrasi: 2.5 → 5 → 10 mg OD, tiap 2 minggu. Target 10 mg OD bersama makanan", "route": "PO", "setting": "rj"}], "nicorandil": [{"ind": "Angina stabil kronis — kontrol gejala (add-on / lini ke-2)", "load": "–", "maint": "5–10 mg BID; mulai 5 mg untuk kurangi sakit kepala; naik ke 10–20 mg BID", "route": "PO", "setting": "rj"}], "trimetazidine": [{"ind": "Angina stabil kronis — terapi adjuvan metabolik (tanpa efek hemodinamik)", "load": "–", "maint": "Tablet biasa: 20 mg 3×/hari. Tablet MR: 35 mg BID", "route": "PO", "setting": "rj"}]};
+
+/* ═══════════════════════════════════════════════════════════ */
+/* NON-CARDIAC INTERACTION LAYER                                 */
+/* Reference list of common non-cardiac drugs (NOT in CardioRef) */
+/* checked against selected cardiac drugs.                       */
+/* SUMBER: label produk, Lexicomp/Stockley principles, G&G 13e.  */
+/* WIP — unverified, tidak komprehensif.                         */
+/* ═══════════════════════════════════════════════════════════ */
+
+/* Non-cardiac reference drugs with their own class tags */
+const IX_NONCARDIAC = [
+  // ── Statins ──
+  { id:'nc_simvastatin', name:'Simvastatin', group:'Statin', tags:['statin','cyp3a4_sub'] },
+  { id:'nc_atorvastatin', name:'Atorvastatin', group:'Statin', tags:['statin','cyp3a4_sub'] },
+  { id:'nc_rosuvastatin', name:'Rosuvastatin', group:'Statin', tags:['statin'] },
+  // ── Macrolides / antibiotik QT ──
+  { id:'nc_clarithromycin', name:'Klaritromisin', group:'Makrolida', tags:['qt','cyp3a4_inhib','cyp3a4_inhib_strong','pgp_inhib'] },
+  { id:'nc_erythromycin', name:'Eritromisin', group:'Makrolida', tags:['qt','cyp3a4_inhib'] },
+  { id:'nc_azithromycin', name:'Azitromisin', group:'Makrolida', tags:['qt'] },
+  { id:'nc_ciprofloxacin', name:'Siprofloksasin', group:'Fluorokuinolon', tags:['qt','cyp_inhib_warf'] },
+  { id:'nc_levofloxacin', name:'Levofloksasin', group:'Fluorokuinolon', tags:['qt'] },
+  { id:'nc_metronidazole', name:'Metronidazol', group:'Antibiotik', tags:['cyp_inhib_warf'] },
+  { id:'nc_tmp_smx', name:'Kotrimoksazol (TMP-SMX)', group:'Antibiotik', tags:['cyp_inhib_warf','hyperK','qt'] },
+  // ── Antijamur azol ──
+  { id:'nc_fluconazole', name:'Flukonazol', group:'Antijamur azol', tags:['qt','cyp3a4_inhib','cyp_inhib_warf'] },
+  { id:'nc_ketoconazole', name:'Ketokonazol', group:'Antijamur azol', tags:['qt','cyp3a4_inhib_strong','pgp_inhib'] },
+  { id:'nc_itraconazole', name:'Itrakonazol', group:'Antijamur azol', tags:['cyp3a4_inhib_strong','pgp_inhib','neginotrope_warn'] },
+  // ── NSAID ──
+  { id:'nc_ibuprofen', name:'Ibuprofen', group:'NSAID', tags:['nsaid'] },
+  { id:'nc_diclofenac', name:'Diklofenak', group:'NSAID', tags:['nsaid'] },
+  { id:'nc_naproxen', name:'Naproksen', group:'NSAID', tags:['nsaid'] },
+  { id:'nc_ketorolac', name:'Ketorolak', group:'NSAID', tags:['nsaid'] },
+  // ── SSRI / SNRI ──
+  { id:'nc_fluoxetine', name:'Fluoksetin', group:'SSRI', tags:['ssri','cyp2d6_inhib','cyp_inhib_warf'] },
+  { id:'nc_paroxetine', name:'Paroksetin', group:'SSRI', tags:['ssri','cyp2d6_inhib'] },
+  { id:'nc_sertraline', name:'Sertralin', group:'SSRI', tags:['ssri'] },
+  { id:'nc_citalopram', name:'Sitalopram/Escitalopram', group:'SSRI', tags:['ssri','qt'] },
+  // ── Lain berisiko tinggi ──
+  { id:'nc_rifampin', name:'Rifampisin', group:'Antituberkulosis', tags:['cyp3a4_induce_strong','pgp_induce','cyp_induce_warf'] },
+  { id:'nc_omeprazole', name:'Omeprazol', group:'PPI', tags:['cyp2c19_inhib'] },
+  { id:'nc_grapefruit', name:'Jus grapefruit', group:'Makanan', tags:['cyp3a4_inhib'] },
+  { id:'nc_nsaid_lithium', name:'Litium', group:'Mood stabilizer', tags:['lithium'] },
+  { id:'nc_sildenafil', name:'Sildenafil/Tadalafil', group:'PDE5 inhibitor', tags:['pde5'] },
+  { id:'nc_ksupp', name:'Suplemen Kalium / pengganti garam', group:'Elektrolit', tags:['ksupp'] }
+];
+
+/* Build quick lookup */
+const IX_NC_BY_ID = {};
+IX_NONCARDIAC.forEach(d => { IX_NC_BY_ID[d.id] = d; });
+
+/*
+ * Non-cardiac interaction rules.
+ * Each rule: given a cardiac drug (with its IX_TAGS) and a non-cardiac drug
+ * (with its tags), decide if there's an interaction.
+ * cardTag = tag on cardiac drug; ncTag = tag on non-cardiac drug.
+ */
+const IX_NC_RULES = [
+  // ── Statin myopathy ──
+  { when:(c,n)=> c.has('cyp3a4_inhib')||c.has('cyp3a4_inhib_strong'), nc:'statin',
+    onlyStatin:['nc_simvastatin','nc_atorvastatin'],
+    sev:(c,n)=> n.id==='nc_simvastatin' ? 'major':'moderate',
+    title:'Risiko miopati / rhabdomyolysis', _generic:'statin_myopathy',
+    mech:'Obat kardiak menghambat CYP3A4 → kadar statin (simvastatin/atorvastatin) naik',
+    eff:'Risiko miopati hingga rhabdomyolysis meningkat',
+    mgmt:'Batasi simvastatin (mis. ≤20 mg dgn amiodaron; ≤10 mg dgn diltiazem/verapamil) atau ganti ke pravastatin/rosuvastatin (non-CYP3A4)',
+    ref:'Label simvastatin; ACC/AHA statin advisory' },
+  { when:(c,n)=> c.id==='amiodarone', nc:'statin', onlyStatin:['nc_simvastatin'],
+    sev:()=>'major',
+    title:'Amiodaron + simvastatin — miopati', _specific:'statin_myopathy',
+    mech:'Inhibisi CYP3A4 oleh amiodaron',
+    eff:'Kadar simvastatin naik → rhabdomyolysis',
+    mgmt:'Simvastatin maksimal 20 mg/hari bila bersama amiodaron; lebih baik ganti rosuvastatin/pravastatin',
+    ref:'FDA label simvastatin' },
+
+  // ── QT additive (cardiac QT drug + non-cardiac QT drug) ──
+  { when:(c,n)=> c.has('qt'), ncTag:'qt',
+    sev:()=>'major',
+    title:'Perpanjangan QT aditif',
+    mech:'Penjumlahan blokade IKr antara antiaritmia/obat kardiak dan obat non-kardiak pemanjang QT',
+    eff:'Risiko torsades de pointes meningkat',
+    mgmt:'Hindari bila memungkinkan; bila perlu pantau QTc & koreksi K⁺/Mg²⁺; pertimbangkan antibiotik alternatif',
+    ref:'CredibleMeds; prinsip EP' },
+
+  // ── Warfarin INR interactions ──
+  { when:(c,n)=> c.id==='warfarin', ncTag:'cyp_inhib_warf',
+    sev:()=>'major',
+    title:'Potensiasi warfarin — INR naik',
+    mech:'Inhibisi metabolisme warfarin (CYP2C9/3A4) atau gangguan flora vit-K',
+    eff:'INR naik → risiko perdarahan',
+    mgmt:'Pantau INR ketat 3–5 hari setelah memulai/menghentikan; antisipasi penurunan dosis warfarin',
+    ref:'Label warfarin; Stockley' },
+  { when:(c,n)=> c.id==='warfarin', ncTag:'cyp_induce_warf',
+    sev:()=>'major',
+    title:'Warfarin melemah — INR turun',
+    mech:'Induksi CYP oleh rifampisin → metabolisme warfarin meningkat',
+    eff:'INR turun → risiko trombosis',
+    mgmt:'Pantau INR; sering perlu menaikkan dosis warfarin signifikan; INR rebound saat rifampisin dihentikan',
+    ref:'Label rifampisin' },
+  { when:(c,n)=> c.has('anticoag')&&c.has('antiplatelet')===false&&c.id!=='warfarin', ncTag:'nsaid',
+    sev:()=>'major',
+    title:'Antikoagulan + NSAID — perdarahan',
+    mech:'NSAID menghambat agregasi platelet + iritasi mukosa GI',
+    eff:'Risiko perdarahan GI meningkat',
+    mgmt:'Hindari NSAID; gunakan parasetamol; bila perlu NSAID tambahkan PPI & batasi durasi',
+    ref:'Stockley; prinsip antitrombotik' },
+
+  // ── DOAC + strong CYP3A4/P-gp ──
+  { when:(c,n)=> c.has('anticoag')&&c.has('pgp_sub'), ncTag:'cyp3a4_inhib_strong',
+    sev:()=>'major',
+    title:'Kadar DOAC naik (CYP3A4/P-gp inhibitor kuat)',
+    mech:'Inhibitor kuat CYP3A4 + P-gp menaikkan kadar DOAC',
+    eff:'Risiko perdarahan meningkat',
+    mgmt:'Hindari kombinasi (terutama rivaroxaban/apixaban dgn azol/ritonavir); konsultasikan penyesuaian',
+    ref:'Label DOAC masing-masing' },
+  { when:(c,n)=> c.has('anticoag')&&c.has('pgp_sub'), ncTag:'cyp3a4_induce_strong',
+    sev:()=>'major',
+    title:'Kadar DOAC turun (inducer kuat)',
+    mech:'Rifampisin menginduksi CYP3A4/P-gp → kadar DOAC turun',
+    eff:'Proteksi antikoagulan tidak adekuat → risiko trombosis/stroke',
+    mgmt:'Hindari kombinasi DOAC + rifampisin; pertimbangkan warfarin dgn monitoring INR',
+    ref:'Label DOAC' },
+
+  // ── RAAS / diuretik + NSAID ──
+  { when:(c,n)=> c.has('raas'), ncTag:'nsaid',
+    sev:()=>'moderate',
+    title:'Triple whammy (sebagian) — RAAS + NSAID',
+    mech:'NSAID menurunkan prostaglandin renal → vasokonstriksi aferen; RAAS menurunkan tonus eferen',
+    eff:'Penurunan GFR, AKI, hiperkalemia, melemahkan efek antihipertensi',
+    mgmt:'Hindari NSAID; bila + diuretik = "triple whammy" risiko AKI tinggi; pantau ginjal & K⁺',
+    ref:'Prinsip nefrologi; Stockley' },
+  { when:(c,n)=> c.has('loop')||c.id==='hctz'||c.id==='metolazone', ncTag:'nsaid',
+    sev:()=>'moderate',
+    title:'Diuretik + NSAID — efek menurun & risiko ginjal',
+    mech:'NSAID menahan natrium & menurunkan perfusi renal',
+    eff:'Efek diuretik/antihipertensi berkurang; risiko AKI',
+    mgmt:'Hindari NSAID; pantau berat badan, fungsi ginjal, TD',
+    ref:'Stockley' },
+
+  // ── Hiperkalemia ──
+  { when:(c,n)=> c.has('raas')||c.has('mra'), ncTag:'hyperK',
+    sev:()=>'moderate',
+    title:'Risiko hiperkalemia',
+    mech:'Obat kardiak penahan kalium + obat non-kardiak (mis. TMP-SMX) yang juga menahan K⁺',
+    eff:'Hiperkalemia (dapat berat, terutama pada CKD/lansia)',
+    mgmt:'Pantau K⁺; hindari kombinasi pada gangguan ginjal',
+    ref:'Stockley' },
+  { when:(c,n)=> c.has('raas')||c.has('mra'), ncTag:'ksupp',
+    sev:()=>'major',
+    title:'Hiperkalemia (RAAS/MRA + suplemen K⁺)',
+    mech:'Penahan kalium + asupan kalium eksogen',
+    eff:'Hiperkalemia berat → aritmia',
+    mgmt:'Hindari suplemen K⁺/pengganti garam kecuali ada indikasi & monitoring ketat',
+    ref:'2022 AHA/ACC/HFSA HF' },
+
+  // ── Lithium ──
+  { when:(c,n)=> c.has('raas')||c.has('loop')||c.id==='hctz'||c.id==='metolazone', ncTag:'lithium',
+    sev:()=>'major',
+    title:'Toksisitas litium',
+    mech:'Diuretik/ACEI/ARB menurunkan klirens litium renal',
+    eff:'Kadar litium naik → tremor, ataksia, kejang, aritmia',
+    mgmt:'Pantau kadar litium; sesuaikan dosis; tiazid berisiko tertinggi',
+    ref:'Label litium; Stockley' },
+
+  // ── Beta-blocker + SSRI (CYP2D6) ──
+  { when:(c,n)=> c.id==='metoprolol'||c.id==='carvedilol', ncTag:'cyp2d6_inhib',
+    sev:()=>'moderate',
+    title:'Kadar beta-blocker naik (inhibisi CYP2D6)',
+    mech:'Fluoksetin/paroksetin menghambat CYP2D6 → metabolisme metoprolol/carvedilol turun',
+    eff:'Bradikardia, hipotensi berlebih',
+    mgmt:'Pantau HR/TD; pertimbangkan SSRI non-2D6 (sertralin/sitalopram) atau beta-blocker hidrofilik',
+    ref:'Label; G&G 13e' },
+
+  // ── Nitrat/sGC + PDE5 ──
+  { when:(c,n)=> c.has('nitrate')||c.id==='vericiguat', ncTag:'pde5',
+    sev:()=>'contra',
+    title:'Nitrat/sGC + PDE5 inhibitor — hipotensi berat',
+    mech:'Penjumlahan akumulasi cGMP → vasodilatasi masif',
+    eff:'Hipotensi berat, sinkop, iskemia',
+    mgmt:'KONTRAINDIKASI. Pisahkan nitrat & PDE5 (mis. ≥24–48 jam tergantung agen)',
+    ref:'Label nitrat & PDE5; vericiguat label' },
+
+  // ── Ivabradine / dronedarone / tolvaptan + strong CYP3A4 ──
+  { when:(c,n)=> c.id==='ivabradine'||c.id==='dronedarone'||c.id==='tolvaptan', ncTag:'cyp3a4_inhib_strong',
+    sev:()=>'contra',
+    title:'Inhibitor CYP3A4 kuat — kadar obat naik tajam',
+    mech:'Inhibisi CYP3A4 kuat (azol, makrolida, ritonavir)',
+    eff:'Kadar ivabradine/dronedarone/tolvaptan naik 3–5× → toksisitas',
+    mgmt:'KONTRAINDIKASI per label; hindari kombinasi',
+    ref:'Label masing-masing' },
+  { when:(c,n)=> c.has('cyp3a4_sub'), ncTag:'cyp3a4_inhib', skipIfStrongerRule:true,
+    sev:()=>'moderate',
+    title:'Inhibitor CYP3A4 sedang',
+    mech:'Inhibisi CYP3A4 sedang (mis. grapefruit, flukonazol)',
+    eff:'Kadar obat substrat CYP3A4 dapat naik',
+    mgmt:'Pantau efek/toksisitas; hindari jus grapefruit dalam jumlah besar',
+    ref:'Stockley' }
+];
+
+/* Compute non-cardiac interactions: cardiac ids + selected non-cardiac ids */
+function computeNonCardiac(cardiacIds, ncIds) {
+  const findings = [];
+  if (!ncIds || ncIds.length === 0) return findings;
+
+  cardiacIds.forEach(cid => {
+    const cTags = new Set(IX_TAGS[cid] || []);
+    const cHelper = { id: cid, has:(t)=>cTags.has(t) };
+
+    ncIds.forEach(nid => {
+      const nc = IX_NC_BY_ID[nid];
+      if (!nc) return;
+      const nTags = new Set(nc.tags);
+      const nHelper = { id: nid, has:(t)=>nTags.has(t) };
+
+      IX_NC_RULES.forEach(rule => {
+        // statin-only constraint
+        if (rule.onlyStatin && !rule.onlyStatin.includes(nid)) return;
+        // rule keyed by nc group tag
+        if (rule.nc === 'statin' && !nTags.has('statin')) return;
+        if (rule.ncTag && !nTags.has(rule.ncTag)) return;
+        // predicate on cardiac drug
+        if (rule.when && !rule.when(cHelper, nHelper)) return;
+
+        findings.push({
+          kind:'noncardiac',
+          sev: rule.sev(cHelper, nHelper),
+          card: cid, nc: nid, ncName: nc.name, ncGroup: nc.group,
+          title: rule.title, mech: rule.mech, eff: rule.eff, mgmt: rule.mgmt, ref: rule.ref,
+          _ruleId: rule.title, _generic: rule._generic, _specific: rule._specific
+        });
+      });
+    });
+  });
+
+  // Dedup: same card+nc+title → keep highest severity
+  const best = {};
+  findings.forEach(f => {
+    const k = f.card+'|'+f.nc+'|'+f.title;
+    if (!best[k] || SEV_RANK[f.sev] < SEV_RANK[best[k].sev]) best[k] = f;
+  });
+  let result = Object.values(best);
+
+  // Suppress moderate generic CYP3A4 if a contra/major CYP3A4 rule already fired for same pair
+  const strongPairs = new Set();
+  result.forEach(f => {
+    if (f._ruleId !== 'Inhibitor CYP3A4 sedang' && /CYP3A4/i.test(f.title)) strongPairs.add(f.card+'|'+f.nc);
+  });
+  result = result.filter(f => !(f._ruleId === 'Inhibitor CYP3A4 sedang' && strongPairs.has(f.card+'|'+f.nc)));
+
+  // Suppress generic family rule when a more specific rule fired for same pair+family
+  const specificPairs = new Set();
+  result.forEach(f => { if (f._specific) specificPairs.add(f.card+'|'+f.nc+'|'+f._specific); });
+  result = result.filter(f => !(f._generic && specificPairs.has(f.card+'|'+f.nc+'|'+f._generic)));
+
+  result.sort((a,b)=>SEV_RANK[a.sev]-SEV_RANK[b.sev]);
+  return result;
+}
+
+
+/* ═══════════════════════════════════════════════════════════ */
+/* DRUG INTERACTION ENGINE — class tags + explicit pairs + rules */
+/* SUMBER: label produk, 2022 AHA/ACC/HFSA HF, 2023 AF Guideline, */
+/*         2019/2020 ESC, Goodman & Gilman 13e. WIP — unverified. */
+/* ═══════════════════════════════════════════════════════════ */
+
+/* Class tags per drug (id -> [tags]) */
+const IX_TAGS = {
+  // QT-prolonging (Class III + IA)
+  amiodarone:   ['qt','avnode','pgp_inhib','cyp3a4_inhib'],
+  sotalol:      ['qt','avnode','neginotrope','betablocker'],
+  dronedarone:  ['qt','avnode','pgp_inhib','cyp3a4_inhib'],
+  ibutilide:    ['qt'],
+  procainamide: ['qt'],
+  // AV-nodal / negative chronotrope-inotrope
+  digoxin:      ['avnode','pgp_sub'],
+  verapamil:    ['avnode','neginotrope','pgp_inhib','cyp3a4_inhib'],
+  metoprolol:   ['avnode','neginotrope','betablocker'],
+  bisoprolol:   ['avnode','neginotrope','betablocker'],
+  carvedilol:   ['avnode','neginotrope','betablocker'],
+  labetalol:    ['avnode','neginotrope','betablocker'],
+  ivabradine:   ['avnode'],
+  clonidine:    ['avnode'],
+  // Class IC
+  flecainide:   ['neginotrope'],
+  propafenone:  ['neginotrope','betablocker'],
+  // RAAS axis
+  ramipril:     ['raas','acei'],
+  enalaprilat:  ['raas','acei'],
+  candesartan:  ['raas','arb'],
+  'sacubitril-valsartan': ['raas','arni'],
+  // MRA
+  spironolactone: ['mra'],
+  eplerenone:     ['mra'],
+  // Anticoagulants
+  'heparin-ufh': ['anticoag'],
+  enoxaparin:   ['anticoag'],
+  fondaparinux: ['anticoag'],
+  warfarin:     ['anticoag'],
+  bivalirudin:  ['anticoag'],
+  argatroban:   ['anticoag'],
+  apixaban:     ['anticoag','pgp_sub'],
+  rivaroxaban:  ['anticoag','pgp_sub'],
+  dabigatran:   ['anticoag','pgp_sub'],
+  edoxaban:     ['anticoag','pgp_sub'],
+  // Antiplatelets (oral + parenteral GPIIb/IIIa)
+  aspirin:      ['antiplatelet'],
+  clopidogrel:  ['antiplatelet'],
+  ticagrelor:   ['antiplatelet'],
+  prasugrel:    ['antiplatelet'],
+  eptifibatide: ['antiplatelet'],
+  tirofiban:    ['antiplatelet'],
+  // Thrombolytics
+  alteplase:    ['thrombolytic'],
+  streptokinase:['thrombolytic'],
+  tenecteplase: ['thrombolytic'],
+  urokinase:    ['thrombolytic'],
+  reteplase:    ['thrombolytic'],
+  // Loop diuretics & SGLT2
+  furosemide:   ['loop'],
+  torsemide:    ['loop'],
+  bumetanide:   ['loop'],
+  'dapagliflozin-hf': ['sglt2'],
+  'empagliflozin-hf': ['sglt2'],
+  // NO-cGMP vasodilators / nitrates
+  nitroglycerin:['nitrate','vasodilator'],
+  nitroprusside:['vasodilator'],
+  hydralazine:  ['vasodilator'],
+  nicorandil:   ['nitrate','vasodilator'],
+  vericiguat:   ['sgc'],
+  // Vasopressors
+  norepinephrine:['vasopressor'],
+  epinephrine:  ['vasopressor'],
+  dopamine:     ['vasopressor'],
+  phenylephrine:['vasopressor'],
+  vasopressin:  ['vasopressor'],
+  terlipressin: ['vasopressor'],
+  // CYP3A4-sensitive
+  tolvaptan:    ['cyp3a4_sub']
+};
+
+const SEV_RANK = { contra: 0, major: 1, moderate: 2, info: 3 };
+const SEV_LABEL = {
+  contra:   'KONTRAINDIKASI / HINDARI',
+  major:    'MAYOR',
+  moderate: 'SEDANG',
+  info:     'CATATAN / SERING DISENGAJA'
+};
+
+/* Explicit pairwise interactions. Order of a/b irrelevant (normalized). */
+const IX_PAIRS = [
+  // ── Digoxin level/toxicity ──
+  { a:'amiodarone', b:'digoxin', sev:'major', mech:'Amiodaron menghambat P-glikoprotein → klirens digoksin turun', eff:'Kadar digoksin naik ~70–100% → risiko toksisitas (mual, aritmia, blok AV)', mgmt:'Turunkan dosis digoksin 30–50% saat memulai amiodaron; pantau kadar digoksin & EKG', ref:'Label produk; 2023 AF Guideline' },
+  { a:'dronedarone', b:'digoxin', sev:'major', mech:'Inhibisi P-gp', eff:'Kadar digoksin naik ~1.7×', mgmt:'Pertimbangkan turunkan digoksin 50% atau hentikan; pantau kadar', ref:'Label dronedarone' },
+  { a:'verapamil', b:'digoxin', sev:'major', mech:'Inhibisi P-gp + penurunan klirens ginjal', eff:'Kadar digoksin naik ~50–75% + bradikardia/blok AV aditif', mgmt:'Turunkan digoksin; pantau kadar, HR, EKG', ref:'Goodman & Gilman 13e' },
+  { a:'propafenone', b:'digoxin', sev:'moderate', mech:'Inhibisi P-gp', eff:'Kadar digoksin naik 35–85% (dose-dependent)', mgmt:'Turunkan digoksin 25–50%; pantau kadar', ref:'Label propafenone' },
+  { a:'digoxin', b:'furosemide', sev:'moderate', mech:'Loop diuretik → hipokalemia/hipomagnesemia', eff:'Hipokalemia mempotensiasi toksisitas digoksin (aritmia)', mgmt:'Pantau & koreksi K⁺ dan Mg²⁺; jaga K⁺ >4.0 mEq/L', ref:'Prinsip elektrofisiologi' },
+  { a:'digoxin', b:'hctz', sev:'moderate', mech:'Tiazid → hipokalemia', eff:'Hipokalemia mempotensiasi toksisitas digoksin', mgmt:'Pantau & koreksi K⁺/Mg²⁺', ref:'Prinsip elektrofisiologi' },
+  { a:'digoxin', b:'spironolactone', sev:'moderate', mech:'Spironolakton menghambat sekresi tubular digoksin + interferensi sebagian assay', eff:'Kadar digoksin naik modest; hiperkalemia diimbangi', mgmt:'Pantau kadar digoksin (waspada interferensi assay) & K⁺', ref:'Label spironolakton' },
+
+  // ── Warfarin ──
+  { a:'amiodarone', b:'warfarin', sev:'major', mech:'Inhibisi CYP2C9/3A4 → metabolisme warfarin turun', eff:'INR naik tajam (efek berlangsung berminggu-minggu karena t½ amiodaron panjang)', mgmt:'Turunkan warfarin empiris ~30–50% saat memulai; pantau INR ketat 1–2 mingguan', ref:'Label amiodaron; 2023 AF Guideline' },
+  { a:'propafenone', b:'warfarin', sev:'moderate', mech:'Inhibisi metabolisme warfarin', eff:'INR naik ~25%', mgmt:'Pantau INR; sesuaikan dosis warfarin', ref:'Label propafenone' },
+
+  // ── QT (worst pairs eksplisit; sisanya via class-rule) ──
+  { a:'amiodarone', b:'sotalol', sev:'contra', mech:'Penjumlahan blokade IKr', eff:'Perpanjangan QT berat → risiko torsades de pointes', mgmt:'Hindari kombinasi. Bila transisi: washout & pantau QTc', ref:'Label; prinsip EP' },
+  { a:'sotalol', b:'dronedarone', sev:'contra', mech:'Penjumlahan blokade IKr', eff:'Perpanjangan QT → torsades', mgmt:'Hindari kombinasi', ref:'Label dronedarone' },
+  { a:'amiodarone', b:'dronedarone', sev:'major', mech:'Dua antiaritmia Class III redundan', eff:'QT aditif + tidak rasional secara terapeutik', mgmt:'Hindari penggunaan bersamaan', ref:'Label dronedarone' },
+
+  // ── DOAC + P-gp / CYP3A4 inhibitor ──
+  { a:'dronedarone', b:'dabigatran', sev:'contra', mech:'Inhibisi P-gp kuat', eff:'AUC dabigatran naik ~100% → risiko perdarahan', mgmt:'Hindari (khususnya CrCl <50). Bila CrCl 30–50 sangat hati-hati', ref:'Label dabigatran' },
+  { a:'amiodarone', b:'dabigatran', sev:'moderate', mech:'Inhibisi P-gp', eff:'Kadar dabigatran naik ~12–60%', mgmt:'Pertimbangkan dabigatran 110 mg BID bila CrCl 30–50; pantau perdarahan', ref:'Label dabigatran' },
+  { a:'verapamil', b:'dabigatran', sev:'moderate', mech:'Inhibisi P-gp', eff:'Kadar dabigatran naik', mgmt:'Beri dabigatran ≥2 jam sebelum verapamil; pertimbangkan 110 mg BID', ref:'Label dabigatran' },
+  { a:'dronedarone', b:'edoxaban', sev:'moderate', mech:'Inhibisi P-gp', eff:'Kadar edoxaban naik', mgmt:'Turunkan edoxaban ke 30 mg OD', ref:'Label edoxaban' },
+  { a:'verapamil', b:'edoxaban', sev:'moderate', mech:'Inhibisi P-gp', eff:'Kadar edoxaban naik', mgmt:'Pertimbangkan edoxaban 30 mg OD', ref:'Label edoxaban' },
+
+  // ── Beta-blocker + verapamil (non-DHP CCB) ──
+  { a:'verapamil', b:'metoprolol', sev:'major', mech:'Penjumlahan blokade nodus SA/AV + inotropi negatif', eff:'Bradikardia berat, blok AV, hipotensi, gagal jantung', mgmt:'Hindari kombinasi IV (kontraindikasi). Oral: hanya bila sangat diperlukan, pantau HR/EKG', ref:'Goodman & Gilman 13e' },
+  { a:'verapamil', b:'bisoprolol', sev:'major', mech:'Penjumlahan blokade SA/AV + inotropi negatif', eff:'Bradikardia, blok AV, hipotensi', mgmt:'Hindari; bila perlu pantau ketat', ref:'Goodman & Gilman 13e' },
+  { a:'verapamil', b:'carvedilol', sev:'major', mech:'Penjumlahan blokade SA/AV + inotropi negatif', eff:'Bradikardia, blok AV, hipotensi', mgmt:'Hindari; bila perlu pantau ketat', ref:'Goodman & Gilman 13e' },
+  { a:'verapamil', b:'labetalol', sev:'major', mech:'Penjumlahan blokade SA/AV + inotropi negatif', eff:'Bradikardia, blok AV, hipotensi', mgmt:'Hindari; bila perlu pantau ketat', ref:'Goodman & Gilman 13e' },
+  { a:'verapamil', b:'sotalol', sev:'major', mech:'Blokade SA/AV aditif + QT', eff:'Bradikardia/blok AV + risiko torsades', mgmt:'Hindari kombinasi', ref:'Label' },
+
+  // ── RAAS axis ──
+  { a:'ramipril', b:'sacubitril-valsartan', sev:'contra', mech:'ACEI + ARNI → akumulasi bradikinin', eff:'Risiko angioedema (berpotensi fatal)', mgmt:'KONTRAINDIKASI. Washout 36 jam antara ACEI dan ARNI', ref:'2022 AHA/ACC/HFSA HF; label Entresto' },
+  { a:'enalaprilat', b:'sacubitril-valsartan', sev:'contra', mech:'ACEI (IV) + ARNI', eff:'Risiko angioedema', mgmt:'KONTRAINDIKASI; washout 36 jam', ref:'Label Entresto' },
+  { a:'candesartan', b:'sacubitril-valsartan', sev:'major', mech:'ARB + ARNI (ARNI sudah mengandung valsartan)', eff:'Blokade RAAS ganda redundan → hiperkalemia, gangguan ginjal, hipotensi', mgmt:'Hindari; jangan kombinasikan ARB dengan ARNI', ref:'Label Entresto' },
+  { a:'ramipril', b:'candesartan', sev:'major', mech:'Blokade RAAS ganda (ACEI + ARB)', eff:'Hiperkalemia, disfungsi ginjal, hipotensi tanpa manfaat tambahan', mgmt:'Umumnya dihindari (ONTARGET)', ref:'ONTARGET; 2021 ESC HF' },
+  { a:'enalaprilat', b:'candesartan', sev:'major', mech:'Blokade RAAS ganda', eff:'Hiperkalemia, disfungsi ginjal', mgmt:'Hindari', ref:'ONTARGET' },
+  { a:'ramipril', b:'enalaprilat', sev:'major', mech:'Dua ACEI redundan', eff:'Efek aditif tanpa manfaat; hipotensi/hiperkalemia', mgmt:'Jangan gunakan dua ACEI bersamaan', ref:'Prinsip farmakologi' },
+  { a:'spironolactone', b:'eplerenone', sev:'major', mech:'Dua antagonis reseptor mineralokortikoid redundan', eff:'Hiperkalemia berat', mgmt:'Jangan gunakan dua MRA bersamaan', ref:'Prinsip farmakologi' },
+
+  // ── Ivabradine ──
+  { a:'ivabradine', b:'verapamil', sev:'contra', mech:'Verapamil = inhibitor CYP3A4 sedang + penurun HR', eff:'Kadar ivabradine naik + bradikardia aditif', mgmt:'KONTRAINDIKASI per label', ref:'Label ivabradine; 2021 ESC HF' },
+  { a:'ivabradine', b:'amiodarone', sev:'moderate', mech:'Bradikardia aditif (+ amiodaron inhibitor CYP3A4 lemah)', eff:'Risiko bradikardia simtomatik', mgmt:'Pantau HR; pertahankan HR istirahat ≥50', ref:'Label ivabradine' },
+
+  // ── Clonidine + beta-blocker ──
+  { a:'clonidine', b:'metoprolol', sev:'major', mech:'(1) Bradikardia aditif; (2) jika klonidin dihentikan saat masih on BB → rebound hipertensi (aktivitas alfa tak terlawan)', eff:'Bradikardia; krisis rebound HT saat penghentian', mgmt:'Hentikan BB DULU (beberapa hari) baru klonidin; jangan stop klonidin mendadak', ref:'Goodman & Gilman 13e' },
+  { a:'clonidine', b:'bisoprolol', sev:'major', mech:'Bradikardia aditif + rebound HT saat penghentian klonidin', eff:'Bradikardia; rebound HT', mgmt:'Taper BB dulu sebelum klonidin', ref:'Goodman & Gilman 13e' },
+  { a:'clonidine', b:'carvedilol', sev:'major', mech:'Bradikardia aditif + rebound HT', eff:'Bradikardia; rebound HT', mgmt:'Taper BB dulu sebelum klonidin', ref:'Goodman & Gilman 13e' },
+  { a:'clonidine', b:'labetalol', sev:'major', mech:'Bradikardia aditif + rebound HT', eff:'Bradikardia; rebound HT', mgmt:'Taper BB dulu sebelum klonidin', ref:'Goodman & Gilman 13e' },
+
+  // ── Tolvaptan + CYP3A4 inhibitor ──
+  { a:'tolvaptan', b:'verapamil', sev:'major', mech:'Verapamil inhibitor CYP3A4 sedang', eff:'Kadar tolvaptan naik → koreksi natrium terlalu cepat', mgmt:'Hindari atau turunkan dosis tolvaptan; pantau Na⁺ ketat', ref:'Label tolvaptan' },
+  { a:'tolvaptan', b:'amiodarone', sev:'moderate', mech:'Amiodaron inhibitor CYP3A4 lemah', eff:'Kadar tolvaptan dapat naik', mgmt:'Pantau natrium; hati-hati', ref:'Label tolvaptan' },
+
+  // ── Flecainide ──
+  { a:'flecainide', b:'amiodarone', sev:'moderate', mech:'Amiodaron menghambat metabolisme flecainide', eff:'Kadar flecainide naik → proaritmia', mgmt:'Turunkan flecainide ~30–50%; pantau QRS', ref:'Label flecainide' },
+  { a:'flecainide', b:'verapamil', sev:'moderate', mech:'Inotropi negatif & perlambatan konduksi aditif', eff:'Depresi miokard, blok konduksi', mgmt:'Hati-hati; pantau EKG/fungsi LV', ref:'Goodman & Gilman 13e' },
+
+  // ── SGLT2i + loop diuretic (sering disengaja di HF) ──
+  { a:'dapagliflozin-hf', b:'furosemide', sev:'moderate', mech:'Diuresis osmotik + natriuresis aditif', eff:'Deplesi volume, hipotensi, AKI pra-renal', mgmt:'Pantau status volume; mungkin perlu turunkan dosis loop', ref:'2022 AHA/ACC/HFSA HF' },
+  { a:'empagliflozin-hf', b:'furosemide', sev:'moderate', mech:'Diuresis aditif', eff:'Deplesi volume, hipotensi', mgmt:'Pantau volume; sesuaikan loop', ref:'2022 AHA/ACC/HFSA HF' },
+
+  // ── Vasodilator/NO-cGMP additive ──
+  { a:'nicorandil', b:'nitroglycerin', sev:'moderate', mech:'Dua donor NO', eff:'Hipotensi aditif', mgmt:'Pantau TD; hati-hati pada hipovolemia', ref:'Label nicorandil' },
+  { a:'vericiguat', b:'nitroglycerin', sev:'moderate', mech:'Stimulasi sGC + donor NO → cGMP berlebih', eff:'Hipotensi simtomatik', mgmt:'Pantau TD; hindari bila sistolik <90', ref:'Label vericiguat' },
+  { a:'vericiguat', b:'nicorandil', sev:'moderate', mech:'Jalur NO–cGMP aditif', eff:'Hipotensi', mgmt:'Pantau TD', ref:'Label vericiguat' },
+
+  // ── Intended GDMT combos (INFO) ──
+  { a:'hydralazine', b:'nitroglycerin', sev:'info', mech:'Kombinasi H-ISDN (vasodilator arteri + vena)', eff:'Kombinasi GDMT HFrEF (A-HeFT) — vasodilatasi aditif disengaja', mgmt:'Pantau TD & sakit kepala; titrasi bertahap', ref:'A-HeFT; 2022 AHA/ACC/HFSA HF' }
+];
+
+/* Class-based rules. Each returns a finding when its predicate matches. */
+const IX_CLASS_RULES = [
+  {
+    id: 'qt-additive',
+    test: (tagMap) => tagMap.qt && tagMap.qt.length >= 2,
+    build: (tagMap) => ({
+      sev: 'major', kind: 'class',
+      title: 'Perpanjangan QT aditif',
+      members: tagMap.qt,
+      mech: 'Penjumlahan blokade arus kalium (IKr) dari ≥2 agen pemanjang QT',
+      eff: 'Risiko torsades de pointes meningkat secara aditif',
+      mgmt: 'Hindari bila memungkinkan; bila terpaksa pantau QTc serial (target <500 ms) & koreksi K⁺/Mg²⁺',
+      ref: 'Prinsip elektrofisiologi; label masing-masing'
+    })
+  },
+  {
+    id: 'avnode-additive',
+    test: (tagMap) => tagMap.avnode && tagMap.avnode.length >= 2,
+    build: (tagMap) => ({
+      sev: 'major', kind: 'class',
+      title: 'Bradikardia / blok AV aditif',
+      members: tagMap.avnode,
+      mech: 'Penjumlahan perlambatan nodus SA/AV dari beta-blocker, CCB non-DHP, digoksin, ivabradine, dan/atau klonidin',
+      eff: 'Bradikardia simtomatik, blok AV derajat tinggi',
+      mgmt: 'Pantau HR & EKG; sesuaikan dosis; waspadai kombinasi verapamil + beta-blocker',
+      ref: 'Prinsip elektrofisiologi'
+    })
+  },
+  {
+    id: 'hyperkalemia-raas-mra',
+    test: (tagMap) => (tagMap.raas && tagMap.raas.length >= 1) && (tagMap.mra && tagMap.mra.length >= 1),
+    build: (tagMap) => ({
+      sev: 'moderate', kind: 'class',
+      title: 'Risiko hiperkalemia (RAAS + MRA)',
+      members: [...(tagMap.raas||[]), ...(tagMap.mra||[])],
+      mech: 'Inhibitor RAAS + antagonis aldosteron → retensi kalium',
+      eff: 'Hiperkalemia (dapat berat). Catatan: kombinasi ini sering DISENGAJA sebagai GDMT HFrEF',
+      mgmt: 'Pantau K⁺ & kreatinin (baseline, 1 & 4 minggu, lalu berkala); hindari suplemen K⁺',
+      ref: '2022 AHA/ACC/HFSA HF; 2021 ESC HF'
+    })
+  },
+  {
+    id: 'neginotrope-additive',
+    test: (tagMap) => tagMap.neginotrope && tagMap.neginotrope.length >= 2,
+    build: (tagMap) => ({
+      sev: 'moderate', kind: 'class',
+      title: 'Inotropi negatif aditif',
+      members: tagMap.neginotrope,
+      mech: 'Penjumlahan efek inotropik negatif',
+      eff: 'Penurunan curah jantung, perburukan gagal jantung, hipotensi',
+      mgmt: 'Hati-hati pada disfungsi LV; pantau gejala kongesti & TD',
+      ref: 'Prinsip farmakologi kardiovaskular'
+    })
+  },
+  {
+    id: 'anticoag-plus-antiplatelet',
+    test: (tagMap) => (tagMap.anticoag && tagMap.anticoag.length >= 1) && (tagMap.antiplatelet && tagMap.antiplatelet.length >= 1),
+    build: (tagMap) => {
+      const totalAntithrombotic = (tagMap.anticoag||[]).length + (tagMap.antiplatelet||[]).length;
+      const triple = (tagMap.anticoag||[]).length >= 1 && (tagMap.antiplatelet||[]).length >= 2;
+      return {
+        sev: triple ? 'major' : 'major', kind: 'class',
+        title: triple ? 'Terapi tripel (antikoagulan + 2 antiplatelet)' : 'Antikoagulan + antiplatelet',
+        members: [...(tagMap.anticoag||[]), ...(tagMap.antiplatelet||[])],
+        mech: 'Penjumlahan efek antitrombotik pada jalur berbeda',
+        eff: 'Risiko perdarahan mayor meningkat' + (triple ? ' secara substansial (terapi tripel)' : ''),
+        mgmt: triple
+          ? 'Minimalkan durasi terapi tripel; gunakan dosis antikoagulan terendah teruji + PPI; pertimbangkan strategi double therapy (OAC + P2Y12)'
+          : 'Pastikan indikasi jelas; gunakan dosis terendah efektif + gastroproteksi (PPI); evaluasi skor perdarahan',
+        ref: '2023 ESC ACS; 2021 ESC PCI'
+      };
+    }
+  },
+  {
+    id: 'dual-anticoag',
+    test: (tagMap) => tagMap.anticoag && tagMap.anticoag.length >= 2,
+    build: (tagMap) => ({
+      sev: 'major', kind: 'class',
+      title: 'Dua antikoagulan bersamaan',
+      members: tagMap.anticoag,
+      mech: 'Penjumlahan antikoagulasi',
+      eff: 'Risiko perdarahan tinggi; umumnya tidak ada indikasi kombinasi kronik',
+      mgmt: 'Hindari kecuali transisi terjadwal (mis. bridging/overlap warfarin); ikuti protokol overlap',
+      ref: 'Prinsip antitrombotik' })
+  },
+  {
+    id: 'thrombolytic-bleed',
+    test: (tagMap) => (tagMap.thrombolytic && tagMap.thrombolytic.length >= 1) && ((tagMap.anticoag && tagMap.anticoag.length >= 1) || (tagMap.antiplatelet && tagMap.antiplatelet.length >= 1)),
+    build: (tagMap) => ({
+      sev: 'major', kind: 'class',
+      title: 'Trombolitik + antikoagulan/antiplatelet',
+      members: [...(tagMap.thrombolytic||[]), ...(tagMap.anticoag||[]), ...(tagMap.antiplatelet||[])],
+      mech: 'Fibrinolisis + inhibisi hemostasis',
+      eff: 'Risiko perdarahan mayor & intrakranial meningkat (sebagian kombinasi adalah bagian protokol STEMI dengan dosis spesifik)',
+      mgmt: 'Ikuti protokol reperfusi spesifik; perhatikan kontraindikasi & dosis terbatas; pantau tanda perdarahan',
+      ref: '2017 ESC STEMI' })
+  },
+  {
+    id: 'vasopressor-additive',
+    test: (tagMap) => tagMap.vasopressor && tagMap.vasopressor.length >= 2,
+    build: (tagMap) => ({
+      sev: 'info', kind: 'class',
+      title: 'Kombinasi vasopresor',
+      members: tagMap.vasopressor,
+      mech: 'Penjumlahan vasokonstriksi/efek inotropik',
+      eff: 'Sering DISENGAJA pada syok refrakter; risiko iskemia perifer/splanknik & aritmia',
+      mgmt: 'Pantau perfusi perifer, laktat, irama; titrasi ke target MAP',
+      ref: 'SSC 2021; prinsip ICU' })
+  }
+];
+
+function ixNormPair(a, b) { return a < b ? a + '|' + b : b + '|' + a; }
+
+/* Main engine: given array of selected ids → { findings, dosing } */
+function computeInteractions(ids) {
+  const findings = [];
+
+  // 1. Explicit pairwise
+  const pairIndex = {};
+  IX_PAIRS.forEach(p => { pairIndex[ixNormPair(p.a, p.b)] = p; });
+  for (let i = 0; i < ids.length; i++) {
+    for (let j = i + 1; j < ids.length; j++) {
+      const hit = pairIndex[ixNormPair(ids[i], ids[j])];
+      if (hit) {
+        findings.push({
+          kind: 'pair', sev: hit.sev,
+          a: ids[i], b: ids[j],
+          mech: hit.mech, eff: hit.eff, mgmt: hit.mgmt, ref: hit.ref
+        });
+      }
+    }
+  }
+
+  // 2. Class rules — build tag map of selected ids
+  const tagMap = {};
+  ids.forEach(id => {
+    (IX_TAGS[id] || []).forEach(t => {
+      (tagMap[t] = tagMap[t] || []).push(id);
+    });
+  });
+  IX_CLASS_RULES.forEach(rule => {
+    if (rule.test(tagMap)) {
+      const f = rule.build(tagMap);
+      // dedupe members
+      f.members = [...new Set(f.members)];
+      findings.push(f);
+    }
+  });
+
+  // sort by severity then kind (pair before class within same sev)
+  findings.sort((x, y) => {
+    const s = SEV_RANK[x.sev] - SEV_RANK[y.sev];
+    if (s !== 0) return s;
+    return (x.kind === 'pair' ? 0 : 1) - (y.kind === 'pair' ? 0 : 1);
+  });
+
+  return findings;
+}
+
+const ixState = { selected: [], ncSelected: [], doseIdx: {} };  // cardiac ids, non-cardiac ids, per-drug indication index
+
+function ixDrugById(id){ return DRUGS.find(d => d.id === id); }
+
+function ixToggle(id){
+  const i = ixState.selected.indexOf(id);
+  if (i >= 0) ixState.selected.splice(i,1);
+  else ixState.selected.push(id);
+  ixSyncCheckboxes();
+  ixRenderTray();
+}
+
+function ixRemove(id){
+  const i = ixState.selected.indexOf(id);
+  if (i >= 0) ixState.selected.splice(i,1);
+  ixSyncCheckboxes();
+  ixRenderTray();
+}
+
+function ixClearAll(){
+  ixState.selected = [];
+  ixState.ncSelected = [];
+  ixState.doseIdx = {};
+  ixSyncCheckboxes();
+  ixRenderTray();
+}
+
+/* reflect selection state onto any rendered checkboxes */
+function ixSyncCheckboxes(){
+  document.querySelectorAll('[data-select]').forEach(el => {
+    const on = ixState.selected.includes(el.dataset.select);
+    el.classList.toggle('checked', on);
+    el.setAttribute('aria-checked', on ? 'true' : 'false');
+  });
+}
+
+function ixRenderTray(){
+  const tray = document.getElementById('ixTray');
+  const chips = document.getElementById('ixChips');
+  const checkBtn = document.getElementById('ixCheck');
+  if (ixState.selected.length === 0){
+    tray.classList.remove('visible');
+    chips.innerHTML = '';
+    return;
+  }
+  tray.classList.add('visible');
+  chips.innerHTML = ixState.selected.map(id => {
+    const d = ixDrugById(id);
+    return `<span class="ix-chip">${escapeHtml(d ? d.name : id)}
+      <span class="ix-chip-x" data-remove="${id}" title="Hapus">&times;</span></span>`;
+  }).join('');
+  chips.querySelectorAll('[data-remove]').forEach(x => {
+    x.addEventListener('click', e => { e.stopPropagation(); ixRemove(x.dataset.remove); });
+  });
+  checkBtn.disabled = ixState.selected.length < 2;
+  checkBtn.textContent = ixState.selected.length < 2
+    ? 'Pilih ≥2 obat' : `Periksa Interaksi (${ixState.selected.length})`;
+}
+
+function ixDoseCard(id){
+  const d = ixDrugById(id);
+  const entries = IX_DOSING[id] || [];
+  // selected indication index for this drug (default 0)
+  const idx = (ixState.doseIdx && ixState.doseIdx[id] != null) ? ixState.doseIdx[id] : 0;
+  const ds = entries[idx] || {};
+  const load = ds.load && ds.load !== '–'
+    ? `<div class="ix-dose-line"><span class="ix-dose-tag">Loading</span>${escapeHtml(ds.load)}</div>` : '';
+  const maint = ds.maint && ds.maint !== '–'
+    ? `<div class="ix-dose-line"><span class="ix-dose-tag">Rumatan</span>${escapeHtml(ds.maint)}</div>` : '';
+  // indication selector: dropdown if >1, plain text if 1
+  let indHtml;
+  if (entries.length > 1){
+    const opts = entries.map((e,i) =>
+      `<option value="${i}" ${i===idx?'selected':''}>${escapeHtml(e.ind)}</option>`).join('');
+    indHtml = `<select class="ix-dose-select" data-dose-select="${id}" aria-label="Pilih indikasi">${opts}</select>`;
+  } else {
+    indHtml = ds.ind ? `<div class="ix-dose-ind">${escapeHtml(ds.ind)}</div>` : '';
+  }
+  const route = ds.route ? `<span class="ix-dose-route">${escapeHtml(ds.route)}</span>` : '';
+  return `
+    <div class="ix-dose-card" data-dose-card="${id}">
+      <div class="ix-dose-name">${escapeHtml(d ? d.name : id)} ${route}</div>
+      <div class="ix-dose-generic">${escapeHtml(d ? d.generic : '')}</div>
+      ${indHtml}
+      <div class="ix-dose-lines">${load}${maint || (load ? '' : '<div class="ix-dose-line ix-dose-empty">Lihat kartu obat untuk detail dosis</div>')}</div>
+      <div class="ix-dose-foot">Buka kartu obat untuk penyesuaian ginjal/hepatik, titrasi & kontraindikasi.</div>
+    </div>`;
+}
+
+function ixFindingCard(f){
+  let head, members='';
+  if (f.kind === 'pair'){
+    const A = ixDrugById(f.a), B = ixDrugById(f.b);
+    head = `<span class="ix-find-pair">${escapeHtml(A?A.name:f.a)} + ${escapeHtml(B?B.name:f.b)}</span>`;
+  } else if (f.kind === 'noncardiac'){
+    const C = ixDrugById(f.card);
+    head = `<span class="ix-find-pair">${escapeHtml(C?C.name:f.card)} + ${escapeHtml(f.ncName)}</span>`;
+    members = `<div class="ix-find-members">Obat non-kardiak · ${escapeHtml(f.ncGroup||'')}</div>`;
+  } else {
+    const names = (f.members||[]).map(id => { const d = ixDrugById(id); return d?d.name:id; });
+    head = `<span class="ix-find-title">${escapeHtml(f.title)}</span>`;
+    members = `<div class="ix-find-members">${escapeHtml(names.join('  ·  '))}</div>`;
+  }
+  const titleRow = (f.kind === 'noncardiac') ? `<div class="ix-find-subtitle">${escapeHtml(f.title)}</div>` : '';
+  const row = (k,v,cls='') => v ? `<div class="ix-find-row"><span class="ix-find-key">${k}</span><span class="ix-find-val ${cls}">${escapeHtml(v)}</span></div>` : '';
+  return `
+    <div class="ix-find sev-${f.sev}">
+      <div class="ix-find-head">
+        <span class="ix-sev-badge">${escapeHtml(SEV_LABEL[f.sev])}</span>
+        ${head}
+        ${members}
+      </div>
+      ${titleRow}
+      ${row('Mekanisme', f.mech)}
+      ${row('Efek', f.eff)}
+      ${row('Tindakan', f.mgmt, 'mgmt')}
+      ${f.ref ? `<div class="ix-find-ref">Sumber: ${escapeHtml(f.ref)}</div>` : ''}
+    </div>`;
+}
+
+/* non-cardiac picker panel inside modal */
+function ixRenderNcPanel(){
+  // group by .group
+  const groups = {};
+  IX_NONCARDIAC.forEach(n => { (groups[n.group] = groups[n.group]||[]).push(n); });
+  const groupHtml = Object.keys(groups).map(g => {
+    const chips = groups[g].map(n => {
+      const on = ixState.ncSelected.includes(n.id);
+      return `<button class="ix-nc-chip ${on?'on':''}" data-nc-toggle="${n.id}">${escapeHtml(n.name)}</button>`;
+    }).join('');
+    return `<div class="ix-nc-group"><div class="ix-nc-group-label">${escapeHtml(g)}</div><div class="ix-nc-chips">${chips}</div></div>`;
+  }).join('');
+  return `<div class="ix-nc-panel" id="ixNcPanel">${groupHtml}</div>`;
+}
+
+function ixRunCheck(){
+  if (ixState.selected.length < 2 && !(ixState.selected.length >= 1 && ixState.ncSelected.length >= 1)) {
+    if (ixState.selected.length < 1) return;
+  }
+  const findings = computeInteractions(ixState.selected);
+  const ncFindings = computeNonCardiac(ixState.selected, ixState.ncSelected);
+  const totalFindings = findings.length + ncFindings.length;
+
+  const body = document.getElementById('ixModalBody');
+  const sub = document.getElementById('ixModalSub');
+  sub.textContent = ixState.selected.length + ' obat kardiak'
+    + (ixState.ncSelected.length ? ' + ' + ixState.ncSelected.length + ' non-kardiak' : '')
+    + ' · ' + totalFindings + ' temuan';
+
+  // cardiac interactions section
+  let interHtml;
+  if (findings.length === 0){
+    interHtml = `<div class="ix-none">
+      <div class="ix-none-title">Tidak ada interaksi antar-obat kardiak</div>
+      <div class="ix-none-sub">Basis data terbatas pada interaksi kardiovaskular utama. Ketiadaan temuan ≠ jaminan aman.</div>
+    </div>`;
+  } else {
+    interHtml = findings.map(ixFindingCard).join('');
+  }
+
+  // non-cardiac section
+  let ncHtml = '';
+  if (ixState.ncSelected.length > 0){
+    if (ncFindings.length === 0){
+      ncHtml = `<div class="ix-none"><div class="ix-none-title">Tidak ada interaksi non-kardiak terdaftar</div>
+        <div class="ix-none-sub">Untuk obat non-kardiak yang dipilih. Tetap verifikasi sumber tersier.</div></div>`;
+    } else {
+      ncHtml = ncFindings.map(ixFindingCard).join('');
+    }
+  }
+
+  // dosing section
+  const doseHtml = `<div class="ix-dose-grid">${ixState.selected.map(ixDoseCard).join('')}</div>`;
+
+  body.innerHTML = `
+    <div class="ix-section-label">Tambah Obat Non-Kardiak <span class="ix-section-hint">(opsional — centang untuk cek)</span></div>
+    ${ixRenderNcPanel()}
+    <div class="ix-section-label">Interaksi Antar-Obat Kardiak</div>
+    ${interHtml}
+    ${ixState.ncSelected.length ? `<div class="ix-section-label">Interaksi dengan Obat Non-Kardiak</div>${ncHtml}` : ''}
+    <div class="ix-section-label">Dosis Rekomendasi (Obat Kardiak Dipilih)</div>
+    ${doseHtml}
+    <div class="ix-modal-disclaimer">
+      ⚠ WORK IN PROGRESS — Basis data interaksi belum diverifikasi penuh & tidak komprehensif.
+      Hanya mencakup sebagian interaksi kardiovaskular & non-kardiak terpilih. Bukan untuk keputusan klinis.
+      Selalu konsultasikan referensi tersier (Lexicomp, Micromedex, Stockley's) & apoteker klinis.
+    </div>`;
+
+  // wire dose-indication dropdowns (delegated — survives re-render)
+  function ixOnDoseChange(e){
+    const sel = e.target.closest('[data-dose-select]');
+    if (!sel) return;
+    const id = sel.dataset.doseSelect;
+    ixState.doseIdx = ixState.doseIdx || {};
+    ixState.doseIdx[id] = parseInt(sel.value, 10);
+    const card = body.querySelector(`[data-dose-card="${id}"]`);
+    if (card) card.outerHTML = ixDoseCard(id);
+  }
+  body.addEventListener('change', ixOnDoseChange);
+
+  // wire non-cardiac chips (live re-check)
+  body.querySelectorAll('[data-nc-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const nid = btn.dataset.ncToggle;
+      const i = ixState.ncSelected.indexOf(nid);
+      if (i>=0) ixState.ncSelected.splice(i,1); else ixState.ncSelected.push(nid);
+      ixRunCheck();  // re-render modal with updated findings
+    });
+  });
+
+  document.getElementById('ixModal').classList.add('visible');
+}
+
+function ixCloseModal(){ document.getElementById('ixModal').classList.remove('visible'); }
+
+/* event delegation for checkboxes (cards re-render often) */
+document.getElementById('drugList').addEventListener('click', (e) => {
+  const sel = e.target.closest('[data-select]');
+  if (sel){ e.stopPropagation(); ixToggle(sel.dataset.select); }
+});
+
+document.getElementById('ixClear').addEventListener('click', ixClearAll);
+document.getElementById('ixCheck').addEventListener('click', ixRunCheck);
+document.getElementById('ixModalClose').addEventListener('click', ixCloseModal);
+document.getElementById('ixModal').addEventListener('click', (e) => {
+  if (e.target.id === 'ixModal') ixCloseModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') ixCloseModal();
+});
+
+/* re-sync checkbox visual state after each drug render */
+const _origRenderDrugs = renderDrugs;
+renderDrugs = function(){ _origRenderDrugs(); ixSyncCheckboxes(); };
 
 renderSidebar();
 renderDrugs();
