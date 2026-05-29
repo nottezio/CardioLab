@@ -2328,112 +2328,306 @@ function interpretECG(s) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   ECG ILLUSTRATION COMPOSER
-   Coordinate system: 1 unit ≈ 1px. 4 units = 1 small box (40ms)
+   ECG ILLUSTRATION COMPOSER  —  CONTINUOUS-PATH ENGINE v2
+   Coordinate system: 1 unit ≈ 1px. ~4 units = 1 small box.
+   Architecture: a "pen" tracks the current (x,y). Every wave
+   appends continuation commands (C / Q / L) from the pen's
+   current point — NO mid-trace M. A whole rhythm strip is ONE
+   path: a single leading "M 0 base" then continuous segments
+   bridged across every cardiac cycle, extended to X = W.
    ═══════════════════════════════════════════════════════ */
 
-/* Beat builder — returns {path, endX} */
-function ecgBeat(x0, o) {
+/* ---- Pen helpers: each returns the new pen and appends to seg[] ---- */
+function _mkPen(x, y) { return { x: x, y: y }; }
+
+/* Flat isoelectric bridge to absolute x */
+function penLineTo(seg, pen, x, y) {
+  seg.push("L " + r1(x) + " " + r1(y));
+  pen.x = x; pen.y = y;
+}
+function r1(n) { return Math.round(n * 10) / 10; }
+
+/* Cubic from pen through to (x,y) with control points c1,c2 */
+function penCubic(seg, pen, c1x, c1y, c2x, c2y, x, y) {
+  seg.push("C " + r1(c1x) + " " + r1(c1y) + " " + r1(c2x) + " " + r1(c2y) + " " + r1(x) + " " + r1(y));
+  pen.x = x; pen.y = y;
+}
+/* Quadratic from pen through control (cx,cy) to (x,y) */
+function penQuad(seg, pen, cx, cy, x, y) {
+  seg.push("Q " + r1(cx) + " " + r1(cy) + " " + r1(x) + " " + r1(y));
+  pen.x = x; pen.y = y;
+}
+
+/* ---- P wave (smooth rounded bump). Pen must sit at onset on baseline. ---- */
+function penP(seg, pen, base, dur, amp, shape) {
+  const x0 = pen.x;
+  if (shape === 'absent') { penLineTo(seg, pen, x0 + dur, base); return; }
+  if (shape === 'inverted') {
+    penCubic(seg, pen, x0 + dur*0.3, base + amp*1.6, x0 + dur*0.7, base + amp*1.6, x0 + dur, base);
+    return;
+  }
+  if (shape === 'peaked') {
+    /* tall, narrow, fairly sharp apex (P pulmonale) */
+    penCubic(seg, pen, x0 + dur*0.32, base - amp*2.4, x0 + dur*0.45, base - amp*3, x0 + dur*0.5, base - amp*3);
+    penCubic(seg, pen, x0 + dur*0.55, base - amp*3, x0 + dur*0.68, base - amp*2.4, x0 + dur, base);
+    return;
+  }
+  if (shape === 'bifid') {
+    /* two humps (P mitrale) */
+    const h = amp*1.7;
+    penCubic(seg, pen, x0 + dur*0.12, base - h, x0 + dur*0.22, base - h, x0 + dur*0.30, base - h*0.55);
+    penCubic(seg, pen, x0 + dur*0.42, base - h*0.1, x0 + dur*0.5, base - h*0.1, x0 + dur*0.58, base - h*0.55);
+    penCubic(seg, pen, x0 + dur*0.7, base - h, x0 + dur*0.85, base - h, x0 + dur, base);
+    return;
+  }
+  /* normal: smooth symmetric-ish low bump */
+  penCubic(seg, pen, x0 + dur*0.3, base - amp*1.9, x0 + dur*0.7, base - amp*1.9, x0 + dur, base);
+}
+
+/* ---- QRS complex (sharp, line-based by nature). Pen at QRS onset baseline. ---- */
+function penQRS(seg, pen, base, o) {
+  /* o: {qDur,qAmp,rDur,rAmp,sDur,sAmp} */
+  if (o.qAmp > 0 && o.qDur > 0) penLineTo(seg, pen, pen.x + o.qDur, base + o.qAmp);
+  penLineTo(seg, pen, pen.x + o.rDur, base - o.rAmp);
+  if (o.sAmp > 0 && o.sDur > 0) penLineTo(seg, pen, pen.x + o.sDur, base + o.sAmp);
+  else penLineTo(seg, pen, pen.x + (o.sDur||1), base); /* return toward baseline */
+}
+
+/* ---- J-point + ST segment. Pen at end of S. Returns ST-end Y offset. ---- */
+function penST(seg, pen, base, o) {
+  /* o: {stDur, stOffset, stShape} ; stOffset +down / -up (screen coords, +y is down) */
+  const off = o.stOffset || 0;
+  const dur = o.stDur;
+  const x0 = pen.x;
+  /* J-point: smoothly ease pen from current S-nadir up/down to J level */
+  const jy = base + off;
+  /* small fluid transition into J (cubic, short) */
+  penCubic(seg, pen, x0 + 1.5, (pen.y + jy)/2, x0 + 2.5, jy, x0 + 3, jy);
+  const sx = pen.x;
+  const shape = o.stShape || 'flat';
+  let endY = jy;
+  if (shape === 'concave-up') {
+    /* dips slightly then returns up to baseline-ish (smiley) */
+    penCubic(seg, pen, sx + dur*0.4, jy + 3, sx + dur*0.7, jy + 2, sx + dur, jy);
+    endY = jy;
+  } else if (shape === 'convex-up') {
+    /* domed STE (frowny up) */
+    penCubic(seg, pen, sx + dur*0.35, jy - 3.5, sx + dur*0.7, jy - 2, sx + dur, jy - 0.5);
+    endY = jy - 0.5;
+  } else if (shape === 'coved') {
+    /* Brugada T1: convex-up coved, descends progressively */
+    penCubic(seg, pen, sx + dur*0.45, jy - 1.5, sx + dur*0.8, jy + 2.5, sx + dur, jy + 5);
+    endY = jy + 5;
+  } else if (shape === 'saddle') {
+    penCubic(seg, pen, sx + dur*0.5, jy + 5, sx + dur*0.85, jy + 1, sx + dur, jy);
+    endY = jy;
+  } else if (shape === 'downsloping') {
+    penCubic(seg, pen, sx + dur*0.4, jy + 1.5, sx + dur*0.7, jy + 2.5, sx + dur, jy + 3.5);
+    endY = jy + 3.5;
+  } else if (shape === 'upsloping') {
+    /* De Winter STD: from depressed J, slopes up toward baseline/T */
+    penCubic(seg, pen, sx + dur*0.4, jy - 2, sx + dur*0.7, jy - 4, sx + dur, jy - 5.5);
+    endY = jy - 5.5;
+  } else { /* flat */
+    penLineTo(seg, pen, sx + dur, jy);
+    endY = jy;
+  }
+  return endY;
+}
+
+/* ---- T wave (ASYMMETRIC: slow gradual upstroke, steep fast return). ----
+   Pen at ST-end (y = startY). */
+function penT(seg, pen, base, startY, o) {
+  const dur = o.tDur, amp = o.tAmp, shape = o.tShape || 'normal';
+  const x0 = pen.x;
+  if (shape === 'flat') { penLineTo(seg, pen, x0 + dur, base); return; }
+
+  if (shape === 'inverted') {
+    /* symmetric-ish inverted (gentle) */
+    penCubic(seg, pen, x0 + dur*0.35, base + amp*1.9, x0 + dur*0.65, base + amp*1.9, x0 + dur, base);
+    return;
+  }
+  if (shape === 'deep-inv') {
+    /* deep + symmetric (Wellens B / Yamaguchi) */
+    penCubic(seg, pen, x0 + dur*0.32, base + amp*2.6, x0 + dur*0.68, base + amp*2.6, x0 + dur, base);
+    return;
+  }
+  if (shape === 'biphasic') {
+    /* Wellens A: positive first, smooth zero-cross, then negative */
+    const mid = x0 + dur*0.5;
+    penCubic(seg, pen, x0 + dur*0.18, base - amp*1.6, x0 + dur*0.33, base - amp*1.4, mid, base);
+    penCubic(seg, pen, x0 + dur*0.66, base + amp*1.7, x0 + dur*0.82, base + amp*1.6, x0 + dur, base);
+    return;
+  }
+  if (shape === 'tented') {
+    /* hyperkalemia: narrow base, sharp tented peak, symmetric & pointed */
+    penCubic(seg, pen, x0 + dur*0.40, startY - amp*0.4, x0 + dur*0.46, base - amp*2.6, x0 + dur*0.5, base - amp*2.8);
+    penCubic(seg, pen, x0 + dur*0.54, base - amp*2.6, x0 + dur*0.60, startY - amp*0.4, x0 + dur, base);
+    return;
+  }
+  if (shape === 'hyperacute') {
+    /* broad-based, massive amplitude, asymmetric (slow up, faster down) */
+    const peakX = x0 + dur*0.55, peakY = base - amp*2.5;
+    penCubic(seg, pen, x0 + dur*0.30, startY - amp*1.4, x0 + dur*0.42, peakY, peakX, peakY);
+    penCubic(seg, pen, x0 + dur*0.66, peakY, x0 + dur*0.80, base - amp*0.6, x0 + dur, base);
+    return;
+  }
+  if (shape === 'peaked') {
+    /* moderately tall, somewhat pointed, still asymmetric */
+    const peakX = x0 + dur*0.55, peakY = base - amp*2.3;
+    penCubic(seg, pen, x0 + dur*0.32, startY - amp*1.0, x0 + dur*0.47, peakY, peakX, peakY);
+    penCubic(seg, pen, x0 + dur*0.66, peakY, x0 + dur*0.82, base - amp*0.4, x0 + dur, base);
+    return;
+  }
+  /* NORMAL asymmetric T: gradual prolonged ascending limb, steep rapid descent */
+  const peakX = x0 + dur*0.62;          /* apex past midpoint → asymmetry */
+  const peakY = base - amp*1.9;
+  /* ascending limb: slow, long, gentle (controls hug baseline early) */
+  penCubic(seg, pen, x0 + dur*0.30, startY - amp*0.5, x0 + dur*0.50, peakY, peakX, peakY);
+  /* descending limb: steep, short, fast return */
+  penCubic(seg, pen, x0 + dur*0.74, peakY, x0 + dur*0.84, base - amp*0.3, x0 + dur, base);
+}
+
+/* ---- U wave (small rounded bump after T). Pen at baseline. ---- */
+function penU(seg, pen, base, amp, dur) {
+  const x0 = pen.x;
+  penCubic(seg, pen, x0 + dur*0.3, base - amp*1.8, x0 + dur*0.7, base - amp*1.8, x0 + dur, base);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ecgBeat — appends ONE full PQRST(U) beat to seg[] continuing
+   from pen. Pen must be at the P-wave onset (baseline). After
+   return, pen sits at the end of the T (or U) on the baseline.
+   Includes the PR segment + (implicit) TP handled by caller bridge.
+   ───────────────────────────────────────────────────────────── */
+function beatSeg(seg, pen, base, o) {
   o = Object.assign({
-    base: 38, pDur: 10, pAmp: 3, pShape: 'normal',
-    prSeg: 4, qDur: 2, qAmp: 2, rDur: 3, rAmp: 18,
-    sDur: 3, sAmp: 5, stDur: 12, stOffset: 0, stShape: 'flat',
-    tDur: 18, tAmp: 5, tShape: 'normal', uAmp: 0, uDur: 10
+    pDur: 9, pAmp: 3, pShape: 'normal', prSeg: 5,
+    qDur: 2, qAmp: 2, rDur: 3, rAmp: 17, sDur: 3, sAmp: 5,
+    stDur: 10, stOffset: 0, stShape: 'flat',
+    tDur: 16, tAmp: 5, tShape: 'normal', uAmp: 0, uDur: 9
   }, o);
-  let p = "M "+x0+" "+o.base;
-  let x = x0;
-  /* P wave */
-  if (o.pShape === 'absent') {
-    p += " L "+(x+o.pDur)+" "+o.base;
-  } else if (o.pShape === 'bifid') {
-    const m1 = x + o.pDur*0.3, m2 = x + o.pDur*0.7;
-    p += " Q "+(x+o.pDur*0.15)+" "+(o.base-o.pAmp*2)+" "+m1+" "+(o.base-o.pAmp*0.4);
-    p += " Q "+(x+o.pDur*0.5)+" "+(o.base-o.pAmp*0.4)+" "+m2+" "+(o.base-o.pAmp*0.4);
-    p += " Q "+(x+o.pDur*0.85)+" "+(o.base-o.pAmp*2)+" "+(x+o.pDur)+" "+o.base;
-  } else if (o.pShape === 'peaked') {
-    p += " L "+(x+o.pDur/2)+" "+(o.base-o.pAmp*3);
-    p += " L "+(x+o.pDur)+" "+o.base;
-  } else if (o.pShape === 'inverted') {
-    p += " Q "+(x+o.pDur/2)+" "+(o.base+o.pAmp*2)+" "+(x+o.pDur)+" "+o.base;
+  penP(seg, pen, base, o.pDur, o.pAmp, o.pShape);          /* P */
+  penLineTo(seg, pen, pen.x + o.prSeg, base);              /* PR segment */
+  penQRS(seg, pen, base, o);                               /* QRS */
+  const stEndY = penST(seg, pen, base, o);                 /* J + ST */
+  penT(seg, pen, base, stEndY, o);                         /* asymmetric T */
+  if (o.uAmp && o.uAmp !== 0) {                            /* optional U */
+    penLineTo(seg, pen, pen.x + 2, base);
+    penU(seg, pen, base, o.uAmp, o.uDur);
+  }
+}
+
+/* Total horizontal span of one beat given options (for spacing math) */
+function beatSpan(o) {
+  o = o || {};
+  const pDur=o.pDur??9, prSeg=o.prSeg??5, qDur=(o.qAmp>0?(o.qDur??2):0),
+        rDur=o.rDur??3, sDur=o.sDur??3, stDur=o.stDur??10, tDur=o.tDur??16,
+        uExtra=(o.uAmp?(2+(o.uDur??9)):0);
+  /* +3 for the J-point easing introduced in penST */
+  return pDur + prSeg + qDur + rDur + sDur + 3 + stDur + tDur + uExtra;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ecgStrip — build ONE continuous path covering 0..W.
+   opts:
+     base       baseline Y
+     w          width (default 240)
+     beats      array of beat-option objects (PQRST descriptors)
+     startX     x of first P onset (default 12)
+     gap        flat isoelectric bridge length between beats (TP)
+     baseline   'flat' | 'fib' | 'flutter'  — what to draw between beats
+     lead       stroke color class (unused here; color applied by caller)
+   Returns the path 'd' string (single M ... continuous).
+   ───────────────────────────────────────────────────────────── */
+function ecgStrip(opts) {
+  const base = opts.base, W = opts.w || 240;
+  const startX = opts.startX != null ? opts.startX : 12;
+  const gap = opts.gap != null ? opts.gap : 14;
+  const baseline = opts.baseline || 'flat';
+  const beats = opts.beats || [];
+  const seg = [];
+  const pen = _mkPen(0, base);
+  seg.push("M 0 " + r1(base));               /* the ONE move command */
+
+  /* lead-in bridge to first beat */
+  bridge(seg, pen, base, startX, baseline);
+
+  for (let i = 0; i < beats.length; i++) {
+    beatSeg(seg, pen, base, beats[i]);       /* draw the beat */
+    /* bridge to next beat (or to W at the end) */
+    const nextX = (i < beats.length - 1)
+      ? pen.x + gap
+      : W;
+    bridge(seg, pen, base, nextX, baseline);
+  }
+  /* ensure we reach W */
+  if (pen.x < W) bridge(seg, pen, base, W, baseline);
+  return seg.join(" ");
+}
+
+/* Draw a continuous baseline from pen.x to targetX in the requested style */
+function bridge(seg, pen, base, targetX, style) {
+  if (targetX <= pen.x) return;
+  if (style === 'fib') {
+    /* irregular low-amplitude fibrillatory waves via connected cubics */
+    let x = pen.x;
+    let k = 0;
+    while (x < targetX - 2) {
+      const step = 5 + (k % 3) * 2.5;            /* irregular spacing */
+      const nx = Math.min(x + step, targetX);
+      const amp = 1.2 + ((k * 37) % 5) * 0.5;    /* pseudo-random small amp */
+      const dir = (k % 2 === 0) ? -1 : 1;
+      penCubic(seg, pen, x + step*0.3, base + dir*amp, x + step*0.7, base - dir*amp*0.6, nx, base + (Math.sin(k)*0.8));
+      x = nx; k++;
+    }
+    penLineTo(seg, pen, targetX, base);
+  } else if (style === 'flutter') {
+    /* sawtooth F waves: ramp up then sharp drop, continuous */
+    let x = pen.x;
+    const period = 11, amp = 5;
+    while (x < targetX - period) {
+      penLineTo(seg, pen, x + period*0.75, base - amp);  /* ramp up */
+      penLineTo(seg, pen, x + period, base + amp*0.4);   /* sharp drop */
+      x += period;
+    }
+    penLineTo(seg, pen, targetX, base);
   } else {
-    p += " Q "+(x+o.pDur/2)+" "+(o.base-o.pAmp*2)+" "+(x+o.pDur)+" "+o.base;
+    penLineTo(seg, pen, targetX, base);                  /* flat isoelectric */
   }
-  x += o.pDur;
-  /* PR segment */
-  x += o.prSeg;
-  p += " L "+x+" "+o.base;
-  /* QRS — sharp */
-  p += " L "+(x+o.qDur)+" "+(o.base+o.qAmp);
-  x += o.qDur;
-  p += " L "+(x+o.rDur)+" "+(o.base-o.rAmp);
-  x += o.rDur;
-  p += " L "+(x+o.sDur)+" "+(o.base+o.sAmp);
-  x += o.sDur;
-  /* J-point */
-  p += " L "+(x+1)+" "+(o.base+o.stOffset);
-  x += 1;
-  /* ST segment */
-  if (o.stShape === 'concave-up') {
-    const m = x + o.stDur/2;
-    p += " Q "+m+" "+(o.base+o.stOffset+2.5)+" "+(x+o.stDur)+" "+(o.base+o.stOffset);
-  } else if (o.stShape === 'convex-up') {
-    const m = x + o.stDur/2;
-    p += " Q "+m+" "+(o.base+o.stOffset-3)+" "+(x+o.stDur)+" "+(o.base+o.stOffset);
-  } else if (o.stShape === 'coved') {
-    /* Brugada coved — descends progressively */
-    const m = x + o.stDur/2;
-    p += " Q "+m+" "+(o.base+o.stOffset+3)+" "+(x+o.stDur)+" "+(o.base+o.stOffset+5);
-  } else if (o.stShape === 'saddle') {
-    const m = x + o.stDur/2;
-    p += " Q "+m+" "+(o.base+o.stOffset+4)+" "+(x+o.stDur)+" "+(o.base+o.stOffset);
-  } else if (o.stShape === 'downsloping') {
-    p += " L "+(x+o.stDur)+" "+(o.base+o.stOffset+3);
-  } else if (o.stShape === 'upsloping') {
-    p += " L "+(x+o.stDur)+" "+(o.base+o.stOffset-3);
-  } else {
-    p += " L "+(x+o.stDur)+" "+(o.base+o.stOffset);
-  }
-  x += o.stDur;
-  /* T wave */
-  let stEnd = o.stShape==='coved' ? o.stOffset+5 : (o.stShape==='downsloping' ? o.stOffset+3 : (o.stShape==='upsloping' ? o.stOffset-3 : o.stOffset));
-  if (o.tShape === 'inverted') {
-    const m = x + o.tDur*0.6;
-    p += " Q "+m+" "+(o.base+o.tAmp*2+stEnd)+" "+(x+o.tDur)+" "+o.base;
-  } else if (o.tShape === 'peaked') {
-    p += " L "+(x+o.tDur/2)+" "+(o.base-o.tAmp*2.5+stEnd);
-    p += " L "+(x+o.tDur)+" "+o.base;
-  } else if (o.tShape === 'hyperacute') {
-    const m = x + o.tDur*0.4;
-    p += " Q "+m+" "+(o.base-o.tAmp*2.6+stEnd)+" "+(x+o.tDur)+" "+o.base;
-  } else if (o.tShape === 'biphasic') {
-    const m1 = x + o.tDur*0.4, m2 = x + o.tDur*0.7;
-    p += " Q "+(x+o.tDur*0.2)+" "+(o.base-o.tAmp*1.5+stEnd)+" "+m1+" "+(o.base+stEnd);
-    p += " Q "+m2+" "+(o.base+o.tAmp*1.8+stEnd)+" "+(x+o.tDur)+" "+o.base;
-  } else if (o.tShape === 'flat') {
-    p += " L "+(x+o.tDur)+" "+o.base;
-  } else if (o.tShape === 'deep-inv') {
-    const m = x + o.tDur/2;
-    p += " Q "+m+" "+(o.base+o.tAmp*3+stEnd)+" "+(x+o.tDur)+" "+o.base;
-  } else {
-    const m = x + o.tDur*0.55;
-    p += " Q "+m+" "+(o.base-o.tAmp*2+stEnd)+" "+(x+o.tDur)+" "+o.base;
-  }
-  x += o.tDur;
-  /* U wave (optional) */
-  if (o.uAmp > 0) {
-    x += 2;
-    const m = x + o.uDur/2;
-    p += " L "+x+" "+o.base;
-    p += " Q "+m+" "+(o.base-o.uAmp*2)+" "+(x+o.uDur)+" "+o.base;
-    x += o.uDur;
-  } else if (o.uAmp < 0) {
-    x += 2;
-    const m = x + o.uDur/2;
-    p += " L "+x+" "+o.base;
-    p += " Q "+m+" "+(o.base-o.uAmp*2)+" "+(x+o.uDur)+" "+o.base;
-    x += o.uDur;
-  }
-  return { path: p, endX: x };
+}
+
+/* Even spacing helper: given count beats of span ~beatW across W with margins */
+function spaceBeats(count, opts) {
+  return opts; /* placeholder; spacing handled in ecgStrip via gap */
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BACKWARD-COMPAT ecgBeat — same signature/return as the old one
+   ({path, endX}) but now built on the smooth pen engine. Existing
+   ecgIllust cases that call ecgBeat(x0,o) keep working, and gain
+   the asymmetric-T / fluid-ST morphology automatically. The path
+   it returns DOES start with its own M (these legacy cases render
+   isolated complexes); continuity-critical cases use ecgStrip.
+   ───────────────────────────────────────────────────────────── */
+function ecgBeat(x0, o) {
+  o = o || {};
+  const base = o.base != null ? o.base : 38;
+  const seg = [];
+  const pen = _mkPen(x0, base);
+  seg.unshift(); /* no-op for clarity */
+  // map legacy option names → beatSeg options (same names already)
+  const opts = {
+    pDur: o.pDur ?? 10, pAmp: o.pAmp ?? 3, pShape: o.pShape ?? 'normal',
+    prSeg: o.prSeg ?? 4, qDur: o.qDur ?? 2, qAmp: o.qAmp ?? 2,
+    rDur: o.rDur ?? 3, rAmp: o.rAmp ?? 18, sDur: o.sDur ?? 3, sAmp: o.sAmp ?? 5,
+    stDur: o.stDur ?? 12, stOffset: o.stOffset ?? 0, stShape: o.stShape ?? 'flat',
+    tDur: o.tDur ?? 18, tAmp: o.tAmp ?? 5, tShape: o.tShape ?? 'normal',
+    uAmp: o.uAmp ?? 0, uDur: o.uDur ?? 10
+  };
+  const path = ["M " + r1(x0) + " " + r1(base)];
+  beatSeg(path, pen, base, opts);
+  return { path: path.join(" "), endX: pen.x };
 }
 
 /* SVG style constants */
@@ -2968,26 +3162,23 @@ function ecgIllust(type) {
       break;
     }
     case 'de-winter': {
-      /* Upsloping STD at J-point + tall symmetric T waves (anterior) */
+      /* De Winter: depressed J → sharp upsloping STD → tall symmetric peaked T.
+         Single continuous path, 3 beats bridged. */
       const base = 34;
-      function dwBeat(x) {
-        let p = "M "+x+" "+base;
-        p += " Q "+(x+4)+" "+(base-3)+" "+(x+9)+" "+base;   /* P */
-        p += " L "+(x+11)+" "+base;                          /* PR */
-        p += " L "+(x+12)+" "+(base+2);                      /* q */
-        p += " L "+(x+15)+" "+(base-9);                      /* R */
-        p += " L "+(x+18)+" "+(base+6);                      /* S (deepish) */
-        /* J-point DEPRESSED, then upsloping STD rising into tall T */
-        p += " L "+(x+20)+" "+(base+5);                      /* J-point still depressed */
-        p += " L "+(x+28)+" "+(base-2);                      /* upsloping ST (rises) */
-        /* tall symmetric T */
-        p += " Q "+(x+36)+" "+(base-18)+" "+(x+44)+" "+base; /* tall symmetric peaked T */
-        return p;
-      }
-      body = '<path d="'+dwBeat(20)+'" '+WAVE_A+'/>'
-           + '<path d="'+dwBeat(130)+'" '+WAVE_A+'/>'
-           + '<circle cx="40" cy="'+(base+5)+'" r="3.5" fill="none" stroke="#E87060" stroke-width="0.8"/>'
-           + '<text x="20" y="11" '+LBL_A+'>J-point STD upsloping → tall symmetric T</text>'
+      const beat = { pShape:'normal', pDur:8, pAmp:2.5, prSeg:4,
+                     qDur:1, qAmp:1.5, rDur:3, rAmp:11, sDur:3, sAmp:7,
+                     stDur:9, stOffset:5, stShape:'upsloping',
+                     tDur:18, tAmp:9, tShape:'peaked' };
+      const seg = []; const pen = _mkPen(0, base);
+      seg.push("M 0 "+r1(base));
+      bridge(seg, pen, base, 14, 'flat');
+      [0,1,2].forEach(i => {
+        beatSeg(seg, pen, base, beat);
+        bridge(seg, pen, base, (i<2 ? pen.x + 12 : 240), 'flat');
+      });
+      if (pen.x < 240) bridge(seg, pen, base, 240, 'flat');
+      body = '<path d="'+seg.join(" ")+'" '+WAVE_A+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>J-point STD upsloping → tall simetris T</text>'
            + '<text x="20" y="55" '+LBL_A+'>De Winter (oklusi total LAD)</text>';
       break;
     }
@@ -3025,54 +3216,41 @@ function ecgIllust(type) {
       break;
     }
     case 'af-pattern': {
-      /* Irregularly irregular RR, no P, fibrillation baseline */
-      let waves = '';
-      /* Wavy baseline */
-      let baseLine = "M 5 35";
-      for (let i = 5; i < 235; i += 2) {
-        const wave = Math.sin(i*0.5) * 0.8 + (Math.random()-0.5) * 1.5;
-        baseLine += " L "+(i)+" "+(35+wave);
-      }
-      waves += '<path d="'+baseLine+'" stroke="rgba(232,112,96,0.4)" stroke-width="0.8" fill="none"/>';
-      /* Irregular QRS positions */
-      const positions = [25, 72, 115, 168, 218];
-      positions.forEach(x => {
-        let qrs = "M "+(x-3)+" 35";
-        qrs += " L "+(x-1)+" 37";
-        qrs += " L "+(x)+" 18";
-        qrs += " L "+(x+2)+" 41";
-        qrs += " L "+(x+4)+" 35";
-        qrs += " Q "+(x+8)+" 31 "+(x+13)+" 35";
-        waves += '<path d="'+qrs+'" '+WAVE_A+'/>';
+      /* Single unbroken path: fibrillatory baseline bridges + irregular QRS,
+         no P waves. Irregular RR via varying gaps. */
+      const base = 34;
+      const qrs = { pShape:'absent', pDur:0, prSeg:0, qDur:1, qAmp:1, rDur:2, rAmp:14,
+                    sDur:2, sAmp:3, stDur:5, stShape:'flat', tDur:9, tAmp:3, tShape:'normal' };
+      /* irregular gaps → irregularly irregular */
+      const seg = []; const pen = _mkPen(0, base);
+      seg.push("M 0 "+r1(base));
+      bridge(seg, pen, base, 14, 'fib');
+      const gaps = [20, 12, 26, 16, 22];
+      gaps.forEach((g, i) => {
+        beatSeg(seg, pen, base, qrs);
+        bridge(seg, pen, base, Math.min(pen.x + g, 240), 'fib');
       });
-      body = waves
-           + '<text x="20" y="10" '+LBL_A+'>Irreg. irreg, no P, f waves</text>'
+      if (pen.x < 240) bridge(seg, pen, base, 240, 'fib');
+      body = '<path d="'+seg.join(" ")+'" '+WAVE_A+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>Irreg. irreg, no P, f waves</text>'
            + '<text x="20" y="55" '+LBL_A+'>Atrial Fibrillation</text>';
       break;
     }
     case 'aflutter-pattern': {
-      /* Sawtooth flutter waves with regular ventricular response */
-      let p = "M 5 38";
-      /* Sawtooth: ascending then sudden drop */
-      for (let i = 0; i < 12; i++) {
-        const x = 5 + i * 18;
-        p += " L "+(x+12)+" 28";
-        p += " L "+(x+14)+" 42";
-        p += " L "+(x+18)+" 38";
-      }
-      let waves = '<path d="'+p+'" stroke="rgba(232,112,96,0.5)" stroke-width="0.9" fill="none"/>';
-      /* QRS at every 2nd flutter (2:1 conduction) */
-      [55, 130, 205].forEach(x => {
-        let qrs = "M "+(x-2)+" 38";
-        qrs += " L "+(x-1)+" 40";
-        qrs += " L "+(x)+" 22";
-        qrs += " L "+(x+2)+" 44";
-        qrs += " L "+(x+4)+" 38";
-        qrs += " Q "+(x+8)+" 35 "+(x+12)+" 38";
-        waves += '<path d="'+qrs+'" '+WAVE_A+'/>';
+      /* Single continuous path: sawtooth flutter baseline with QRS at 2:1 */
+      const base = 36;
+      const qrs = { pShape:'absent', pDur:0, prSeg:0, qDur:1, qAmp:1, rDur:2, rAmp:15,
+                    sDur:2, sAmp:3, stDur:5, stShape:'flat', tDur:8, tAmp:2.5, tShape:'normal' };
+      const seg = []; const pen = _mkPen(0, base);
+      seg.push("M 0 "+r1(base));
+      bridge(seg, pen, base, 22, 'flutter');
+      [0,1,2].forEach(i => {
+        beatSeg(seg, pen, base, qrs);
+        bridge(seg, pen, base, Math.min(pen.x + 33, 240), 'flutter');
       });
-      body = waves
-           + '<text x="20" y="10" '+LBL_A+'>Sawtooth F waves (II/III/aVF)</text>'
+      if (pen.x < 240) bridge(seg, pen, base, 240, 'flutter');
+      body = '<path d="'+seg.join(" ")+'" '+WAVE_A+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>Sawtooth F waves (II/III/aVF), 2:1</text>'
            + '<text x="20" y="55" '+LBL_A+'>Atrial Flutter</text>';
       break;
     }
@@ -3123,48 +3301,71 @@ function ecgIllust(type) {
       break;
     }
     case 'vt-pattern': {
-      /* Wide regular fast — monomorphic VT */
-      let waves = '';
-      [10, 55, 100, 145, 190].forEach(x => {
-        let p = "M "+x+" 32";
-        /* Wide, sharp, monomorphic */
-        p += " L "+(x+5)+" 32";
-        p += " Q "+(x+10)+" 30 "+(x+15)+" 14";  /* slow upstroke */
-        p += " L "+(x+18)+" 14";
-        p += " Q "+(x+22)+" 16 "+(x+28)+" 44";  /* wide downstroke */
-        p += " L "+(x+33)+" 38";
-        p += " Q "+(x+36)+" 36 "+(x+40)+" 32";
-        waves += '<path d="'+p+'" '+WAVE_A+'/>';
-      });
-      body = waves
-           + '<text x="20" y="10" '+LBL_A+'>QRS lebar regular, rate &gt;100</text>'
+      /* Monomorphic VT — single continuous path, broad complexes flowing
+         directly into each other (no isoelectric segments). */
+      const base = 32;
+      const seg = []; const pen = _mkPen(0, base);
+      seg.push("M 0 "+r1(base));
+      /* lead-in */
+      penLineTo(seg, pen, 6, base);
+      const period = 46;
+      for (let x = 6; x < 232; x += period) {
+        /* slow wide upstroke to broad R */
+        penCubic(seg, pen, x+8, base-6, x+14, base-18, x+19, base-18);
+        /* broad apex */
+        penCubic(seg, pen, x+22, base-18, x+26, base-10, x+30, base+14);
+        /* wide downstroke into deep S, flows into next complex */
+        penCubic(seg, pen, x+34, base+18, x+40, base+6, x+period, base);
+      }
+      if (pen.x < 240) penLineTo(seg, pen, 240, base);
+      body = '<path d="'+seg.join(" ")+'" '+WAVE_A+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>QRS lebar regular, rate &gt;100</text>'
            + '<text x="20" y="55" '+LBL_A+'>Ventricular Tachycardia</text>';
       break;
     }
     case 'vf-pattern': {
-      /* Chaotic, irregular squiggle */
-      let p = "M 5 32";
-      for (let i = 5; i < 235; i += 1.5) {
-        const amp = (Math.random() - 0.5) * 24 + Math.sin(i*0.8) * 8;
-        p += " L "+i+" "+(32+amp);
+      /* Chaotic continuous oscillation — single path, deterministic pseudo-random */
+      const base = 32;
+      const seg = []; const pen = _mkPen(0, base);
+      seg.push("M 0 "+r1(base));
+      let prevY = base;
+      let k = 0;
+      for (let x = 4; x <= 236; x += 6) {
+        const amp = 8 + ((k*53) % 11);                 /* varying amplitude */
+        const dir = (k % 2 === 0) ? -1 : 1;
+        const ny = base + dir*amp + Math.sin(k*1.7)*4;
+        const cy = (prevY + ny)/2 + ((k*29)%7 - 3);
+        penCubic(seg, pen, x-3, cy, x-1, ny + ((k*17)%5 -2), x, ny);
+        prevY = ny; k++;
       }
-      body = '<path d="'+p+'" '+WAVE_A+'/>'
-           + '<text x="20" y="10" '+LBL_A+'>Chaotic, no QRS identifiable</text>'
+      penCubic(seg, pen, 238, base, 239, base, 240, base);
+      body = '<path d="'+seg.join(" ")+'" '+WAVE_A+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>Chaotic, QRS tak teridentifikasi</text>'
            + '<text x="20" y="55" '+LBL_A+'>Ventricular Fibrillation</text>';
       break;
     }
     case 'tdp-pattern': {
-      /* Polymorphic VT — twisting amplitude/axis */
-      let p = "M 5 32";
-      const amps = [5, 10, 14, 16, 14, 10, 5, -5, -10, -14, -16, -14, -10, -5, 5, 10, 14, 16, 14, 10];
-      amps.forEach((amp, i) => {
-        const x = 5 + i*12;
-        p += " L "+(x+2)+" "+(32-amp);
-        p += " L "+(x+6)+" "+(32+amp/3);
-        p += " L "+(x+10)+" 32";
-      });
-      body = '<path d="'+p+'" '+WAVE_A+'/>'
-           + '<text x="20" y="10" '+LBL_A+'>Polimorfik, axis berubah (twisting)</text>'
+      /* Polymorphic VT — continuous sinusoid whose amplitude waxes & wanes
+         (twisting around baseline), zero flatline. */
+      const base = 32;
+      const seg = []; const pen = _mkPen(0, base);
+      seg.push("M 0 "+r1(base));
+      penLineTo(seg, pen, 4, base);
+      const N = 232, step = 4;
+      let k = 0;
+      for (let x = 4; x <= N; x += step) {
+        /* envelope: |sin| over the strip → spindle (waxing/waning) */
+        const env = Math.abs(Math.sin((x/N) * Math.PI * 2)) * 17 + 2;
+        const ph = Math.sin(x * 0.55);                 /* fast oscillation */
+        const ny = base - ph * env;
+        const px = x - step/2;
+        const py = base - Math.sin((x-step*0.5)*0.55) * (Math.abs(Math.sin(((x-step*0.5)/N)*Math.PI*2))*17+2);
+        penCubic(seg, pen, px, (pen.y+py)/2, px+0.5, py, x, ny);
+        k++;
+      }
+      penLineTo(seg, pen, 240, base);
+      body = '<path d="'+seg.join(" ")+'" '+WAVE_A+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>Polimorfik, amplitudo twisting</text>'
            + '<text x="20" y="55" '+LBL_A+'>Torsades de Pointes (QTc &gt;500)</text>';
       break;
     }
@@ -3181,38 +3382,60 @@ function ecgIllust(type) {
       break;
     }
     case 'avb-mobitz1-pattern': {
-      /* Progressive PR lengthening then dropped beat */
-      let waves = '';
-      const prSegs = [4, 10, 16, 22];
-      let curX = 8;
-      prSegs.forEach((pr, i) => {
-        const b = ecgBeat(curX, {pDur: 7, pAmp: 2.5, prSeg: pr, rDur: 1.5, rAmp: 12, sDur: 1.5, sAmp: 3, stDur: 5, tDur: 9, tAmp: 3, base: 32});
-        waves += '<path d="'+b.path+'" '+WAVE_Y+'/>';
-        curX = b.endX + 5;
+      /* Wenckebach: progressive PR prolongation → dropped QRS → reset.
+         Single continuous path; the dropped beat is an explicit P then a
+         flat baseline pause until the next P. */
+      const base = 32;
+      const seg = []; const pen = _mkPen(0, base);
+      seg.push("M 0 "+r1(base));
+      penLineTo(seg, pen, 8, base);
+      const prSegs = [4, 11, 19];                 /* lengthening PR */
+      prSegs.forEach(pr => {
+        penP(seg, pen, base, 7, 2.5, 'normal');
+        penLineTo(seg, pen, pen.x + pr, base);     /* PR segment (grows) */
+        penQRS(seg, pen, base, {qDur:1,qAmp:1,rDur:1.5,rAmp:12,sDur:1.5,sAmp:3});
+        const y = penST(seg, pen, base, {stDur:5,stOffset:0,stShape:'flat'});
+        penT(seg, pen, base, y, {tDur:9,tAmp:3,tShape:'normal'});
+        penLineTo(seg, pen, pen.x + 6, base);      /* short TP */
       });
-      /* Dropped P after last (P without QRS) */
-      waves += '<path d="M '+curX+' 32 Q '+(curX+4)+' 27 '+(curX+8)+' 32 L '+(curX+20)+' 32" '+WAVE_Y+'/>';
-      curX += 20;
-      /* Reset with normal beat */
-      const bReset = ecgBeat(curX, {pDur: 7, pAmp: 2.5, prSeg: 4, rDur: 1.5, rAmp: 12, sDur: 1.5, sAmp: 3, stDur: 5, tDur: 9, tAmp: 3, base: 32});
-      waves += '<path d="'+bReset.path+'" '+WAVE_Y+'/>';
-      body = waves
-           + '<text x="10" y="10" '+LBL_Y+'>PR memanjang → drop → reset</text>'
+      /* dropped beat: P wave then NO QRS — flat pause */
+      penP(seg, pen, base, 7, 2.5, 'normal');
+      penLineTo(seg, pen, pen.x + 26, base);        /* the pause (continuous flat) */
+      /* reset: normal short-PR beat */
+      penP(seg, pen, base, 7, 2.5, 'normal');
+      penLineTo(seg, pen, pen.x + 4, base);
+      penQRS(seg, pen, base, {qDur:1,qAmp:1,rDur:1.5,rAmp:12,sDur:1.5,sAmp:3});
+      const yr = penST(seg, pen, base, {stDur:5,stOffset:0,stShape:'flat'});
+      penT(seg, pen, base, yr, {tDur:9,tAmp:3,tShape:'normal'});
+      if (pen.x < 240) penLineTo(seg, pen, 240, base);
+      body = '<path d="'+seg.join(" ")+'" '+WAVE_Y+'/>'
+           + '<text x="10" y="11" '+LBL_Y+'>PR memanjang → drop → reset</text>'
            + '<text x="10" y="55" '+LBL_Y+'>Mobitz I (Wenckebach)</text>';
       break;
     }
     case 'avb-mobitz2-pattern': {
-      /* Constant PR, sudden dropped beat */
-      let waves = '';
-      const positions = [10, 55, 100, 195];  /* Skip 145 — that's the dropped */
-      positions.forEach(x => {
-        const b = ecgBeat(x, {pDur: 7, pAmp: 2.5, prSeg: 10, rDur: 1.5, rAmp: 14, sDur: 1.5, sAmp: 3, stDur: 5, tDur: 9, tAmp: 3, base: 32});
-        waves += '<path d="'+b.path+'" '+WAVE_A+'/>';
-      });
-      /* Dropped P at position 145 (P present but no QRS follows) */
-      waves += '<path d="M 145 32 Q 149 28 153 32 L 195 32" '+WAVE_A+'/>';
-      body = waves
-           + '<text x="10" y="10" '+LBL_A+'>PR konstan → drop tiba-tiba</text>'
+      /* Constant PR, sudden dropped QRS. Single continuous path. */
+      const base = 32;
+      const seg = []; const pen = _mkPen(0, base);
+      seg.push("M 0 "+r1(base));
+      penLineTo(seg, pen, 8, base);
+      function conductedBeat() {
+        penP(seg, pen, base, 7, 2.5, 'normal');
+        penLineTo(seg, pen, pen.x + 10, base);      /* constant PR */
+        penQRS(seg, pen, base, {qDur:1,qAmp:1,rDur:1.5,rAmp:14,sDur:1.5,sAmp:3});
+        const y = penST(seg, pen, base, {stDur:5,stOffset:0,stShape:'flat'});
+        penT(seg, pen, base, y, {tDur:9,tAmp:3,tShape:'normal'});
+        penLineTo(seg, pen, pen.x + 8, base);       /* TP */
+      }
+      conductedBeat();
+      conductedBeat();
+      /* dropped: P then flat pause (no QRS) */
+      penP(seg, pen, base, 7, 2.5, 'normal');
+      penLineTo(seg, pen, pen.x + 30, base);
+      conductedBeat();
+      if (pen.x < 240) penLineTo(seg, pen, 240, base);
+      body = '<path d="'+seg.join(" ")+'" '+WAVE_A+'/>'
+           + '<text x="10" y="11" '+LBL_A+'>PR konstan → drop tiba-tiba</text>'
            + '<text x="10" y="55" '+LBL_A+'>Mobitz II / High-grade</text>';
       break;
     }
@@ -3433,16 +3656,17 @@ function ecgIllust(type) {
 
     /* ─── PATHO: ELEKTROLIT ─── */
     case 'hyperk-progress-pattern': {
-      /* Progression: normal → peaked T → P flat → wide QRS */
-      const b1 = ecgBeat(8, {pDur: 6, pAmp: 2, prSeg: 1, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 4, tDur: 10, tAmp: 8, tShape: 'peaked', base: 32});
-      const b2 = ecgBeat(75, {pDur: 4, pAmp: 1, prSeg: 4, rDur: 2, rAmp: 10, sDur: 3, sAmp: 4, stDur: 4, tDur: 10, tAmp: 10, tShape: 'peaked', base: 32});
-      const b3 = ecgBeat(140, {pDur: 0, pAmp: 0, pShape: 'absent', prSeg: 0, rDur: 5, rAmp: 8, sDur: 5, sAmp: 5, stDur: 3, tDur: 10, tAmp: 10, tShape: 'peaked', base: 32});
+      /* Progression: peaked tented T (narrow base) → P flattens → wide QRS.
+         Uses 'tented' shape (sharp, narrow) — contrast vs ischemic hyperacute. */
+      const b1 = ecgBeat(8, {pDur: 6, pAmp: 2, prSeg: 1, rDur: 2, rAmp: 12, sDur: 2, sAmp: 3, stDur: 4, tDur: 12, tAmp: 9, tShape: 'tented', base: 32});
+      const b2 = ecgBeat(78, {pDur: 4, pAmp: 0.8, prSeg: 4, rDur: 2, rAmp: 10, sDur: 3, sAmp: 4, stDur: 4, tDur: 12, tAmp: 10, tShape: 'tented', base: 32});
+      const b3 = ecgBeat(148, {pDur: 0, pAmp: 0, pShape: 'absent', prSeg: 0, rDur: 6, rAmp: 8, sDur: 6, sAmp: 5, stDur: 3, tDur: 12, tAmp: 10, tShape: 'tented', base: 32});
       body = '<path d="'+b1.path+'" '+WAVE_Y+'/>'
            + '<path d="'+b2.path+'" '+WAVE_A+'/>'
            + '<path d="'+b3.path+'" '+WAVE_A+'/>'
-           + '<text x="8" y="11" '+LBL_Y+'>K 6.0: peaked T</text>'
-           + '<text x="68" y="11" '+LBL_A+'>K 7.5: P flat</text>'
-           + '<text x="138" y="11" '+LBL_A+'>K &gt;8: wide QRS</text>'
+           + '<text x="8" y="11" '+LBL_Y+'>K 6.0: tented T</text>'
+           + '<text x="72" y="11" '+LBL_A+'>K 7.5: P flat</text>'
+           + '<text x="146" y="11" '+LBL_A+'>K &gt;8: wide QRS</text>'
            + '<text x="68" y="55" '+LBL_A+'>Hiperkalemia Progresif</text>';
       break;
     }
@@ -3557,13 +3781,24 @@ function ecgIllust(type) {
 
     /* ─── PATHO: HEREDITER ─── */
     case 'brugada-type1-pattern': {
-      /* Coved STE V1-V2 with TWI */
-      const b1 = ecgBeat(20, {pDur: 6, pAmp: 1.5, prSeg: 2, qDur: 1, qAmp: 1, rDur: 2, rAmp: 10, sDur: 2, sAmp: 3, stDur: 10, stOffset: -4, stShape: 'coved', tDur: 12, tAmp: 4, tShape: 'inverted', base: 30});
-      const b2 = ecgBeat(130, {pDur: 6, pAmp: 1.5, prSeg: 2, qDur: 1, qAmp: 1, rDur: 2, rAmp: 10, sDur: 2, sAmp: 3, stDur: 10, stOffset: -4, stShape: 'coved', tDur: 12, tAmp: 4, tShape: 'inverted', base: 30});
-      body = '<path d="'+b1.path+'" '+WAVE_A+'/>'
-           + '<path d="'+b2.path+'" '+WAVE_A+'/>'
-           + '<text x="20" y="11" '+LBL_A+'>V1-V2: Coved STE ≥2mm + TWI</text>'
-           + '<text x="20" y="55" '+LBL_A+'>Brugada Type 1 (Diagnostic)</text>';
+      /* Type 1: high take-off, coved (convex-up) STE ≥2mm descending into a
+         symmetric inverted T. Continuous strip, 2 beats. */
+      const base = 32;
+      const beat = { pShape:'normal', pDur:6, pAmp:1.5, prSeg:3,
+                     qDur:1, qAmp:1, rDur:2.5, rAmp:11, sDur:1, sAmp:0,
+                     stDur:12, stOffset:-6, stShape:'coved',
+                     tDur:13, tAmp:4.5, tShape:'inverted' };
+      const seg = []; const pen = _mkPen(0, base);
+      seg.push("M 0 "+r1(base));
+      bridge(seg, pen, base, 22, 'flat');
+      [0,1].forEach(i => {
+        beatSeg(seg, pen, base, beat);
+        bridge(seg, pen, base, (i<1 ? pen.x + 30 : 240), 'flat');
+      });
+      if (pen.x < 240) bridge(seg, pen, base, 240, 'flat');
+      body = '<path d="'+seg.join(" ")+'" '+WAVE_A+'/>'
+           + '<text x="20" y="11" '+LBL_A+'>V1-V2: Coved STE ≥2mm → T inversi simetris</text>'
+           + '<text x="20" y="55" '+LBL_A+'>Brugada Type 1 (Diagnostik)</text>';
       break;
     }
     case 'lqts-pattern': {
