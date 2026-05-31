@@ -681,7 +681,7 @@ NORMAL_GROUPS.push(
     {name:"QTc normal", abbr:"QTc", value:"—", unit:"ms",
      sex:{male:"♂ <450 ms", female:"♀ <460 ms"},
      range:[{pct:15,color:"var(--red)",op:.7},{pct:15,color:"var(--yellow)",op:.8},{pct:40,color:"var(--moss)",normal:true},{pct:15,color:"var(--yellow)",op:.8},{pct:15,color:"var(--red)",op:.7}],
-     ticks:["<340","340","450/460",">500"],
+     ticks:["≤390","390","450/460",">500"],
      clinical:"Diukur dari onset Q ke akhir T (kembali ke baseline). Hindari lead dengan U wave prominent. Gunakan tangent method untuk T end.",
      source:"AHA/ACC 2009"},
     {name:"QTc borderline", abbr:"QTc-bord", value:"440–470", unit:"ms",
@@ -694,11 +694,11 @@ NORMAL_GROUPS.push(
      ticks:["normal","long","—","—"],
      clinical:"<strong>QTc >500 ms:</strong> high risk TdP. Stop QT-prolonging drugs. Koreksi K⁺ ke >4.0, Mg ke >2.0. Pertimbangkan kongenital LQTS jika tidak ada reversible cause.",
      source:"AHA/ACC 2010"},
-    {name:"QTc short", abbr:"QTc-short", value:"<340", unit:"ms",
-     range:[{pct:30,color:"var(--red)",op:.7},{pct:70,color:"var(--moss)",normal:true}],
-     ticks:["<340","340","—","—"],
-     clinical:"<strong>Short QT syndrome:</strong> QTc <320–340 ms persisten + family history SCD atau aritmia atrium/ventrikel. Genetic (KCNH2, KCNQ1, KCNJ2 gain-of-function).",
-     source:"Gussak 2000"},
+    {name:"QTc short", abbr:"QTc-short", value:"≤390", unit:"ms",
+     range:[{pct:35,color:"var(--red)",op:.7},{pct:65,color:"var(--moss)",normal:true}],
+     ticks:["≤390","390","—","—"],
+     clinical:"<strong>Abnormally short (AHA/ACCF/HRS 2009):</strong> QTc ≤390 ms pada pria maupun wanita. <strong>Short QT Syndrome (diagnosis):</strong> ambang lebih ketat, QTc ≤320–340 ms persisten + family history SCD atau aritmia atrium/ventrikel. Genetik gain-of-function (KCNH2, KCNQ1, KCNJ2).",
+     source:"AHA/ACCF/HRS 2009; Gussak 2000"},
     {name:"QTc >500 ms (TdP risk)", abbr:"QTc>500", value:">500", unit:"ms — alarm",
      range:[{pct:75,color:"var(--moss)",normal:true},{pct:25,color:"var(--red)",op:.7}],
      ticks:["safe","danger","—","—"],
@@ -1457,12 +1457,13 @@ PATHO_CATEGORIES.push({
     {name:"ARVC", territory:"RV", ref:"Marcus 2010 Task Force Criteria (Circulation)",
      mech:"Penggantian myocardium RV oleh jaringan fibrofatty → re-entry circuits → VT. Genetic (desmoplakin, plakophilin, dll).",
      criteriaTable:{
-       header:["Kriteria EKG (Task Force 2010 — Major)","Detail"],
+       header:["Kriteria EKG (Task Force 2010)","Detail / Klasifikasi"],
        rows:[
-         ["Epsilon wave","Deflection kecil terminal QRS / awal ST V1–V3"],
-         ["TWI V1–V3","Pada usia ≥14 tahun tanpa RBBB lengkap"],
-         ["QRS prolongation V1–V3","≥110 ms"],
-         ["VT LBBB superior axis","Konfigurasi LBBB axis ≤-90°"],
+         ["Epsilon wave (V1–V3)","Deflection kecil di ST segment, distinct dari QRS — MAJOR (depolarisasi)"],
+         ["TWI V1–V3 (usia ≥14y)","Tanpa complete RBBB — MAJOR (repolarisasi)"],
+         ["TAD ≥55 ms (V1–V3)","Terminal activation duration: nadir S → akhir QRS, tanpa cRBBB — MINOR"],
+         ["TWI V1–V2 (usia ≥14y)","Tanpa cRBBB, ATAU V1–V4 dengan cRBBB — MINOR"],
+         ["VT LBBB superior axis","Konfigurasi LBBB, axis superior (neg/indeterminate II,III,aVF) — MAJOR"],
        ]
      },
      pitfall:"Athletic heart bisa mimic ARVC (TWI anterior pada atlet Afrika dan young athletes). Differensiasi dengan SAECG, MRI, riwayat keluarga.",
@@ -2981,7 +2982,7 @@ function ecgIllust(type) {
            + '<line x1="55" y1="14" x2="55" y2="50" '+MARK+'/>'
            + '<line x1="100" y1="14" x2="100" y2="50" '+MARK+'/>'
            + '<line x1="55" y1="14" x2="100" y2="14" '+MARK+'/>'
-           + '<text x="58" y="11" '+LBL_N+'>QTc 340-440ms</text>';
+           + '<text x="58" y="11" '+LBL_N+'>QTc 390-440ms</text>';
       break;
     }
     case 'qtc-borderline': {
@@ -3008,7 +3009,7 @@ function ecgIllust(type) {
            + '<line x1="75" y1="14" x2="75" y2="50" '+MARK+'/>'
            + '<line x1="100" y1="14" x2="100" y2="50" '+MARK+'/>'
            + '<line x1="75" y1="14" x2="100" y2="14" '+MARK+'/>'
-           + '<text x="76" y="11" '+LBL_A+'>QTc &lt;340ms short</text>';
+           + '<text x="76" y="11" '+LBL_A+'>QTc ≤390ms short</text>';
       break;
     }
     case 'qtc-500': {
