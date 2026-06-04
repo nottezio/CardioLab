@@ -215,6 +215,126 @@
   .tag-physio { background: rgba(16, 185, 129, 0.12); color: #6ee7b7; }
   .tag-fibrinolytic { background: rgba(167, 139, 250, 0.12); color: #c4b5fd; }
 
+  /* ============== TAB NAVIGATION ============== */
+  .tab-btn {
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    background: transparent;
+    cursor: pointer;
+  }
+  .tab-btn:hover { color: var(--text-secondary); }
+  .tab-btn.tab-active {
+    color: var(--accent-gold);
+    border-bottom-color: var(--accent-gold);
+  }
+  .tab-content.hidden { display: none; }
+
+  /* ============== VASCULAR ANIMATION ============== */
+  /* RBC flow animation */
+  @keyframes rbc-flow {
+    from { transform: translateX(-50px); }
+    to { transform: translateX(1250px); }
+  }
+  #rbc-layer.flowing .rbc {
+    animation: rbc-flow linear infinite;
+  }
+  #rbc-layer.flowing .rbc[data-rbc="1"] { animation-duration: 8s; animation-delay: 0s; }
+  #rbc-layer.flowing .rbc[data-rbc="2"] { animation-duration: 9s; animation-delay: 1.2s; }
+  #rbc-layer.flowing .rbc[data-rbc="3"] { animation-duration: 7s; animation-delay: 2.5s; }
+  #rbc-layer.flowing .rbc[data-rbc="4"] { animation-duration: 8.5s; animation-delay: 3.8s; }
+  #rbc-layer.flowing .rbc[data-rbc="5"] { animation-duration: 7.5s; animation-delay: 0.6s; }
+  #rbc-layer.flowing .rbc[data-rbc="6"] { animation-duration: 9.2s; animation-delay: 4.2s; }
+  #rbc-layer.flowing .rbc[data-rbc="7"] { animation-duration: 8s; animation-delay: 5.1s; }
+  #rbc-layer.flowing .rbc[data-rbc="8"] { animation-duration: 7s; animation-delay: 3.0s; }
+  #rbc-layer.flowing .rbc[data-rbc="9"] { animation-duration: 8.8s; animation-delay: 1.8s; }
+  #rbc-layer.flowing .rbc[data-rbc="10"] { animation-duration: 8s; animation-delay: 4.5s; }
+
+  /* Platelet resting flow */
+  @keyframes platelet-flow {
+    from { transform: translate(-30px, 0); }
+    to { transform: translate(1230px, 0); }
+  }
+  #platelet-layer.flowing .platelet-resting {
+    animation: platelet-flow linear infinite;
+  }
+  #platelet-layer.flowing .platelet-resting[data-plt="1"] { animation-duration: 6s; animation-delay: 0.4s; }
+  #platelet-layer.flowing .platelet-resting[data-plt="2"] { animation-duration: 7s; animation-delay: 1.6s; }
+  #platelet-layer.flowing .platelet-resting[data-plt="3"] { animation-duration: 5.5s; animation-delay: 2.8s; }
+  #platelet-layer.flowing .platelet-resting[data-plt="4"] { animation-duration: 6.5s; animation-delay: 0.9s; }
+  #platelet-layer.flowing .platelet-resting[data-plt="5"] { animation-duration: 6s; animation-delay: 3.4s; }
+  #platelet-layer.flowing .platelet-resting[data-plt="6"] { animation-duration: 7.2s; animation-delay: 4.5s; }
+
+  /* Pulse animation for activated platelet "spread" */
+  @keyframes platelet-pulse {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.5)); }
+    50% { filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.85)); }
+  }
+  .platelet-activated.visible {
+    transition: opacity 0.6s ease;
+    animation: platelet-pulse 2.5s ease-in-out infinite;
+  }
+
+  /* Factor particles random walk via JS, but CSS for entry */
+  .fp {
+    transition: opacity 0.4s ease, transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  #factor-particles.visible {
+    opacity: 1;
+  }
+
+  /* Fibrin strand grow-in */
+  @keyframes fibrin-draw {
+    from { stroke-dasharray: 0 1000; }
+    to { stroke-dasharray: 1000 0; }
+  }
+  .fibrin-strand {
+    transition: opacity 0.8s ease;
+  }
+  #fibrin-mesh.growing .fibrin-strand {
+    animation: fibrin-draw 1.5s ease-out forwards;
+  }
+
+  /* Endothelium injury — disappearance with fragmentation */
+  @keyframes endo-injury-break {
+    0% { opacity: 1; transform: scaleY(1); }
+    100% { opacity: 0; transform: scaleY(0.2); }
+  }
+  #endo-injury.injured {
+    animation: endo-injury-break 1s ease-out forwards;
+    transform-origin: center;
+  }
+
+  /* Collagen reveal */
+  #collagen-fibers.exposed {
+    opacity: 1;
+    transition: opacity 0.8s ease;
+  }
+
+  /* TF cells appearance */
+  #tf-cells.exposed {
+    opacity: 1;
+    transition: opacity 0.8s ease;
+  }
+
+  /* Annotation fade */
+  #annotations g {
+    transition: opacity 0.5s ease;
+  }
+  #annotations g.show { opacity: 1; }
+
+  /* Trapped RBCs */
+  #trapped-rbc-layer.visible {
+    opacity: 1;
+    transition: opacity 1s ease;
+  }
+
+  /* Pause animations when not playing */
+  .vasc-paused #rbc-layer.flowing .rbc,
+  .vasc-paused #platelet-layer.flowing .platelet-resting {
+    animation-play-state: paused;
+  }
+
   /* Arrows */
   .cascade-arrow { stroke: var(--status-inactive); stroke-width: 1.5; fill: none; opacity: 0.35; transition: all 0.6s ease; }
   .cascade-arrow.active { stroke: var(--accent-gold); stroke-width: 2; opacity: 0.9; }
@@ -339,16 +459,38 @@
 <main class="max-w-[1700px] mx-auto px-4 md:px-8 py-6 grid grid-cols-12 gap-5">
   <section class="col-span-12 xl:col-span-9">
     <div class="info-card p-4 md:p-6">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <h2 class="font-display text-xl text-accent">Diagram Kaskade</h2>
-          <p class="text-xs text-muted mt-0.5">Klik node faktor untuk detail · Klik pemicu untuk simulasi</p>
+      <!-- ====== TAB NAVIGATION ====== -->
+      <div class="flex items-center justify-between mb-4 border-b" style="border-color: var(--border-subtle);">
+        <div class="flex">
+          <button id="tab-cascade" class="tab-btn tab-active px-4 py-2.5 text-sm font-medium tracking-wide transition-all flex items-center gap-2">
+            <i data-lucide="git-branch" class="w-4 h-4"></i>
+            <span>Diagram Kaskade</span>
+          </button>
+          <button id="tab-vascular" class="tab-btn px-4 py-2.5 text-sm font-medium tracking-wide transition-all flex items-center gap-2">
+            <i data-lucide="droplet" class="w-4 h-4"></i>
+            <span>Visualisasi Vaskular</span>
+          </button>
         </div>
-        <div id="step-counter" class="font-mono text-xs text-muted text-right">
-          <div class="text-[10px] uppercase tracking-widest text-muted/70">Progres</div>
-          <div class="text-accent text-sm"><span id="step-num">0</span> <span class="text-muted/50">/</span> <span id="step-total">—</span></div>
+        <div class="flex items-center gap-3 pb-2">
+          <label class="flex items-center gap-1.5 text-[10px] text-muted uppercase tracking-wider cursor-pointer">
+            <input type="checkbox" id="sync-toggle" checked class="accent-amber-400 cursor-pointer" style="accent-color: var(--accent-gold);">
+            Sync Tab
+          </label>
         </div>
       </div>
+
+      <!-- ====== TAB 1: CASCADE DIAGRAM ====== -->
+      <div id="tab-content-cascade" class="tab-content">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="font-display text-xl text-accent">Diagram Kaskade</h2>
+            <p class="text-xs text-muted mt-0.5">Klik node faktor untuk detail · Klik pemicu untuk simulasi</p>
+          </div>
+          <div id="step-counter" class="font-mono text-xs text-muted text-right">
+            <div class="text-[10px] uppercase tracking-widest text-muted/70">Progres</div>
+            <div class="text-accent text-sm"><span id="step-num">0</span> <span class="text-muted/50">/</span> <span id="step-total">—</span></div>
+          </div>
+        </div>
 
       <div class="bg-deepest rounded-lg p-3 overflow-x-auto" style="border: 1px solid var(--border-subtle);">
         <svg id="cascade-svg" viewBox="0 0 1200 1380" class="w-full h-auto" style="min-width: 850px;" preserveAspectRatio="xMidYMid meet">
@@ -564,7 +706,281 @@
           <span class="px-1.5 py-0.5 rounded border ml-1" style="border-color: var(--status-inhibited); color: var(--status-inhibited);">T</span> Dabigatran
         </div>
       </div>
-    </div>
+    </div><!-- /tab-content-cascade -->
+
+    <!-- ====== TAB 2: VASCULAR VISUALIZATION ====== -->
+    <div id="tab-content-vascular" class="tab-content hidden">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="font-display text-xl text-accent">Visualisasi Vaskular</h2>
+          <p class="text-xs text-muted mt-0.5">Cell-based Model · Hemostasis pada permukaan endotelium</p>
+        </div>
+        <div class="font-mono text-xs text-muted text-right">
+          <div class="text-[10px] uppercase tracking-widest text-muted/70">Fase</div>
+          <div class="text-accent text-sm"><span id="vasc-step-num">0</span> <span class="text-muted/50">/</span> <span>7</span></div>
+        </div>
+      </div>
+
+      <div class="bg-deepest rounded-lg p-3 overflow-x-auto" style="border: 1px solid var(--border-subtle);">
+        <svg id="vascular-svg" viewBox="0 0 1200 600" class="w-full h-auto" style="min-width: 850px;" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="lumen-gradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#3a1820" stop-opacity="0.4"/>
+              <stop offset="50%" stop-color="#5a2030" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#3a1820" stop-opacity="0.4"/>
+            </linearGradient>
+            <linearGradient id="endothelium-gradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#d4af6a" stop-opacity="0.7"/>
+              <stop offset="100%" stop-color="#8a7549" stop-opacity="0.5"/>
+            </linearGradient>
+            <linearGradient id="subendo-gradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#6b5436" stop-opacity="0.6"/>
+              <stop offset="100%" stop-color="#3d2f1c" stop-opacity="0.8"/>
+            </linearGradient>
+            <radialGradient id="platelet-active-gradient">
+              <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.95"/>
+              <stop offset="60%" stop-color="#d4af6a" stop-opacity="0.85"/>
+              <stop offset="100%" stop-color="#8a7549" stop-opacity="0.7"/>
+            </radialGradient>
+            <radialGradient id="platelet-resting-gradient">
+              <stop offset="0%" stop-color="#a8b0bd" stop-opacity="0.9"/>
+              <stop offset="100%" stop-color="#6b7280" stop-opacity="0.7"/>
+            </radialGradient>
+            <radialGradient id="rbc-gradient">
+              <stop offset="0%" stop-color="#ef4444" stop-opacity="0.4"/>
+              <stop offset="50%" stop-color="#b91c1c" stop-opacity="0.85"/>
+              <stop offset="100%" stop-color="#7f1d1d" stop-opacity="0.9"/>
+            </radialGradient>
+            <filter id="glow-fibrin" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="1.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <!-- ===== DINDING PEMBULUH DARAH (anatomi benar: dari lumen ke luar) ===== -->
+
+          <!-- LUMEN (darah mengalir) - paling atas -->
+          <rect x="0" y="0" width="1200" height="380" fill="url(#lumen-gradient)"/>
+          <text x="40" y="32" font-family="Cormorant Garamond" font-size="16" font-style="italic" fill="#d4af6a" opacity="0.7" letter-spacing="3">LUMEN PEMBULUH DARAH</text>
+
+          <!-- TUNICA INTIMA: Endotelium (paling dalam, kontak lumen) -->
+          <g id="endothelium-layer">
+            <rect id="endo-left" x="0" y="380" width="450" height="16" fill="url(#endothelium-gradient)"/>
+            <rect id="endo-right" x="750" y="380" width="450" height="16" fill="url(#endothelium-gradient)"/>
+            <rect id="endo-injury" x="450" y="380" width="300" height="16" fill="url(#endothelium-gradient)"/>
+          </g>
+          <text x="40" y="392" font-family="JetBrains Mono" font-size="8" fill="#3a2c1a" letter-spacing="1" font-weight="600">ENDOTELIUM</text>
+
+          <!-- TUNICA INTIMA: Subendotelium / membran basal (kolagen, vWF) -->
+          <rect x="0" y="396" width="1200" height="32" fill="url(#subendo-gradient)"/>
+          <text x="40" y="416" font-family="JetBrains Mono" font-size="8" fill="#c9a876" letter-spacing="1.5">SUBENDOTELIUM · MEMBRAN BASAL · KOLAGEN · vWF</text>
+
+          <!-- Lamina elastica interna -->
+          <rect x="0" y="428" width="1200" height="5" fill="#9d7548" opacity="0.55"/>
+          <line x1="0" y1="430" x2="1200" y2="430" stroke="#c9a876" stroke-width="0.8" stroke-dasharray="8 4" opacity="0.5"/>
+
+          <!-- TUNICA MEDIA: otot polos + elastin -->
+          <rect x="0" y="433" width="1200" height="90" fill="#2a1f17" opacity="0.85"/>
+          <g opacity="0.4">
+            <path d="M 0,448 Q 150,442 300,448 T 600,448 T 900,448 T 1200,448" stroke="#5a4836" stroke-width="1.5" fill="none"/>
+            <path d="M 0,468 Q 150,462 300,468 T 600,468 T 900,468 T 1200,468" stroke="#5a4836" stroke-width="1.5" fill="none"/>
+            <path d="M 0,488 Q 150,482 300,488 T 600,488 T 900,488 T 1200,488" stroke="#5a4836" stroke-width="1.5" fill="none"/>
+            <path d="M 0,508 Q 150,502 300,508 T 600,508 T 900,508 T 1200,508" stroke="#5a4836" stroke-width="1.5" fill="none"/>
+          </g>
+          <text x="40" y="478" font-family="JetBrains Mono" font-size="9" fill="#8a6f52" letter-spacing="2" font-weight="600">TUNICA MEDIA · OTOT POLOS + ELASTIN</text>
+
+          <!-- Lamina elastica eksterna -->
+          <line x1="0" y1="523" x2="1200" y2="523" stroke="#c9a876" stroke-width="0.8" stroke-dasharray="8 4" opacity="0.45"/>
+
+          <!-- TUNICA ADVENTITIA: jaringan ikat -->
+          <rect x="0" y="523" width="1200" height="77" fill="#1a1410" opacity="0.8"/>
+          <g opacity="0.3">
+            <path d="M 100,540 Q 130,555 110,575" stroke="#4a3826" stroke-width="1.2" fill="none"/>
+            <path d="M 350,545 Q 380,560 360,580" stroke="#4a3826" stroke-width="1.2" fill="none"/>
+            <path d="M 700,540 Q 730,558 710,578" stroke="#4a3826" stroke-width="1.2" fill="none"/>
+            <path d="M 1000,545 Q 1030,560 1010,580" stroke="#4a3826" stroke-width="1.2" fill="none"/>
+          </g>
+          <text x="40" y="560" font-family="JetBrains Mono" font-size="9" fill="#6b5436" letter-spacing="2" font-weight="600">TUNICA ADVENTITIA · JARINGAN IKAT · VASA VASORUM</text>
+
+          <!-- LAYER 5: Collagen fibers (revealed after injury — in subendothelium zone y=400-426) -->
+          <g id="collagen-fibers" opacity="0">
+            <path d="M 450,402 Q 480,408 510,401 T 570,409 T 630,401 T 690,409 T 750,402" stroke="#c9a876" stroke-width="1.8" fill="none" opacity="0.9"/>
+            <path d="M 450,410 Q 480,415 510,409 T 570,416 T 630,409 T 690,416 T 750,410" stroke="#b89665" stroke-width="1.8" fill="none" opacity="0.85"/>
+            <path d="M 450,418 Q 480,423 510,417 T 570,424 T 630,417 T 690,424 T 750,418" stroke="#a8825c" stroke-width="1.8" fill="none" opacity="0.8"/>
+            <path d="M 450,425 Q 480,430 510,424 T 570,431 T 630,424 T 690,431 T 750,425" stroke="#9d7548" stroke-width="1.8" fill="none" opacity="0.75"/>
+          </g>
+
+          <!-- LAYER 6: Tissue Factor expressed cells (sub-endothelial fibroblasts, y≈412) -->
+          <g id="tf-cells" opacity="0">
+            <g class="tf-cell" transform="translate(490, 412)">
+              <ellipse cx="0" cy="0" rx="18" ry="7" fill="#8a4332" opacity="0.9"/>
+              <text x="0" y="3" text-anchor="middle" font-family="JetBrains Mono" font-size="7" fill="#fcd34d" font-weight="600">TF</text>
+            </g>
+            <g class="tf-cell" transform="translate(560, 414)">
+              <ellipse cx="0" cy="0" rx="18" ry="7" fill="#8a4332" opacity="0.9"/>
+              <text x="0" y="3" text-anchor="middle" font-family="JetBrains Mono" font-size="7" fill="#fcd34d" font-weight="600">TF</text>
+            </g>
+            <g class="tf-cell" transform="translate(640, 412)">
+              <ellipse cx="0" cy="0" rx="18" ry="7" fill="#8a4332" opacity="0.9"/>
+              <text x="0" y="3" text-anchor="middle" font-family="JetBrains Mono" font-size="7" fill="#fcd34d" font-weight="600">TF</text>
+            </g>
+            <g class="tf-cell" transform="translate(710, 414)">
+              <ellipse cx="0" cy="0" rx="18" ry="7" fill="#8a4332" opacity="0.9"/>
+              <text x="0" y="3" text-anchor="middle" font-family="JetBrains Mono" font-size="7" fill="#fcd34d" font-weight="600">TF</text>
+            </g>
+          </g>
+
+          <!-- LAYER 7: Red blood cells (flowing) -->
+          <g id="rbc-layer">
+            <g class="rbc" data-rbc="1"><ellipse cx="100" cy="160" rx="22" ry="14" fill="url(#rbc-gradient)" opacity="0.85"/><ellipse cx="100" cy="160" rx="8" ry="5" fill="#3a1820" opacity="0.4"/></g>
+            <g class="rbc" data-rbc="2"><ellipse cx="280" cy="200" rx="22" ry="14" fill="url(#rbc-gradient)" opacity="0.85"/><ellipse cx="280" cy="200" rx="8" ry="5" fill="#3a1820" opacity="0.4"/></g>
+            <g class="rbc" data-rbc="3"><ellipse cx="460" cy="180" rx="22" ry="14" fill="url(#rbc-gradient)" opacity="0.85"/><ellipse cx="460" cy="180" rx="8" ry="5" fill="#3a1820" opacity="0.4"/></g>
+            <g class="rbc" data-rbc="4"><ellipse cx="640" cy="220" rx="22" ry="14" fill="url(#rbc-gradient)" opacity="0.85"/><ellipse cx="640" cy="220" rx="8" ry="5" fill="#3a1820" opacity="0.4"/></g>
+            <g class="rbc" data-rbc="5"><ellipse cx="820" cy="170" rx="22" ry="14" fill="url(#rbc-gradient)" opacity="0.85"/><ellipse cx="820" cy="170" rx="8" ry="5" fill="#3a1820" opacity="0.4"/></g>
+            <g class="rbc" data-rbc="6"><ellipse cx="1000" cy="210" rx="22" ry="14" fill="url(#rbc-gradient)" opacity="0.85"/><ellipse cx="1000" cy="210" rx="8" ry="5" fill="#3a1820" opacity="0.4"/></g>
+            <g class="rbc" data-rbc="7"><ellipse cx="180" cy="260" rx="22" ry="14" fill="url(#rbc-gradient)" opacity="0.85"/><ellipse cx="180" cy="260" rx="8" ry="5" fill="#3a1820" opacity="0.4"/></g>
+            <g class="rbc" data-rbc="8"><ellipse cx="380" cy="320" rx="22" ry="14" fill="url(#rbc-gradient)" opacity="0.85"/><ellipse cx="380" cy="320" rx="8" ry="5" fill="#3a1820" opacity="0.4"/></g>
+            <g class="rbc" data-rbc="9"><ellipse cx="900" cy="290" rx="22" ry="14" fill="url(#rbc-gradient)" opacity="0.85"/><ellipse cx="900" cy="290" rx="8" ry="5" fill="#3a1820" opacity="0.4"/></g>
+            <g class="rbc" data-rbc="10"><ellipse cx="1100" cy="320" rx="22" ry="14" fill="url(#rbc-gradient)" opacity="0.85"/><ellipse cx="1100" cy="320" rx="8" ry="5" fill="#3a1820" opacity="0.4"/></g>
+          </g>
+
+          <!-- LAYER 8: Platelets (initially resting/circulating, then adherent/activated) -->
+          <g id="platelet-layer">
+            <!-- Resting platelets (small discs, gray) flowing -->
+            <g class="platelet platelet-resting" data-plt="1" transform="translate(150, 200)"><circle r="6" fill="url(#platelet-resting-gradient)"/></g>
+            <g class="platelet platelet-resting" data-plt="2" transform="translate(330, 150)"><circle r="6" fill="url(#platelet-resting-gradient)"/></g>
+            <g class="platelet platelet-resting" data-plt="3" transform="translate(510, 250)"><circle r="6" fill="url(#platelet-resting-gradient)"/></g>
+            <g class="platelet platelet-resting" data-plt="4" transform="translate(690, 180)"><circle r="6" fill="url(#platelet-resting-gradient)"/></g>
+            <g class="platelet platelet-resting" data-plt="5" transform="translate(870, 230)"><circle r="6" fill="url(#platelet-resting-gradient)"/></g>
+            <g class="platelet platelet-resting" data-plt="6" transform="translate(1050, 170)"><circle r="6" fill="url(#platelet-resting-gradient)"/></g>
+
+            <!-- Adherent/Activated platelets (initially hidden, appear in step 3+) -->
+            <g class="platelet platelet-activated" data-plt-act="1" transform="translate(490, 380)" opacity="0">
+              <path d="M -12,0 Q -8,-10 0,-12 Q 8,-10 12,0 Q 8,8 0,10 Q -8,8 -12,0 Z" fill="url(#platelet-active-gradient)"/>
+              <circle r="3" fill="#fcd34d" opacity="0.6"/>
+            </g>
+            <g class="platelet platelet-activated" data-plt-act="2" transform="translate(540, 378)" opacity="0">
+              <path d="M -14,0 Q -10,-12 0,-14 Q 10,-12 14,0 Q 10,10 0,12 Q -10,10 -14,0 Z" fill="url(#platelet-active-gradient)"/>
+              <circle r="3" fill="#fcd34d" opacity="0.6"/>
+            </g>
+            <g class="platelet platelet-activated" data-plt-act="3" transform="translate(600, 376)" opacity="0">
+              <path d="M -15,0 Q -10,-14 0,-15 Q 10,-14 15,0 Q 10,12 0,14 Q -10,12 -15,0 Z" fill="url(#platelet-active-gradient)"/>
+              <circle r="3" fill="#fcd34d" opacity="0.6"/>
+            </g>
+            <g class="platelet platelet-activated" data-plt-act="4" transform="translate(660, 378)" opacity="0">
+              <path d="M -14,0 Q -10,-12 0,-14 Q 10,-12 14,0 Q 10,10 0,12 Q -10,10 -14,0 Z" fill="url(#platelet-active-gradient)"/>
+              <circle r="3" fill="#fcd34d" opacity="0.6"/>
+            </g>
+            <g class="platelet platelet-activated" data-plt-act="5" transform="translate(710, 380)" opacity="0">
+              <path d="M -12,0 Q -8,-10 0,-12 Q 8,-10 12,0 Q 8,8 0,10 Q -8,8 -12,0 Z" fill="url(#platelet-active-gradient)"/>
+              <circle r="3" fill="#fcd34d" opacity="0.6"/>
+            </g>
+          </g>
+
+          <!-- LAYER 9: Coagulation factor particles (small dots that migrate to platelet surface) -->
+          <g id="factor-particles" opacity="0">
+            <!-- These are positioned/animated via JS for fluid motion -->
+            <g class="fp" data-fp="1"><circle r="4" fill="#fbbf24"/><title>VIIa</title></g>
+            <g class="fp" data-fp="2"><circle r="4" fill="#fbbf24"/><title>Xa</title></g>
+            <g class="fp" data-fp="3"><circle r="4" fill="#f59e0b"/><title>IIa (Thrombin)</title></g>
+            <g class="fp" data-fp="4"><circle r="4" fill="#f59e0b"/><title>IIa</title></g>
+            <g class="fp" data-fp="5"><circle r="4" fill="#fcd34d"/><title>IXa</title></g>
+            <g class="fp" data-fp="6"><circle r="4" fill="#fcd34d"/><title>VIIIa</title></g>
+            <g class="fp" data-fp="7"><circle r="4" fill="#fbbf24"/><title>Va</title></g>
+            <g class="fp" data-fp="8"><circle r="4" fill="#f59e0b"/><title>IIa</title></g>
+          </g>
+
+          <!-- LAYER 10: Fibrin mesh (strands grow during step 6+) -->
+          <g id="fibrin-mesh" opacity="0" filter="url(#glow-fibrin)">
+            <!-- Horizontal strands -->
+            <path class="fibrin-strand" d="M 460,365 L 740,365" stroke="#e8d5b0" stroke-width="1.5" fill="none" opacity="0"/>
+            <path class="fibrin-strand" d="M 470,375 L 730,375" stroke="#e8d5b0" stroke-width="1.5" fill="none" opacity="0"/>
+            <path class="fibrin-strand" d="M 460,355 L 740,355" stroke="#d4c498" stroke-width="1.5" fill="none" opacity="0"/>
+            <!-- Diagonal cross-links -->
+            <path class="fibrin-strand" d="M 470,340 L 730,390" stroke="#d4c498" stroke-width="1.2" fill="none" opacity="0"/>
+            <path class="fibrin-strand" d="M 730,340 L 470,390" stroke="#d4c498" stroke-width="1.2" fill="none" opacity="0"/>
+            <path class="fibrin-strand" d="M 500,345 L 700,385" stroke="#d4c498" stroke-width="1.2" fill="none" opacity="0"/>
+            <path class="fibrin-strand" d="M 700,345 L 500,385" stroke="#d4c498" stroke-width="1.2" fill="none" opacity="0"/>
+            <!-- Curved strands for 3D feel -->
+            <path class="fibrin-strand" d="M 460,360 Q 600,330 740,360" stroke="#e8d5b0" stroke-width="1.2" fill="none" opacity="0"/>
+            <path class="fibrin-strand" d="M 460,380 Q 600,400 740,380" stroke="#d4c498" stroke-width="1.2" fill="none" opacity="0"/>
+            <path class="fibrin-strand" d="M 480,330 Q 600,350 720,330" stroke="#e8d5b0" stroke-width="1.2" fill="none" opacity="0"/>
+            <path class="fibrin-strand" d="M 480,395 Q 600,420 720,395" stroke="#d4c498" stroke-width="1.2" fill="none" opacity="0"/>
+            <!-- Vertical anchors -->
+            <path class="fibrin-strand" d="M 500,330 L 500,395" stroke="#d4c498" stroke-width="1" fill="none" opacity="0"/>
+            <path class="fibrin-strand" d="M 560,325 L 560,395" stroke="#d4c498" stroke-width="1" fill="none" opacity="0"/>
+            <path class="fibrin-strand" d="M 620,322 L 620,398" stroke="#d4c498" stroke-width="1" fill="none" opacity="0"/>
+            <path class="fibrin-strand" d="M 680,325 L 680,395" stroke="#d4c498" stroke-width="1" fill="none" opacity="0"/>
+          </g>
+
+          <!-- LAYER 11: Trapped RBCs (when clot forms) -->
+          <g id="trapped-rbc-layer" opacity="0">
+            <g class="rbc-trapped"><ellipse cx="510" cy="350" rx="20" ry="13" fill="url(#rbc-gradient)" opacity="0.85"/><ellipse cx="510" cy="350" rx="7" ry="4" fill="#3a1820" opacity="0.4"/></g>
+            <g class="rbc-trapped"><ellipse cx="570" cy="340" rx="20" ry="13" fill="url(#rbc-gradient)" opacity="0.85"/><ellipse cx="570" cy="340" rx="7" ry="4" fill="#3a1820" opacity="0.4"/></g>
+            <g class="rbc-trapped"><ellipse cx="635" cy="358" rx="20" ry="13" fill="url(#rbc-gradient)" opacity="0.85"/><ellipse cx="635" cy="358" rx="7" ry="4" fill="#3a1820" opacity="0.4"/></g>
+            <g class="rbc-trapped"><ellipse cx="700" cy="345" rx="20" ry="13" fill="url(#rbc-gradient)" opacity="0.85"/><ellipse cx="700" cy="345" rx="7" ry="4" fill="#3a1820" opacity="0.4"/></g>
+            <g class="rbc-trapped"><ellipse cx="540" cy="385" rx="20" ry="13" fill="url(#rbc-gradient)" opacity="0.85"/><ellipse cx="540" cy="385" rx="7" ry="4" fill="#3a1820" opacity="0.4"/></g>
+            <g class="rbc-trapped"><ellipse cx="660" cy="388" rx="20" ry="13" fill="url(#rbc-gradient)" opacity="0.85"/><ellipse cx="660" cy="388" rx="7" ry="4" fill="#3a1820" opacity="0.4"/></g>
+          </g>
+
+          <!-- LAYER 12: Annotations (appear with relevant step) -->
+          <g id="annotations">
+            <g id="ann-injury" opacity="0">
+              <line x1="500" y1="320" x2="500" y2="380" stroke="#ef4444" stroke-width="1" stroke-dasharray="3 2"/>
+              <text x="495" y="315" text-anchor="end" font-family="Outfit" font-size="11" fill="#ef4444" font-weight="500">⚠ Cedera Endotelium</text>
+            </g>
+            <g id="ann-platelets" opacity="0">
+              <line x1="600" y1="340" x2="600" y2="370" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3 2"/>
+              <text x="600" y="335" text-anchor="middle" font-family="Outfit" font-size="11" fill="#fbbf24" font-weight="500">Trombosit Aktif</text>
+            </g>
+            <g id="ann-fibrin" opacity="0">
+              <line x1="600" y1="290" x2="600" y2="320" stroke="#e8d5b0" stroke-width="1" stroke-dasharray="3 2"/>
+              <text x="600" y="285" text-anchor="middle" font-family="Outfit" font-size="11" fill="#e8d5b0" font-weight="500">Mesh Fibrin Stabil</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Vascular animation status bar -->
+      <div id="vasc-status-bar" class="mt-4 p-4 bg-deepest rounded status-info fade-in" style="border: 1px solid var(--border-subtle);">
+        <div class="flex items-start gap-3">
+          <i data-lucide="info" id="vasc-status-icon" class="w-4 h-4 mt-0.5 text-accent flex-shrink-0"></i>
+          <div class="flex-1">
+            <div id="vasc-status-label" class="text-[10px] uppercase tracking-widest text-accent-dim mb-1">Status</div>
+            <p id="vasc-status-text" class="text-sm text-secondary-c leading-relaxed">
+              Visualisasi Cell-based Model dari hemostasis. Tekan "Putar" untuk memulai animasi pembentukan bekuan pada permukaan endotelium yang mengalami cedera.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vascular controls -->
+      <div class="mt-4 flex items-center justify-between gap-3 flex-wrap">
+        <div class="flex items-center gap-2">
+          <button id="vasc-play-btn" class="btn-primary px-3 py-2 rounded text-[11px] uppercase tracking-wider font-medium"><i data-lucide="play" class="w-3.5 h-3.5 inline mb-0.5 mr-1"></i> <span id="vasc-play-text">Putar</span></button>
+          <button id="vasc-step-btn" class="btn-secondary px-3 py-2 rounded text-[11px] uppercase tracking-wider font-medium"><i data-lucide="skip-forward" class="w-3.5 h-3.5 inline mb-0.5 mr-1"></i> Langkah</button>
+          <button id="vasc-reset-btn" class="btn-secondary px-3 py-2 rounded text-[11px] uppercase tracking-wider font-medium"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5 inline mb-0.5 mr-1"></i> Reset</button>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] text-muted">
+          <span>Kecepatan</span>
+          <select id="vasc-speed-select" class="bg-elevated text-xs px-2 py-1 rounded border" style="border-color: var(--border-default); color: var(--text-secondary);">
+            <option value="2500">Lambat</option>
+            <option value="1800" selected>Normal</option>
+            <option value="1200">Cepat</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Vascular legend -->
+      <div class="mt-4 flex flex-wrap items-center gap-3 md:gap-4 text-xs px-2 py-2">
+        <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full" style="background: radial-gradient(circle, #b91c1c, #7f1d1d);"></div><span class="text-muted text-[11px]">Eritrosit</span></div>
+        <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full" style="background: radial-gradient(circle, #a8b0bd, #6b7280);"></div><span class="text-muted text-[11px]">Trombosit istirahat</span></div>
+        <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full" style="background: radial-gradient(circle, #fbbf24, #8a7549);"></div><span class="text-muted text-[11px]">Trombosit aktif</span></div>
+        <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full" style="background: #fbbf24;"></div><span class="text-muted text-[11px]">Faktor koagulasi</span></div>
+        <div class="flex items-center gap-1.5"><div class="w-3 h-1.5" style="background: #e8d5b0;"></div><span class="text-muted text-[11px]">Fibrin</span></div>
+        <div class="flex items-center gap-1.5"><div class="w-4 h-2 rounded-sm" style="background: linear-gradient(180deg, #d4af6a, #8a7549);"></div><span class="text-muted text-[11px]">Endotelium</span></div>
+      </div>
+    </div><!-- /tab-content-vascular -->
   </section>
 
   <aside class="col-span-12 xl:col-span-3 space-y-4 xl:sticky xl:top-4 xl:self-start xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto xl:pr-1 sidebar-sticky">
@@ -1091,6 +1507,9 @@ function executeStep(stepIdx) {
   $('step-num').textContent = stepIdx + 1;
   $('step-total').textContent = sequence.length;
 
+  // Sync vascular animation if enabled
+  syncVascToCascade(stepIdx);
+
   return true;
 }
 
@@ -1219,6 +1638,11 @@ function resetCascade(clearDrugsToo = false) {
   if (clearDrugsToo) {
     state.activeDrugs.clear();
     updateDrugVisualization();
+  }
+
+  // If sync enabled, reset vascular too
+  if (vascState && vascState.syncEnabled && vascState.currentStep > -1) {
+    vascReset();
   }
 
   setStatus('Pilih jalur pemicu (Intrinsik atau Ekstrinsik) untuk memulai simulasi kaskade koagulasi. Anda juga dapat mengaktifkan antikoagulan, regulator fisiologis, atau fibrinolitik untuk eksplorasi lebih lanjut.', 'info');
@@ -1546,6 +1970,300 @@ function showFibrinolysisInfo(item) {
   if (window.lucide) lucide.createIcons();
 }
 
+// ============== TAB SWITCHING & VASCULAR ANIMATION ==============
+const vascularSequence = [
+  {
+    label: 'BASELINE',
+    desc: 'Kondisi normal: pembuluh darah utuh, endotelium intak, eritrosit dan trombosit beredar bebas dalam lumen tanpa adhesi. Endotelium sehat memproduksi prostasiklin & NO (antiplatelet), thrombomodulin (antikoagulan), dan tPA (profibrinolytic) — mempertahankan permukaan non-trombogenik.',
+    actions: ['flowing']
+  },
+  {
+    label: 'CEDERA VASKULAR',
+    desc: '⚠ Cedera robek endotelium. Lapisan subendotelium terekspos: kolagen, von Willebrand Factor (vWF), dan FIBROBLAS yang mengekspresikan Tissue Factor (TF) — pemicu jalur ekstrinsik. Inilah inisiator hemostasis fisiologis in vivo.',
+    actions: ['injury', 'expose-collagen', 'expose-tf', 'ann-injury']
+  },
+  {
+    label: 'ADHESI & AKTIVASI TROMBOSIT',
+    desc: 'Trombosit beredar menempel pada vWF & kolagen via reseptor GPIb-IX-V dan GPVI/α2β1. Adhesi → degranulasi (ADP, TXA2, serotonin) → AKTIVASI: bentuk berubah (discoid → spread/pseudopodia), reseptor GPIIb/IIIa berubah konformasi → afinitas tinggi terhadap fibrinogen. Hemostasis primer dimulai.',
+    actions: ['stop-flow', 'platelets-adhere', 'ann-platelets']
+  },
+  {
+    label: 'INISIASI KOAGULASI · TF·VIIa',
+    desc: '🔬 FASE INISIASI (Cell-based Model): VII plasma berikatan dengan TF pada permukaan sel TF-bearing. Kompleks TF·VIIa mengaktivasi sejumlah kecil X → Xa dan IX → IXa. Va lokal dari trombosit teraktivasi (granula α) bergabung → kompleks prothrombinase awal → jejak thrombin (~5% total).',
+    actions: ['particles-to-tf']
+  },
+  {
+    label: 'AMPLIFIKASI THROMBIN PADA TROMBOSIT',
+    desc: '🔬 FASE AMPLIFIKASI: Jejak thrombin awal berdifusi ke permukaan TROMBOSIT TERAKTIVASI (PL kaya phosphatidylserine). Di sini thrombin mengaktivasi V, VIII, XI — semua bertumpuk di membran platelet. VIIIa mengikat IXa = TENASE INTRINSIK; Va mengikat Xa = PROTHROMBINASE INTRINSIK. "Ledakan" thrombin terjadi (~95% total terbentuk di fase ini).',
+    actions: ['particles-to-platelets', 'amplify-burst']
+  },
+  {
+    label: 'POLIMERISASI FIBRIN',
+    desc: '🔬 FASE PROPAGASI: Thrombin memecah fibrinogen → monomer fibrin → polimer fibrin yang spontan terbentuk antar trombosit. XIIIa (transglutaminase) membentuk ikatan kovalen γ-glutamyl-ε-lysine — cross-linking → mesh stabil yang resistan terhadap fibrinolisis prematur. Eritrosit terjebak dalam meshwork.',
+    actions: ['fibrin-grow', 'trap-rbc', 'ann-fibrin']
+  },
+  {
+    label: 'BEKUAN MATANG · HEMOSTASIS SEKUNDER',
+    desc: '✓ HEMOSTASIS LENGKAP. Bekuan merah-putih: gabungan trombosit (white thrombus, hemostasis primer) + mesh fibrin & eritrosit terjebak (red thrombus, hemostasis sekunder). Resistansi terhadap geseran aliran darah. Selanjutnya: retraksi clot (kontraksi platelet), penyembuhan luka, dan eventual resolusi via plasmin.',
+    actions: ['fibrin-mature', 'all-trapped']
+  }
+];
+
+const vascState = {
+  currentStep: -1,
+  isPlaying: false,
+  interval: null,
+  syncEnabled: true
+};
+
+function vascSetStatus(text, type = 'info') {
+  const bar = $('vasc-status-bar');
+  if (!bar) return;
+  bar.classList.remove('status-info', 'status-warning', 'status-success', 'status-danger');
+  bar.classList.add('status-' + type);
+  bar.classList.remove('fade-in'); void bar.offsetWidth; bar.classList.add('fade-in');
+  const icons = { info: 'info', warning: 'alert-triangle', success: 'check-circle-2', danger: 'x-octagon' };
+  const labels = { info: 'Fase', warning: 'Peringatan', success: 'Selesai', danger: 'Terhenti' };
+  const colors = { info: 'var(--accent-gold)', warning: 'var(--status-warning)', success: 'var(--status-clot)', danger: 'var(--status-inhibited)' };
+  const icon = $('vasc-status-icon');
+  if (icon) {
+    icon.setAttribute('data-lucide', icons[type]);
+    icon.style.color = colors[type];
+  }
+  $('vasc-status-label').textContent = labels[type];
+  $('vasc-status-label').style.color = colors[type];
+  $('vasc-status-text').textContent = text;
+  if (window.lucide) lucide.createIcons();
+}
+
+function vascExecuteAction(action) {
+  switch (action) {
+    case 'flowing':
+      $('rbc-layer').classList.add('flowing');
+      $('platelet-layer').classList.add('flowing');
+      break;
+    case 'stop-flow':
+      // Stop flow at injury zone
+      $('rbc-layer').classList.remove('flowing');
+      $('platelet-layer').classList.remove('flowing');
+      break;
+    case 'injury':
+      $('endo-injury').classList.add('injured');
+      break;
+    case 'expose-collagen':
+      $('collagen-fibers').classList.add('exposed');
+      break;
+    case 'expose-tf':
+      $('tf-cells').classList.add('exposed');
+      break;
+    case 'platelets-adhere':
+      $$('.platelet-activated').forEach((p, i) => {
+        setTimeout(() => {
+          p.style.opacity = '1';
+          p.classList.add('visible');
+        }, i * 150);
+      });
+      break;
+    case 'particles-to-tf':
+      // Show particles, position near TF cells
+      const fpLayer = $('factor-particles');
+      fpLayer.style.opacity = '1';
+      const tfPositions = [[490, 412], [560, 414], [640, 412], [710, 414]];
+      $$('.fp').forEach((fp, i) => {
+        const start = [200 + Math.random() * 200, 150 + Math.random() * 100];
+        const end = tfPositions[i % tfPositions.length];
+        fp.setAttribute('transform', `translate(${start[0]}, ${start[1]})`);
+        setTimeout(() => {
+          fp.setAttribute('transform', `translate(${end[0] + (Math.random() * 20 - 10)}, ${end[1] - 15})`);
+        }, 100 + i * 80);
+      });
+      break;
+    case 'particles-to-platelets':
+      // Migrate particles to platelet surface
+      const pltPositions = [[490, 365], [540, 363], [600, 361], [660, 363], [710, 365]];
+      $$('.fp').forEach((fp, i) => {
+        const end = pltPositions[i % pltPositions.length];
+        setTimeout(() => {
+          fp.setAttribute('transform', `translate(${end[0] + (Math.random() * 15 - 7)}, ${end[1] + (Math.random() * 10 - 5)})`);
+        }, i * 100);
+      });
+      break;
+    case 'amplify-burst':
+      // Briefly brighten platelets and create a flash
+      $$('.platelet-activated').forEach(p => {
+        p.style.filter = 'drop-shadow(0 0 20px rgba(251, 191, 36, 1))';
+        setTimeout(() => { p.style.filter = ''; }, 1500);
+      });
+      break;
+    case 'fibrin-grow':
+      $('fibrin-mesh').style.opacity = '1';
+      $$('.fibrin-strand').forEach((s, i) => {
+        setTimeout(() => { s.style.opacity = '0.9'; }, i * 130);
+      });
+      break;
+    case 'fibrin-mature':
+      $$('.fibrin-strand').forEach(s => {
+        s.style.opacity = '1';
+        s.style.strokeWidth = parseFloat(s.style.strokeWidth || s.getAttribute('stroke-width')) + 0.3;
+      });
+      break;
+    case 'trap-rbc':
+      $('trapped-rbc-layer').classList.add('visible');
+      $('trapped-rbc-layer').style.opacity = '1';
+      break;
+    case 'all-trapped':
+      $('factor-particles').style.opacity = '0.3';
+      break;
+    case 'ann-injury':
+      $('ann-injury').classList.add('show'); $('ann-injury').style.opacity = '1';
+      break;
+    case 'ann-platelets':
+      $('ann-platelets').classList.add('show'); $('ann-platelets').style.opacity = '1';
+      break;
+    case 'ann-fibrin':
+      $('ann-fibrin').classList.add('show'); $('ann-fibrin').style.opacity = '1';
+      break;
+  }
+}
+
+function vascNextStep() {
+  vascState.currentStep++;
+  if (vascState.currentStep >= vascularSequence.length) {
+    vascPause();
+    return;
+  }
+  const step = vascularSequence[vascState.currentStep];
+  step.actions.forEach(a => vascExecuteAction(a));
+  const isLast = vascState.currentStep === vascularSequence.length - 1;
+  vascSetStatus(step.desc, isLast ? 'success' : 'info');
+  $('vasc-step-num').textContent = vascState.currentStep + 1;
+
+  if (isLast) vascPause();
+}
+
+function vascPlay() {
+  // If completed, reset before replay
+  if (vascState.currentStep >= vascularSequence.length - 1) {
+    vascReset();
+  }
+  vascState.isPlaying = true;
+  $('vasc-play-text').textContent = 'Jeda';
+  const icon = $('vasc-play-btn').querySelector('[data-lucide]');
+  if (icon) {
+    icon.setAttribute('data-lucide', 'pause');
+    if (window.lucide) lucide.createIcons();
+  }
+  const speed = parseInt($('vasc-speed-select').value) || 1800;
+  vascNextStep();
+  vascState.interval = setInterval(() => {
+    vascNextStep();
+    if (vascState.currentStep >= vascularSequence.length - 1) vascPause();
+  }, speed);
+}
+
+function vascPause() {
+  vascState.isPlaying = false;
+  if (vascState.interval) { clearInterval(vascState.interval); vascState.interval = null; }
+  $('vasc-play-text').textContent = 'Putar';
+  const icon = $('vasc-play-btn').querySelector('[data-lucide]');
+  if (icon) {
+    icon.setAttribute('data-lucide', 'play');
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function vascTogglePlay() {
+  if (vascState.isPlaying) vascPause();
+  else vascPlay();
+}
+
+function vascReset() {
+  vascPause();
+  vascState.currentStep = -1;
+  $('vasc-step-num').textContent = 0;
+
+  // Reset all visual elements
+  $('rbc-layer').classList.add('flowing');
+  $('platelet-layer').classList.add('flowing');
+  $('endo-injury').classList.remove('injured');
+  $('collagen-fibers').classList.remove('exposed');
+  $('tf-cells').classList.remove('exposed');
+  $('factor-particles').style.opacity = '0';
+  $('fibrin-mesh').style.opacity = '0';
+  $('trapped-rbc-layer').classList.remove('visible');
+  $('trapped-rbc-layer').style.opacity = '0';
+
+  $$('.platelet-activated').forEach(p => {
+    p.style.opacity = '0';
+    p.classList.remove('visible');
+    p.style.filter = '';
+  });
+  $$('.fibrin-strand').forEach(s => s.style.opacity = '0');
+  $$('#annotations g').forEach(a => { a.classList.remove('show'); a.style.opacity = '0'; });
+  $$('.fp').forEach((fp, i) => {
+    fp.setAttribute('transform', `translate(${200 + Math.random() * 800}, ${150 + Math.random() * 200})`);
+  });
+
+  vascSetStatus('Visualisasi Cell-based Model dari hemostasis. Tekan "Putar" untuk memulai animasi pembentukan bekuan pada permukaan endotelium yang mengalami cedera.', 'info');
+}
+
+// ============== TAB SWITCHING ==============
+function switchTab(tab) {
+  if (tab === 'cascade') {
+    $('tab-cascade').classList.add('tab-active');
+    $('tab-vascular').classList.remove('tab-active');
+    $('tab-content-cascade').classList.remove('hidden');
+    $('tab-content-vascular').classList.add('hidden');
+  } else {
+    $('tab-vascular').classList.add('tab-active');
+    $('tab-cascade').classList.remove('tab-active');
+    $('tab-content-vascular').classList.remove('hidden');
+    $('tab-content-cascade').classList.add('hidden');
+
+    // Initialize vascular flow on first view
+    if (vascState.currentStep === -1) {
+      $('rbc-layer').classList.add('flowing');
+      $('platelet-layer').classList.add('flowing');
+    }
+  }
+}
+
+// ============== SYNC: Cascade → Vascular ==============
+// Map cascade step (intrinsic/extrinsic) → vascular step
+// 7 vascular steps total. Map based on what's happening in cascade.
+function getVascStepForCascade(cascStep, trigger) {
+  // For intrinsic with prelude (15 steps total):
+  // steps 0-1 (prelude initiation) → vasc 1 (cedera) + 2 (adhesi) + 3 (inisiasi)
+  // For extrinsic (10 steps):
+  // step 0 (pemicu) → vasc 1 (cedera)
+  // Both: step ~5 (II/IIa formation) → vasc 4 (amplifikasi)
+  // step ~6 (fibrinogen → fibrin) → vasc 5 (polimerisasi)
+  // step ~end (clot) → vasc 6 (matang)
+  const seq = cascadeSequences[trigger];
+  if (!seq) return -1;
+  const total = seq.length;
+  const ratio = cascStep / Math.max(total - 1, 1);
+  // Linear interpolation 0→6 (vasc has 7 steps indexed 0-6)
+  return Math.min(6, Math.round(ratio * 6));
+}
+
+function syncVascToCascade(cascStep) {
+  if (!vascState.syncEnabled) return;
+  if (!state.currentTrigger) return;
+  const targetVascStep = getVascStepForCascade(cascStep, state.currentTrigger);
+  // Advance vasc to match
+  while (vascState.currentStep < targetVascStep) {
+    vascState.currentStep++;
+    if (vascState.currentStep >= vascularSequence.length) break;
+    const step = vascularSequence[vascState.currentStep];
+    step.actions.forEach(a => vascExecuteAction(a));
+    $('vasc-step-num').textContent = vascState.currentStep + 1;
+    // Update vasc status if user is on vasc tab (silently otherwise)
+    const isLast = vascState.currentStep === vascularSequence.length - 1;
+    vascSetStatus(step.desc, isLast ? 'success' : 'info');
+  }
+}
+
 // ============== INIT ==============
 function init() {
   // Factor click handlers
@@ -1612,6 +2330,29 @@ function init() {
 
   // Fibrinolysis runner
   $('fib-play-btn').addEventListener('click', runFibrinolysis);
+
+  // ====== TAB SWITCHING ======
+  $('tab-cascade').addEventListener('click', () => switchTab('cascade'));
+  $('tab-vascular').addEventListener('click', () => switchTab('vascular'));
+
+  // ====== SYNC TOGGLE ======
+  $('sync-toggle').addEventListener('change', (e) => {
+    vascState.syncEnabled = e.target.checked;
+  });
+
+  // ====== VASCULAR CONTROLS ======
+  $('vasc-play-btn').addEventListener('click', vascTogglePlay);
+  $('vasc-step-btn').addEventListener('click', () => {
+    if (vascState.isPlaying) vascPause();
+    vascNextStep();
+  });
+  $('vasc-reset-btn').addEventListener('click', vascReset);
+
+  // Initialize vascular flow on load (resting state)
+  setTimeout(() => {
+    $('rbc-layer').classList.add('flowing');
+    $('platelet-layer').classList.add('flowing');
+  }, 100);
 
   // Init lucide
   if (window.lucide) lucide.createIcons();
