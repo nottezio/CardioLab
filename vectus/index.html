@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vectus — Cardiac Electrical Conduction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-base:#1C1C1E;--bg-surface:#242424;--bg-elevated:#2E2E2E;--bg-hover:#3A3A3A;
+  --border:#3A3A3A;--border-bright:#565656;
+  --moss:#4E7D42;--moss-light:#7BAB72;--moss-dim:rgba(78,125,66,.22);--moss-border:rgba(78,125,66,.55);--moss-pale:#A8CDA0;
+  --text-primary:#E8E8E6;--text-secondary:#B2B2AE;--text-muted:#7C7C78;
+  --amber:#D9A441;--blue:#5090C0;--red:#C0504E;--red-bg:rgba(192,80,78,.22);--grey:#8A8A86;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg-base);color:var(--text-primary);font-family:'Outfit',system-ui,sans-serif;font-size:13px;display:flex;flex-direction:column}
+.mono{font-family:'JetBrains Mono',monospace}
+.navbar{height:46px;flex:0 0 46px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:var(--bg-surface);border-bottom:1px solid var(--border)}
+.brand{display:flex;flex-direction:column;line-height:1.02}
+.brand .name{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--moss-light);font-weight:600}
+.brand .sub{font-size:10px;color:var(--text-muted)}
+.nav-right{display:flex;align-items:center;gap:8px}
+.lead-badge{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--moss-pale);background:var(--moss-dim);border:1px solid var(--moss-border);padding:4px 11px;border-radius:6px;font-weight:600}
+.sel{background:var(--bg-elevated);color:var(--text-secondary);border:1px solid var(--moss-border);border-radius:7px;padding:5px 8px;font-family:'Outfit',sans-serif;font-size:12px;cursor:pointer}
+.sel:focus{outline:none;border-color:var(--moss-light)}
+.main{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:minmax(280px,37%) 1fr;gap:12px;padding:12px;overflow:hidden}
+.panel{background:var(--bg-surface);border:1px solid var(--border);border-radius:12px}
+#heartPanel{display:flex;flex-direction:column;min-height:0;padding:10px}
+.heart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.vec-badge{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--moss-pale);background:var(--moss-dim);border:1px solid var(--moss-border);padding:3px 8px;border-radius:6px}
+#heartSvg{flex:1 1 auto;min-height:0;width:100%;display:block}
+.node-label{font-family:'Outfit',sans-serif;font-size:9px;fill:var(--text-secondary)}
+.cond-path{fill:none;stroke:var(--border-bright);stroke-width:1.6;stroke-dasharray:4 3;opacity:.45;transition:stroke .2s,opacity .2s,stroke-width .2s}
+.cond-path.active{stroke:var(--moss-light);stroke-width:2.4;opacity:1;stroke-dasharray:none}
+.node circle{transition:fill .18s,stroke .18s,r .18s,filter .18s}
+.elec circle{transition:fill .2s,stroke .2s}
+.controls{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.btn{background:var(--bg-elevated);border:1px solid var(--border);color:var(--text-secondary);border-radius:7px;padding:6px 11px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.btn:hover{background:var(--bg-hover)}
+.btn.play{border-color:var(--moss-border);color:var(--moss-pale)}
+.btn.play:hover{background:var(--moss-dim)}
+.speed-group{display:flex;gap:4px;margin-left:auto}
+.pill{background:var(--bg-elevated);border:1px solid var(--border);color:var(--text-muted);border-radius:18px;padding:4px 10px;font-family:'JetBrains Mono',monospace;font-size:11px;cursor:pointer}
+.pill.active{background:var(--moss-dim);border-color:var(--moss-border);color:var(--moss-pale)}
+.phase-ind{margin-top:7px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--moss-pale);background:var(--moss-dim);border:1px solid var(--moss-border);padding:3px 9px;border-radius:6px;align-self:flex-start}
+.rightcol{display:flex;flex-direction:column;gap:10px;min-height:0;overflow:hidden}
+.ecg-wrap{flex:0 0 auto}
+.ecg-title{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--moss-light);display:flex;justify-content:space-between;align-items:baseline}
+.ecg-title b{font-weight:600}
+.ecg-title small{font-size:10px;color:var(--text-muted);font-family:'Outfit'}
+#leadNote{font-size:9.5px;color:var(--amber);margin:1px 0 3px;min-height:12px;line-height:1.3}
+#ecgCanvas{width:100%;height:162px;background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;display:block}
+.bridge{flex:0 0 auto;background:var(--bg-elevated);border:1px solid var(--border);border-radius:11px;padding:9px 12px}
+.bridge-head{font-size:9px;letter-spacing:1.4px;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px}
+.chain{display:flex;align-items:stretch;gap:5px}
+.chain .step{flex:1 1 0;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;padding:6px 8px;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.chain .step .k{font-size:8.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px}
+.chain .step .v{font-size:11px;line-height:1.25;color:var(--text-secondary)}
+.chain .arrow{display:flex;align-items:center;color:var(--text-muted);font-size:14px;flex:0 0 auto}
+.step.wave .v{font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:600}
+.step.result{align-items:center;text-align:center}
+.step.result .v{font-family:'Outfit';font-weight:600;font-size:15px;letter-spacing:.5px}
+.step.result .cos{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:2px}
+.bottom{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:1.15fr 1fr;gap:10px}
+.mech,.dipole{background:var(--bg-elevated);border:1px solid var(--border);border-radius:11px;padding:10px 12px;display:flex;flex-direction:column;min-height:0}
+.mech h4,.dipole h4{font-size:9px;letter-spacing:1.4px;text-transform:uppercase;color:var(--text-muted);margin-bottom:5px}
+.dipole h4 .why{color:var(--moss-light);text-transform:none;letter-spacing:0;font-size:10px}
+#mechTitle{font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--moss-light);margin-bottom:5px;transition:color .3s}
+#mechBody{font-size:12px;line-height:1.5;color:var(--text-secondary);overflow:auto;flex:1 1 auto;min-height:0;padding-right:4px;transition:opacity .25s}
+#mechBody::-webkit-scrollbar{width:6px}#mechBody::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:3px}
+#mechRef{font-size:10px;color:var(--text-muted);margin-top:6px;line-height:1.4;flex:0 0 auto}
+#dipoleSvg{flex:1 1 auto;min-height:0;width:100%}
+.dipole-cap{font-size:10px;line-height:1.4;color:var(--text-secondary);margin-top:4px}
+.dipole-cap b{color:var(--moss-pale)}
+.footer{flex:0 0 auto;min-height:26px;display:flex;align-items:center;padding:5px 16px;background:var(--bg-elevated);border-left:3px solid var(--moss);font-size:10.5px;color:var(--text-muted)}
+@media(max-width:820px){html,body{overflow:auto}.main{grid-template-columns:1fr;overflow:visible;height:auto}.bottom{grid-template-columns:1fr}#heartSvg{height:320px;flex:none}.rightcol{overflow:visible}}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="brand"><span class="name">Vectus</span><span class="sub">Cardiac Electrical Conduction</span></div>
+  <div class="nav-right">
+    <select class="sel" id="diseaseSelect" title="Profil konduksi">
+      <option value="normal" selected>Normal Sinus</option>
+      <option value="rbbb">RBBB</option>
+      <option value="lbbb">LBBB</option>
+      <option value="stemi_inf">STEMI Inferior</option>
+      <option value="stemi_rv">STEMI Inferior + RV</option>
+      <option value="stemi_ant">STEMI Anterior</option>
+      <option value="stemi_lat">STEMI Lateral</option>
+      <option value="stemi_post">STEMI Posterior</option>
+      <option value="avblock1">AV Block Derajat 1</option>
+      <option value="avb2_mobitz1">AV Block 2° Mobitz I</option>
+      <option value="avb2_mobitz2">AV Block 2° Mobitz II</option>
+      <option value="avb3">AV Block Derajat 3</option>
+    </select>
+    <select class="sel" id="leadSelect" title="Pilih lead">
+      <optgroup label="Ekstremitas (bipolar)"><option>I</option><option selected>II</option><option>III</option></optgroup>
+      <optgroup label="Augmented (unipolar)"><option>aVR</option><option>aVL</option><option>aVF</option></optgroup>
+      <optgroup label="Prekordial (transversal)"><option>V1</option><option>V2</option><option>V3</option><option>V4</option><option>V5</option><option>V6</option></optgroup>
+      <optgroup label="Posterior (V7–V9)"><option>V7</option><option>V8</option><option>V9</option></optgroup>
+      <optgroup label="Sisi kanan (RV)"><option>V3R</option><option>V4R</option><option>V5R</option><option>V6R</option></optgroup>
+    </select>
+    <span class="lead-badge" id="leadBadge">Lead II</span>
+  </div>
+</nav>
+
+<div class="main">
+  <section class="panel" id="heartPanel">
+    <div class="heart-head"><span class="vec-badge" id="vecBadge">Vektor: 60°</span>
+      <span style="display:flex;gap:8px;align-items:center">
+        <button id="view3dToggle" class="pill" style="font-size:10px;border:none;cursor:pointer">Overview 3D</button>
+        <span style="font-size:10px;color:var(--text-muted)" id="planeBadge">Bidang frontal</span>
+      </span></div>
+    <svg id="heartSvg" viewBox="0 0 360 410" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+      <defs><marker id="arrowHead" markerWidth="9" markerHeight="9" refX="2" refY="3" orient="auto"><polygon id="vecArrowHeadPoly" points="0,0 6,3 0,6" fill="var(--moss)"/></marker></defs>
+      <g id="coronalView">
+      <g id="axisBack">
+        <line id="axisLine" stroke="var(--border-bright)" stroke-dasharray="6 4" stroke-width="1.4" opacity="0"/>
+        <line id="vAxis" stroke="var(--moss-border)" stroke-dasharray="4 3" stroke-width="1.4" opacity="0"/>
+      </g>
+      <!-- vessels -->
+      <path d="M270,30 L270,62 Q270,70 262,72" fill="none" stroke="#5A5A5A" stroke-width="8" stroke-linecap="round" opacity=".55"/>
+      <path d="M130,150 Q130,72 95,58 Q72,50 64,72" fill="none" stroke="#6A4A4A" stroke-width="9" stroke-linecap="round" opacity=".55"/>
+      <path d="M210,150 Q208,82 232,62" fill="none" stroke="#46586A" stroke-width="8" stroke-linecap="round" opacity=".55"/>
+      <!-- chambers -->
+      <path d="M72,72 Q58,118 100,148 L185,150 L185,70 Q130,58 72,72 Z" fill="#1F2A1F" stroke="#3A5A3A" stroke-width="1.5"/>
+      <path d="M185,70 L185,150 L262,150 Q300,142 292,90 Q255,60 185,70 Z" fill="#2A1F1F" stroke="#5A3A3A" stroke-width="1.5"/>
+      <path d="M62,168 Q40,278 130,352 Q180,380 185,300 L185,165 Q120,152 62,168 Z" fill="#1A2430" stroke="#2A4A5A" stroke-width="1.7"/>
+      <path d="M185,165 L185,330 Q190,360 235,338 Q300,300 290,210 Q280,168 245,160 Q210,158 185,165 Z" fill="#2A2018" stroke="#5A4A28" stroke-width="1.7"/>
+      <path d="M185,152 L182,338" stroke="#4A4A40" stroke-width="3.4" stroke-linecap="round" opacity=".85"/>
+      <line x1="192" y1="156" x2="246" y2="156" stroke="#777" stroke-width="1.3" stroke-dasharray="3 3" opacity=".65"/>
+      <line x1="118" y1="152" x2="178" y2="152" stroke="#777" stroke-width="1.3" stroke-dasharray="3 3" opacity=".65"/>
+      <text x="118" y="108" class="mono" font-size="11" fill="#5A7A5A" opacity=".7">LA</text>
+      <text x="248" y="108" class="mono" font-size="11" fill="#8A5A5A" opacity=".7">RA</text>
+      <text x="138" y="54" class="mono" font-size="8" fill="#5A7A5A" opacity=".6">Bachmann</text>
+      <text x="92" y="250" class="mono" font-size="12" fill="#5A82A0" opacity=".75">LV</text>
+      <text x="250" y="240" class="mono" font-size="11" fill="#9A8050" opacity=".7">RV</text>
+      <g id="pathLayer" fill="none">
+        <!-- Bachmann's bundle: interatrial, RA roof -> LA -->
+        <path id="path-atrial-la" class="cond-path" d="M255,80 Q188,58 118,92"/>
+        <!-- Internodal tracts SA -> AV: anterior / middle(Wenckebach) / posterior(Thorel) -->
+        <path id="path-int-ant"   class="cond-path" d="M252,85 Q212,100 200,139"/>
+        <path id="path-sa-av"     class="cond-path" d="M255,82 Q236,114 201,141"/>
+        <path id="path-int-post"  class="cond-path" d="M258,85 Q268,126 205,144"/>
+        <!-- AV node -> His (penetrating central fibrous body) -->
+        <path id="path-av-his"    class="cond-path" d="M200,142 Q192,154 187,166"/>
+        <!-- His -> bundle branches -->
+        <path id="path-his-rbb"   class="cond-path" d="M187,166 Q199,204 205,235"/>
+        <path id="path-his-lbb"   class="cond-path" d="M187,166 Q176,194 165,220"/>
+        <!-- LBB -> fascicles (LAF anterosuperior / LPF posteroinferior) -->
+        <path id="path-lbb-laf"   class="cond-path" d="M165,220 Q145,210 130,205"/>
+        <path id="path-lbb-lpf"   class="cond-path" d="M165,220 Q157,254 160,285"/>
+        <!-- fascicles / RBB -> Purkinje -->
+        <path id="path-rbb-purkR" class="cond-path" d="M205,235 Q228,272 235,300"/>
+        <path id="path-laf-purkL" class="cond-path" d="M130,205 Q96,230 85,258"/>
+        <path id="path-lpf-purkL" class="cond-path" d="M160,285 Q150,318 128,346"/>
+      </g>
+      <g stroke="var(--moss-border)" stroke-width="1" opacity=".4" fill="none" stroke-linecap="round">
+        <!-- LAF territory: anterosuperior LV -->
+        <path d="M85,258 q-17,-10 -25,-26 M60,232 q-8,-2 -15,1 M60,232 q-2,-8 -7,-13"/>
+        <path d="M85,258 q-19,7 -29,5 M85,258 q-7,15 -13,23"/>
+        <!-- LPF territory: inferoapical LV -->
+        <path d="M128,346 q-15,7 -25,7 M103,353 q-7,3 -14,1 M128,346 q5,11 1,23"/>
+        <path d="M128,346 q16,-3 23,-15"/>
+        <!-- RV subendocardial Purkinje network -->
+        <path d="M235,300 q22,-8 30,-28 M265,272 q9,-3 16,-1 M265,272 q2,-8 9,-12"/>
+        <path d="M235,300 q10,20 6,34 M241,334 q7,6 15,5"/>
+        <path d="M235,300 q-18,16 -30,18"/>
+      </g>
+      <g id="cometLayer"></g>
+      <g id="nodeLayer"></g>
+      <g id="vectorArrow">
+        <line id="projLine" stroke="var(--moss-light)" stroke-dasharray="3 2" stroke-width="1.3" opacity="0"/>
+        <line id="vecLine" x1="150" y1="245" x2="120" y2="290" stroke="var(--moss)" stroke-width="3.4" stroke-linecap="round" marker-end="url(#arrowHead)"/>
+        <circle cx="150" cy="245" r="3" fill="var(--text-muted)"/>
+      </g>
+      <g id="leadFront"></g>
+      <text id="axisLabel" x="110" y="392" class="mono" font-size="8" fill="var(--text-muted)">Lead II axis (+60°)</text>
+      </g><!-- /coronalView -->
+      <g id="axialView" style="display:none">
+        <text x="180" y="20" class="mono" font-size="10" fill="var(--moss-light)" text-anchor="middle" opacity=".8">ANTERIOR</text>
+        <text x="180" y="402" class="mono" font-size="9" fill="var(--text-muted)" text-anchor="middle">POSTERIOR</text>
+        <text x="20" y="205" class="mono" font-size="10" fill="#5A82A0">L</text>
+        <text x="344" y="205" class="mono" font-size="10" fill="#8A5A5A">R</text>
+        <text x="180" y="392" class="mono" font-size="7" fill="#555" text-anchor="middle">potongan transversal — tampak dari kranial</text>
+        <!-- thorax wall -->
+        <ellipse cx="180" cy="205" rx="156" ry="128" fill="#202227" stroke="#3a3a3a" stroke-width="1.8"/>
+        <!-- spine (posterior) -->
+        <circle cx="180" cy="320" r="17" fill="#26262a" stroke="#444" stroke-width="1.3"/>
+        <circle cx="180" cy="318" r="7" fill="#1C1C1E" stroke="#444" stroke-width="1"/>
+        <!-- LV: patient-left + posterior -> lower-left, thick wall -->
+        <circle cx="150" cy="232" r="52" fill="#1A2430" stroke="#5A82A0" stroke-width="8"/>
+        <text x="150" y="236" class="mono" font-size="12" fill="#5A82A0" text-anchor="middle">LV</text>
+        <!-- RV: anterior crescent, patient-right side, wrapping over LV -->
+        <path d="M196,250 Q235,150 150,140 Q110,150 112,182 Q150,168 178,205 Q192,228 196,250 Z" fill="#2A2018" stroke="#9A8050" stroke-width="2.6"/>
+        <text x="150" y="172" class="mono" font-size="11" fill="#9A8050" text-anchor="middle">RV</text>
+        <!-- IVS -->
+        <path d="M112,182 Q150,205 196,250" fill="none" stroke="#4A4A40" stroke-width="3.4" stroke-linecap="round"/>
+        <text x="120" y="225" class="mono" font-size="7" fill="#777">IVS</text>
+        <g id="axialAxes"></g>
+        <g id="axialElec"></g>
+        <line id="axProj" stroke="var(--moss-light)" stroke-dasharray="3 2" stroke-width="1.3" opacity="0"/>
+        <line id="axVec" stroke="var(--moss)" stroke-width="3.4" stroke-linecap="round" marker-end="url(#arrowHead)"/>
+        <circle cx="180" cy="205" r="3.4" fill="var(--text-muted)"/>
+        <text id="axVecLabel" x="180" y="205" class="mono" font-size="8" fill="var(--moss-light)"></text>
+      </g>
+    </svg>
+    <div id="heart3d" style="display:none;position:relative;width:100%;aspect-ratio:360/410;">
+      <canvas id="heart3dCanvas" style="width:100%;height:100%;display:block;touch-action:none;cursor:grab"></canvas>
+      <div id="heart3dLabels" style="position:absolute;inset:0;pointer-events:none;font-family:'JetBrains Mono',monospace;font-size:9px"></div>
+      <div id="heart3dHint" style="position:absolute;left:8px;bottom:6px;font-size:8px;color:var(--text-muted);opacity:.7">drag = putar · scroll = zoom</div>
+    </div>
+    <div class="controls">
+      <button class="btn" id="btnReset">⏮</button><button class="btn" id="btnPrev">⏪</button>
+      <button class="btn play" id="btnPlay">▶ Play</button><button class="btn" id="btnNext">⏩</button><button class="btn" id="btnEnd">⏭</button>
+      <div class="speed-group"><span class="pill" data-speed="0.5">0.5×</span><span class="pill active" data-speed="1">1×</span><span class="pill" data-speed="2">2×</span></div>
+    </div>
+    <span class="phase-ind" id="phaseInd">Phase 0 / 10 — Resting</span>
+  </section>
+
+  <div class="rightcol">
+    <div class="ecg-wrap">
+      <div class="ecg-title"><span>ECG — <b id="leadTitle">Lead II</b></span><small id="ecgNow">menunggu…</small></div>
+      <div id="leadNote"></div>
+      <div id="profileDisclaimer" style="margin-top:4px;color:var(--amber);font-size:10px"></div>
+      <canvas id="ecgCanvas"></canvas>
+    </div>
+    <div class="bridge">
+      <div class="bridge-head">Apa yang menyebabkan defleksi ini? (di lead terpilih)</div>
+      <div class="chain">
+        <div class="step wave"><div class="k">Gelombang</div><div class="v" id="bWave">—</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="k">Mekanisme</div><div class="v" id="bMech">—</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="k">Vektor vs sumbu lead</div><div class="v" id="bVrel">—</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="k">Aturan dipol</div><div class="v" id="bDipole">—</div></div>
+        <div class="arrow">→</div>
+        <div class="step result"><div class="k">Defleksi</div><div class="v" id="bResult">—</div><div class="cos" id="bCos">cos = —</div></div>
+      </div>
+    </div>
+    <div class="bottom">
+      <div class="mech"><h4>Mekanisme detail</h4><div id="mechTitle">Resting</div><div id="mechBody"></div><div id="mechRef"></div></div>
+      <div class="dipole">
+        <h4>Kenapa T upright? <span class="why" id="dipoleWhy">— aturan dipol</span></h4>
+        <svg id="dipoleSvg" viewBox="0 0 300 150" preserveAspectRatio="xMidYMid meet">
+          <circle cx="278" cy="75" r="11" fill="var(--moss-dim)" stroke="var(--moss)" stroke-width="1.6"/>
+          <text x="278" y="79" text-anchor="middle" class="mono" font-size="10" fill="var(--moss-pale)">+</text>
+          <text x="278" y="98" text-anchor="middle" class="mono" font-size="7" fill="var(--text-muted)">Lead +</text>
+          <g id="rowDepol">
+            <text x="8" y="30" class="mono" font-size="9" fill="var(--text-secondary)">DEPOLARISASI → R</text>
+            <rect x="20" y="36" width="230" height="20" rx="4" fill="var(--bg-surface)" stroke="var(--border)"/>
+            <text x="150" y="50" text-anchor="middle" class="mono" font-size="9" fill="var(--text-muted)">muatan + di depan ⟶</text>
+            <line x1="60" y1="46" x2="240" y2="46" stroke="var(--moss-light)" stroke-width="2.4" marker-end="url(#arrowHead)"/>
+            <text x="60" y="70" class="mono" font-size="8.5" fill="var(--moss-pale)">menuju + ⇒ (+)</text>
+          </g>
+          <g id="rowRepol">
+            <text x="8" y="100" class="mono" font-size="9" fill="var(--text-secondary)">REPOLARISASI → T</text>
+            <rect x="20" y="106" width="230" height="20" rx="4" fill="var(--bg-surface)" stroke="var(--border)"/>
+            <text x="150" y="120" text-anchor="middle" class="mono" font-size="9" fill="var(--text-muted)">⟵ arah BALIK + muatan BALIK</text>
+            <line x1="240" y1="116" x2="60" y2="116" stroke="var(--moss-light)" stroke-width="2.4" marker-end="url(#arrowHead)"/>
+            <text x="60" y="140" class="mono" font-size="8.5" fill="var(--moss-pale)">menjauhi + ⇒ (+)</text>
+          </g>
+        </svg>
+        <div class="dipole-cap">Repol membalik <b>muatan</b> (×−) <b>dan arah</b> (×−) ⇒ tetap <b>(+)</b>. Tanda akhir tiap gelombang = proyeksi vektornya ke sumbu lead.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">⚠️ WORK IN PROGRESS — Konten belum diverifikasi. Tidak untuk keputusan klinis.</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+var CX=150,CY=245;
+var NODES=[
+ {id:"sa",x:255,y:80,label:"SA",lx:272,ly:74},{id:"av",x:200,y:142,label:"AV",lx:215,ly:140},
+ {id:"his",x:188,y:162,label:"His",lx:198,ly:160},{id:"rbb",x:205,y:235,label:"RBB",lx:215,ly:232},
+ {id:"lbb",x:165,y:220,label:"LBB",lx:150,ly:216},{id:"laf",x:130,y:205,label:"LAF",lx:114,ly:200},
+ {id:"lpf",x:160,y:285,label:"LPF",lx:172,ly:284},{id:"purkR",x:235,y:300,label:"Purkinje RV",lx:248,ly:300},
+ {id:"purkLa",x:85,y:258,label:"Purkinje ant",lx:56,ly:256},{id:"purkLp",x:128,y:346,label:"Purkinje inf",lx:138,ly:350}];
+var C={moss:"#4E7D42",mossLight:"#7BAB72",mossPale:"#A8CDA0",amber:"#D9A441",blue:"#5090C0",red:"#C0504E",grey:"#8A8A86"};
+
+/* Leads. Frontal axes = hexaxial (canonical). Horizontal axes (V) = approx teaching values.
+   Horizontal convention: 0°=kiri pasien, 90°=posterior, 180°=kanan, 270°=anterior. */
+var LEADS={
+ "I":{name:"I",plane:"frontal",axis:0,pos:"LA",neg:"RA"},
+ "II":{name:"II",plane:"frontal",axis:60,pos:"LL",neg:"RA"},
+ "III":{name:"III",plane:"frontal",axis:120,pos:"LL",neg:"LA"},
+ "aVR":{name:"aVR",plane:"frontal",axis:-150,pos:"RA",neg:["LA","LL"]},
+ "aVL":{name:"aVL",plane:"frontal",axis:-30,pos:"LA",neg:["RA","LL"]},
+ "aVF":{name:"aVF",plane:"frontal",axis:90,pos:"LL",neg:["RA","LA"]},
+ "V1":{name:"V1",plane:"horizontal",uvec:[-0.866,-0.5],vidx:0},"V2":{name:"V2",plane:"horizontal",uvec:[-0.5,-0.866],vidx:1},
+ "V3":{name:"V3",plane:"horizontal",uvec:[0,-1],vidx:2},"V4":{name:"V4",plane:"horizontal",uvec:[0.5,-0.866],vidx:3},
+ "V5":{name:"V5",plane:"horizontal",uvec:[0.866,-0.5],vidx:4},"V6":{name:"V6",plane:"horizontal",uvec:[1,0],vidx:5},
+ "V7":{name:"V7",plane:"horizontal",uvec:[0.6,0.8],tpl:false},"V8":{name:"V8",plane:"horizontal",uvec:[0.2,0.98],tpl:false},"V9":{name:"V9",plane:"horizontal",uvec:[-0.15,0.99],tpl:false},
+ "V3R":{name:"V3R",plane:"horizontal",uvec:[-0.3,-0.95],tpl:false},"V4R":{name:"V4R",plane:"horizontal",uvec:[-0.5,-0.866],tpl:false},"V5R":{name:"V5R",plane:"horizontal",uvec:[-0.75,-0.6],tpl:false},"V6R":{name:"V6R",plane:"horizontal",uvec:[-0.95,-0.2],tpl:false}};
+var ELEC={RA:{x:320,y:48,lbl:"RA"},LA:{x:42,y:74,lbl:"LA"},LL:{x:50,y:358,lbl:"LL"},RL:{x:312,y:356,lbl:"RL ⏚"}};
+var Vpos=[{x:212,y:322},{x:190,y:340},{x:160,y:350},{x:128,y:348},{x:96,y:336},{x:70,y:312}];
+var currentLead="II";
+
+/* Continuous QRS vector loop (Catmull-Rom) + P/T vectors. axes: x=+left, y=+inferior, z=+posterior.
+   Frontal leads project (x,y); precordial leads project (x,z)*GAIN. One trajectory → all 12 leads.
+   QRS_KF times are ABSOLUTE beat-times, aligned to phase boundaries:
+     SEPTAL 200–230 (−x,−y,−z) ; VENTRICULAR 230–290 peak~260 (+x,+y,+z) ; TERMINAL 290–330 (−x,−y,+z) */
+var Pvec={x:1.0,y:1.6,z:0.5,tc:80,sig:16}, Tvec={x:2.4,y:2.2,z:-0.5,tc:450,s1:42,s2:26};
+var QRS_KF=[[200,0,0,0],[211,-1.2,-0.8,-1.6],[223,-0.4,-0.25,-0.6],[235,6.6,7.6,1.0],[245,8.0,9.2,1.3],
+            [256,5.8,6.6,1.3],[267,1.2,1.9,1.0],[278,-0.55,-0.45,0.9],[288,-0.22,-0.18,0.45],[298,0,0,0]];
+var PRECORDIAL_GAIN=1.75;
+var REGIONS={P:[40,120,80],Q:[200,222,210],R:[222,272,250],S:[272,300,285],T:[380,540,450]};
+function CR(p0,p1,p2,p3,u){var u2=u*u,u3=u2*u;return 0.5*((2*p1)+(-p0+p2)*u+(2*p0-5*p1+4*p2-p3)*u2+(-p0+3*p1-3*p2+p3)*u3);}
+function qrsLoop(t){var K=QRS_KF;if(t<K[0][0]||t>K[K.length-1][0])return{x:0,y:0,z:0};
+ var i=0;for(;i<K.length-1;i++)if(t<=K[i+1][0])break;
+ var a=K[Math.max(0,i-1)],b=K[i],c=K[Math.min(K.length-1,i+1)],d=K[Math.min(K.length-1,i+2)],u=(t-b[0])/(c[0]-b[0]);
+ return{x:CR(a[1],b[1],c[1],d[1],u),y:CR(a[2],b[2],c[2],d[2],u),z:CR(a[3],b[3],c[3],d[3],u)};}
+function gP(t){return Math.exp(-Math.pow(t-Pvec.tc,2)/(2*Pvec.sig*Pvec.sig));}
+function gT(t){return t<Tvec.tc?Math.exp(-Math.pow(t-Tvec.tc,2)/(2*Tvec.s1*Tvec.s1)):Math.exp(-Math.pow(t-Tvec.tc,2)/(2*Tvec.s2*Tvec.s2));}
+/* ST injury current: flat-top plateau over [t0,t1] with cosine edges (~18ms). Projection of STvec
+   onto a lead = ST elevation (facing injury) / reciprocal depression (opposite). null for non-ACS. */
+var STvec=null;
+function gST(t){if(!STvec)return 0;var t0=STvec.t0,t1=STvec.t1,e=18;if(t<t0||t>t1)return 0;
+ if(t<t0+e)return 0.5*(1-Math.cos(Math.PI*(t-t0)/e));if(t>t1-e)return 0.5*(1-Math.cos(Math.PI*(t1-t)/e));return 1;}
+function dipoleAt(t){var q=qrsLoop(t),s=STvec?gST(t):0;
+ return{x:Pvec.x*gP(t)+Tvec.x*gT(t)+q.x+(STvec?STvec.x*s:0),y:Pvec.y*gP(t)+Tvec.y*gT(t)+q.y+(STvec?STvec.y*s:0),z:Pvec.z*gP(t)+Tvec.z*gT(t)+q.z+(STvec?STvec.z*s:0)};}
+function projectLead(lead,v){if(lead.plane==="frontal"){var a=d2r(lead.axis);return v.x*Math.cos(a)+v.y*Math.sin(a);}return (v.x*lead.uvec[0]+v.z*lead.uvec[1])*PRECORDIAL_GAIN;}
+function leadUnit(lead){return lead.plane==="frontal"?{x:Math.cos(d2r(lead.axis)),y:Math.sin(d2r(lead.axis)),plane:"f"}:{x:lead.uvec[0],z:lead.uvec[1],plane:"h"};}
+/* LIVE deflection: integrate the true dipole projection across the active segment window.
+   Returns the dominant signed excursion + a normalized cos vs the lead axis at that vector. */
+function liveDefl(lead,seg){
+ if(!seg||!REGIONS[seg])return{cls:"isoelectric",cos:0,val:0};
+ var rg=REGIONS[seg],pos=0,neg=0,domV={x:0,y:0,z:0},domAbs=0;
+ for(var t=rg[0];t<=rg[1];t+=2){var v=dipoleAt(t);var pjv=projectLead(lead,v);
+  if(pjv>0)pos+=pjv; else neg+=pjv;
+  if(Math.abs(pjv)>domAbs){domAbs=Math.abs(pjv);domV=v;}}
+ var net=pos+neg, signed=Math.abs(pos)>=Math.abs(neg)?pos:neg;
+ // cos between dominant instantaneous vector and lead axis
+ var u=leadUnit(lead), mag, dot;
+ if(u.plane==="f"){mag=Math.sqrt(domV.x*domV.x+domV.y*domV.y);dot=domV.x*u.x+domV.y*u.y;}
+ else{mag=Math.sqrt(domV.x*domV.x+domV.z*domV.z);dot=domV.x*u.x+domV.z*u.z;}
+ var cos=mag<0.05?0:dot/mag;
+ var cls=signed>0.6?"positive":signed<-0.6?"negative":"isoelectric";
+ return{cls:cls,cos:cos,val:signed,vec:domV};}
+
+/* ── Precordial morphology templates (Option B) ──────────────────────────────
+   Limb leads stay exact dipole projections; V1–V6 use digitized normal templates
+   because precordial leads are dominated by proximity/solid-angle, not the global
+   dipole, so a point dipole cannot reproduce their true morphology.
+   Same absolute time base as the dipole (P~80, QRS 200–330, T~480) → pen/phase stay synced.
+   Values grounded in canonical normal-ECG references (see citations in chat):
+     • R grows V1→V5, dips V6 (lung); S largest V1–V2, shrinks to V6; V2–V3 highest voltage
+     • transition R/S>1 at V3–V4; R(V3)>2mm; septal q in V5–V6 (<25% R, <0.03s)
+     • V1 P biphasic (+<1.5 / −<1mm terminal force); T upright, tall in V2–V4, all <10mm
+     • 1mm = 0.1mV. ⚠️ Template = textbook normal approximation, not patient-specific. */
+var PRECORDIAL_TPL={
+ V1:[{t:70,a:1.2,w:11},{t:96,a:-0.8,w:12},{t:212,a:2.5,w:8},{t:242,a:-10,w:11},{t:455,a:1.0,w:34,w2:22}],
+ V2:[{t:82,a:1.5,w:16},{t:214,a:4,w:8},{t:242,a:-14,w:11},{t:458,a:5,w:38,w2:24}],
+ V3:[{t:82,a:1.5,w:16},{t:220,a:7,w:9},{t:247,a:-8,w:10},{t:460,a:6,w:40,w2:26}],
+ V4:[{t:82,a:1.3,w:16},{t:227,a:11,w:9},{t:268,a:-4,w:8},{t:462,a:6,w:40,w2:26}],
+ V5:[{t:82,a:1.2,w:16},{t:209,a:-1.3,w:5},{t:238,a:13,w:9},{t:274,a:-2,w:8},{t:464,a:5,w:40,w2:26}],
+ V6:[{t:82,a:1.0,w:16},{t:209,a:-1.3,w:5},{t:240,a:10,w:9},{t:275,a:-1.5,w:8},{t:466,a:4,w:40,w2:26}]};
+function precordialAt(id,t){var ws=PRECORDIAL_TPL[id];if(!ws)return 0;var s=0;
+ for(var i=0;i<ws.length;i++){var k=ws[i];var sig=(k.w2&&t>k.t)?k.w2:k.w;s+=k.a*Math.exp(-Math.pow(t-k.t,2)/(2*sig*sig));}return s;}
+function leadValueAt(lead,t){if(lead.plane!=="horizontal")return projectLead(lead,dipoleAt(t));return lead.tpl===false?projectLead(lead,dipoleAt(t)):precordialAt(lead.name,t);}
+/* ── Multi-beat rhythm engine (AV block 2°/3°) ───────────────────────────────
+   Reuses single-beat shapes, replayed at scheduled atrial/ventricular times.
+   P-only and QRS+T-only split so atrial & ventricular events are independent
+   (variable PR, dropped QRS, AV dissociation). Heart-animation frozen in rhythm mode. */
+function pOnlyAt(lead,t){
+ if(lead.plane==="horizontal"&&lead.tpl!==false){var ws=PRECORDIAL_TPL[lead.name],s=0;if(ws)for(var i=0;i<ws.length;i++){var k=ws[i];if(k.t<150){var sg=(k.w2&&t>k.t)?k.w2:k.w;s+=k.a*Math.exp(-Math.pow(t-k.t,2)/(2*sg*sg));}}return s;}
+ var g=gP(t);return projectLead(lead,{x:Pvec.x*g,y:Pvec.y*g,z:Pvec.z*g});}
+function qtOnlyAt(lead,t){
+ if(lead.plane==="horizontal"&&lead.tpl!==false){var ws=PRECORDIAL_TPL[lead.name],s=0;if(ws)for(var i=0;i<ws.length;i++){var k=ws[i];if(k.t>=150){var sg=(k.w2&&t>k.t)?k.w2:k.w;s+=k.a*Math.exp(-Math.pow(t-k.t,2)/(2*sg*sg));}}return s;}
+ var q=qrsLoop(t),gt=gT(t);return projectLead(lead,{x:q.x+Tvec.x*gt,y:q.y+Tvec.y*gt,z:q.z+Tvec.z*gt});}
+function buildRhythmSamples(lead){
+ var R=activeProfile.rhythm;SAMPLES=[];QLABELS=[];
+ for(var t=0;t<=cycleLen;t+=STEP){var v=0,i;
+  for(i=0;i<R.atrial.length;i++){var da=t-R.atrial[i];if(da>-130&&da<130)v+=pOnlyAt(lead,80+da);}
+  for(i=0;i<R.vent.length;i++){var dv=t-R.vent[i];if(dv>-20&&dv<380)v+=qtOnlyAt(lead,200+dv);}
+  SAMPLES.push({t:t,mm:v});}
+ for(var a=0;a<R.atrial.length;a++)QLABELS.push({t:R.atrial[a],mm:pOnlyAt(lead,80),label:"P"});
+ for(var b=0;b<R.vent.length;b++)QLABELS.push({t:R.vent[b]+45,mm:qtOnlyAt(lead,245),label:"R"});
+}
+/* instantaneous 3D dipole in rhythm mode (sum of active atrial + ventricular events) */
+function rhythmDipoleAt(t){var R=activeProfile.rhythm,d={x:0,y:0,z:0},i;
+ for(i=0;i<R.atrial.length;i++){var da=t-R.atrial[i];if(da>-130&&da<130){var g=gP(80+da);d.x+=Pvec.x*g;d.y+=Pvec.y*g;d.z+=Pvec.z*g;}}
+ for(i=0;i<R.vent.length;i++){var dv=t-R.vent[i];if(dv>-20&&dv<380){var q=qrsLoop(200+dv),gt=gT(200+dv);d.x+=q.x+Tvec.x*gt;d.y+=q.y+Tvec.y*gt;d.z+=q.z+Tvec.z*gt;}}
+ return d;}
+function liveDipole(){return (activeProfile&&activeProfile.rhythm)?rhythmDipoleAt(beatClock):dipoleAt(beatClock);}
+/* precordial deflection from the TEMPLATE (the curve actually drawn); the cos vs chest
+   direction still comes from the live dipole transverse vector → explains WHY without contradiction */
+function liveDeflPrecordial(lead,seg){
+ if(!seg||!REGIONS[seg])return{cls:"isoelectric",cos:0,val:0};
+ var rg=REGIONS[seg],pos=0,neg=0;
+ for(var t=rg[0];t<=rg[1];t+=2){var y=precordialAt(lead.name,t);if(y>0)pos+=y;else neg+=y;}
+ var signed=Math.abs(pos)>=Math.abs(neg)?pos:neg;
+ var vmid=dipoleAt(Math.round((rg[0]+rg[1])/2)),mag=Math.sqrt(vmid.x*vmid.x+vmid.z*vmid.z);
+ var cos=mag<0.05?0:(vmid.x*lead.uvec[0]+vmid.z*lead.uvec[1])/mag;
+ var cls=signed>0.8?"positive":signed<-0.8?"negative":"isoelectric";
+ return{cls:cls,cos:cos,val:signed};}
+
+var CONDUCTION_PROFILES={normal:{name:"Normal Sinus Rhythm",cycleLen:700,phases:[
+ {id:"RESTING",name_id:"Resting",durationMs:0,activeNodes:[],activePaths:[],vectorAngle:60,hAng:60,vectorMagnitude:0,seg:null,wave:"—",
+  mech:"Semua sel istirahat",eduTitle:"Resting (diastol elektrik)",eduBody:"Semua sel pada potensial istirahat (fase 4). Tidak ada arus net → isoelektrik. Tekan ▶ untuk satu siklus.",ref:"📚 Klabunde."},
+ {id:"SA_FIRE",name_id:"SA Node Firing",durationMs:40,activeNodes:["sa"],activePaths:[],vectorAngle:60,hAng:60,vectorMagnitude:0,seg:null,wave:"—",
+  mech:"SA node memicu (pacemaker)",eduTitle:"Pacu SA Node",eduBody:"SA node (RA superior) = pacemaker. Depolarisasi spontan (I_f Na⁺, lalu Ca²⁺). Laju intrinsik 60–100 ×/mnt.",ref:"📚 Klabunde; ACLS."},
+ {id:"ATRIAL_DEPOL",name_id:"Atrial Depolarization",durationMs:80,activeNodes:["sa","av"],activePaths:["path-atrial-la","path-int-ant","path-sa-av","path-int-post"],vectorAngle:60,hAng:330,vectorMagnitude:0.4,seg:"P",wave:"P",comp:"P",
+  mech:"Atrium depolarisasi (SA→RA→LA)",eduTitle:"Depolarisasi Atrium",eduBody:"Depolarisasi menyebar SA→RA→LA (~1 m/s, jalur internodal & Bachmann). Vektor frontal ~60°. P normal <0,12 s, ≤2,5 mm.",ref:"📚 ecgwaves (P <0,12 s, ≤2,5 mm)."},
+ {id:"AV_DELAY",name_id:"AV Node Delay",durationMs:70,activeNodes:["av"],activePaths:[],vectorAngle:60,hAng:60,vectorMagnitude:0,seg:"PR",wave:"PR",
+  mech:"Tunda di AV node (~0,1 s)",eduTitle:"Tunda AV Node",eduBody:"AV node memperlambat konduksi (~0,05 m/s; delay ~0,1 s). Massa kecil → PR isoelektrik. PR total 0,12–0,20 s.",ref:"📚 AV delay >100 ms (Frontiers 2023)."},
+ {id:"HIS_DEPOL",name_id:"His Bundle",durationMs:10,activeNodes:["his"],activePaths:["path-av-his"],vectorAngle:60,hAng:60,vectorMagnitude:0,seg:"PR",wave:"PR",
+  mech:"Impuls lewat Bundle of His",eduTitle:"Bundle of His",eduBody:"His = satu-satunya hubungan listrik atrium↔ventrikel. Massa kecil → isoelektrik.",ref:"📚 TeachMeAnatomy."},
+ {id:"SEPTAL_DEPOL",name_id:"Septal Depolarization",durationMs:18,activeNodes:["his","lbb"],activePaths:["path-his-lbb"],vectorAngle:214,hAng:210,vectorMagnitude:0.2,seg:"Q",wave:"Q",comp:"SEP",
+  mech:"Septum depolarisasi KIRI→KANAN (LBB)",eduTitle:"Depolarisasi Septum",eduBody:"Septum didepolarisasi dari KIRI dulu (LBB) → kiri→kanan & anterior. Frontal ~170° (beri q septal di lead lateral); horizontal ~anterior-kanan (beri r kecil di V1).",ref:"📚 Septum kiri→kanan (ScienceDirect)."},
+ {id:"VENTRICULAR_DEPOL",name_id:"Ventricular Depolarization",durationMs:52,activeNodes:["rbb","lbb","laf","lpf","purkR","purkLa","purkLp"],activePaths:["path-his-rbb","path-rbb-purkR","path-lbb-laf","path-lbb-lpf","path-laf-purkL","path-lpf-purkL"],vectorAngle:49,hAng:0,vectorMagnitude:1.0,seg:"R",wave:"R",comp:"MAIN",
+  mech:"Massa ventrikel depolarisasi (LV dominan)",eduTitle:"Depolarisasi Ventrikel",eduBody:"Massa ventrikel (LV dominan) depolarisasi endo→epi (~4 m/s). Vektor besar: frontal ~60° (R di lead inferior), horizontal kiri-posterior (R tinggi V5–V6, S dalam V1). QRS 0,07–0,10 s.",ref:"📚 Purkinje ~4 m/s (AnatomyIQ); QRS 70–100 ms."},
+ {id:"TERMINAL_DEPOL",name_id:"Terminal Depolarization",durationMs:28,activeNodes:["purkR","purkLa"],activePaths:["path-rbb-purkR","path-laf-purkL"],vectorAngle:219,hAng:175,vectorMagnitude:0.3,seg:"S",wave:"S",comp:"TERM",
+  mech:"Basal ventrikel (terakhir) depolarisasi",eduTitle:"Depolarisasi Terminal",eduBody:"Basal ventrikel terakhir → vektor terminal superior-kanan (frontal ~210°). Menjauhi sebagian besar lead → gelombang S.\n⚠️ Frontal dikoreksi ke ~210° (spek awal ~120°/150° salah tanda).",ref:"📚 Vektor terminal ke basis (ScienceDirect)."},
+ {id:"ST_SEGMENT",name_id:"ST Segment",durationMs:72,activeNodes:["rbb","lbb","laf","lpf","purkR","purkLa","purkLp"],activePaths:[],vectorAngle:60,hAng:60,vectorMagnitude:0,seg:"ST",wave:"ST",
+  mech:"Seluruh ventrikel terdepolarisasi (plateau)",eduTitle:"Segmen ST",eduBody:"Ventrikel terdepolarisasi penuh (plateau fase 2). Tidak ada beda potensial net → ST isoelektrik.",ref:"📚 ecgwaves."},
+ {id:"REPOLARIZATION",name_id:"Ventricular Repolarization",durationMs:170,activeNodes:[],activePaths:[],vectorAngle:40,hAng:330,vectorMagnitude:0.5,seg:"T",wave:"T",comp:"T",
+  mech:"Ventrikel repolarisasi (epi→endo)",eduTitle:"Repolarisasi Ventrikel",eduBody:"Kenapa T upright (aturan dipol):\n• Depol MENUJU + = (+); Repol MENUJU + = (−).\n• Tapi repolarisasi ventrikel berjalan ARAH BERLAWANAN (epi→endo) → MENJAUHI + = (+).\n→ Dua pembalikan saling meniadakan → vektor-T searah QRS. Tandanya tetap mengikuti proyeksi ke sumbu lead.\n⚠️ Arah transmural pasti diperdebatkan (heterogenitas durasi AP, sel-M).",ref:"📚 Repol menjauhi + → (+) (CV Physiology a009); JACC 2003."},
+ {id:"DIASTOLE",name_id:"Diastole (TP)",durationMs:160,activeNodes:[],activePaths:[],vectorAngle:50,hAng:330,vectorMagnitude:0,seg:null,wave:"TP",
+  mech:"Diastol — pengisian ventrikel",eduTitle:"Diastol (segmen TP)",eduBody:"Ventrikel relaksasi & terisi. Segmen TP isoelektrik hingga pacu SA berikutnya. Siklus 700 ms → HR ≈ 86 ×/mnt.",ref:"📚 60000/700 ≈ 86 bpm."}
+ ],
+ morph:{Pvec:Pvec,Tvec:Tvec,QRS_KF:QRS_KF,PRECORDIAL_TPL:PRECORDIAL_TPL,REGIONS:REGIONS},disclaimer:""},
+ rbbb:{name:"Right Bundle Branch Block",cycleLen:800,phases:[
+ {id:"RESTING",name_id:"Resting",durationMs:0,activeNodes:[],activePaths:[],seg:null,wave:"—",mech:"Semua sel istirahat",eduTitle:"Resting",eduBody:"Semua sel pada potensial istirahat. Tekan ▶.",ref:"📚 Klabunde."},
+ {id:"SA_FIRE",name_id:"SA Node Firing",durationMs:40,activeNodes:["sa"],activePaths:[],seg:null,wave:"—",mech:"SA node memicu",eduTitle:"Pacu SA Node",eduBody:"SA node = pacemaker.",ref:"📚 Klabunde."},
+ {id:"ATRIAL_DEPOL",name_id:"Atrial Depolarization",durationMs:80,activeNodes:["sa","av"],activePaths:["path-atrial-la","path-int-ant","path-sa-av","path-int-post"],seg:"P",wave:"P",comp:"P",mech:"Atrium depolarisasi (normal)",eduTitle:"Depolarisasi Atrium",eduBody:"Atrium & AV normal pada BBB — P & PR tidak terpengaruh.",ref:"📚 AHA/ACCF/HRS 2009."},
+ {id:"AV_DELAY",name_id:"AV Node Delay",durationMs:70,activeNodes:["av"],activePaths:[],seg:"PR",wave:"PR",mech:"Tunda AV node (normal)",eduTitle:"Tunda AV Node",eduBody:"PR normal 0,12–0,20 s.",ref:"📚 Frontiers 2023."},
+ {id:"HIS_DEPOL",name_id:"His Bundle",durationMs:10,activeNodes:["his"],activePaths:["path-av-his"],seg:"PR",wave:"PR",mech:"Impuls lewat His",eduTitle:"Bundle of His",eduBody:"His normal; blok di bawah bifurkasi.",ref:"📚 TeachMeAnatomy."},
+ {id:"SEPTAL_DEPOL",name_id:"Septal Depolarization",durationMs:30,activeNodes:["his","lbb"],activePaths:["path-his-lbb"],seg:"Q",wave:"Q",comp:"SEP",mech:"Septum L→R (LBB utuh) — q septal normal",eduTitle:"Depolarisasi Septum",eduBody:"Pada RBBB septum & LV diaktifkan normal via LBB → q septal lateral & r awal V1 tetap ada.",ref:"📚 Septum L→R."},
+ {id:"VENTRICULAR_DEPOL",name_id:"LV Depolarization (RBB blok)",durationMs:60,activeNodes:["lbb","laf","lpf","purkLa","purkLp"],activePaths:["path-his-lbb","path-lbb-laf","path-lbb-lpf","path-laf-purkL","path-lpf-purkL"],seg:"R",wave:"R",comp:"MAIN",mech:"LV depolarisasi normal via LBB; RBB TERBLOK",eduTitle:"Depolarisasi LV",eduBody:"RBB terblok → LV diaktifkan normal & cepat via LBB. Bagian awal QRS normal.",ref:"📚 AHA/ACCF/HRS 2009."},
+ {id:"TERMINAL_DEPOL",name_id:"RV Late (lambat, transseptal)",durationMs:100,activeNodes:["rbb","purkR"],activePaths:["path-his-rbb","path-rbb-purkR"],seg:"S",wave:"S",comp:"TERM",mech:"RV diaktifkan TERLAMBAT via miokardium (lambat)",eduTitle:"Aktivasi RV Terlambat",eduBody:"Karena RBB blok, RV diaktifkan lambat sel-ke-sel → vektor terminal lambat ke KANAN-ANTERIOR → R′ di V1 (rSR′) & S lebar berslur di I/V6. QRS ≥120 ms.",ref:"📚 RSR′ V1 (Healio); QRS ≥120 ms (AHA 2009)."},
+ {id:"ST_SEGMENT",name_id:"ST Segment",durationMs:40,activeNodes:[],activePaths:[],seg:"ST",wave:"ST",mech:"Plateau",eduTitle:"Segmen ST",eduBody:"ST-T diskordan di prekordial kanan (V1–V3): T terbalik.",ref:"📚 Diskordansi sekunder."},
+ {id:"REPOLARIZATION",name_id:"Repolarization",durationMs:170,activeNodes:[],activePaths:[],seg:"T",wave:"T",comp:"T",mech:"Repolarisasi (T diskordan V1–V3)",eduTitle:"Repolarisasi (RBBB)",eduBody:"Repolarisasi abnormal sekunder → T terbalik di V1–V3 (diskordan terhadap R′). Limb relatif normal.",ref:"📚 Diskordansi RBBB."},
+ {id:"DIASTOLE",name_id:"Diastole (TP)",durationMs:200,activeNodes:[],activePaths:[],seg:null,wave:"TP",mech:"Diastol",eduTitle:"Diastol (TP)",eduBody:"Siklus 800 ms → HR ≈ 75 ×/mnt.",ref:"📚 60000/800 ≈ 75 bpm."}
+ ],
+  morph:{Pvec:{x:1.0,y:1.6,z:0.5,tc:80,sig:16},Tvec:{x:2.4,y:2.2,z:-0.5,tc:490,s1:42,s2:28},QRS_KF:[[200,0,0,0],[214,-1.0,-0.6,-1.6],[230,-0.4,-0.2,-0.6],[247,6.4,7.4,1.0],[262,7.8,9.0,1.3],[280,4.5,5.5,1.0],[300,-1.5,-0.6,-3.0],[320,-4.2,-1.6,-5.5],[338,-3.0,-1.0,-4.0],[352,-1.0,-0.4,-1.4],[360,0,0,0]],
+   REGIONS:{P:[40,120,80],Q:[200,232,214],R:[232,290,262],S:[290,360,330],T:[430,600,490]},
+   PRECORDIAL_TPL:{V1:[{t:70,a:1.2,w:11},{t:96,a:-0.8,w:12},{t:216,a:2,w:9},{t:250,a:-5,w:12},{t:322,a:8,w:14},{t:475,a:-3,w:40,w2:26}],
+   V2:[{t:82,a:1.5,w:16},{t:216,a:3,w:10},{t:250,a:-7,w:12},{t:322,a:6,w:14},{t:478,a:-2.5,w:40,w2:26}],
+   V3:[{t:82,a:1.5,w:16},{t:226,a:6,w:11},{t:262,a:-6,w:12},{t:325,a:3,w:13},{t:480,a:2,w:42,w2:26}],
+   V4:[{t:82,a:1.3,w:16},{t:236,a:10,w:11},{t:300,a:-3,w:10},{t:482,a:4,w:42,w2:26}],
+   V5:[{t:82,a:1.2,w:16},{t:212,a:-1.3,w:6},{t:250,a:12,w:11},{t:330,a:-4,w:16},{t:484,a:4,w:42,w2:26}],
+   V6:[{t:82,a:1.0,w:16},{t:212,a:-1.3,w:6},{t:252,a:10,w:11},{t:330,a:-4,w:18},{t:486,a:3,w:42,w2:26}]}},
+  disclaimer:"⚠️ Profil RBBB — morfologi berbasis template (AHA/ACCF/HRS 2009: QRS ≥120 ms, rSR′ V1, S lebar I/V6, T diskordan V1–V3). Bukan rekaman pasien."},
+ lbbb:{name:"Left Bundle Branch Block",cycleLen:820,phases:[
+ {id:"RESTING",name_id:"Resting",durationMs:0,activeNodes:[],activePaths:[],seg:null,wave:"—",mech:"Semua sel istirahat",eduTitle:"Resting",eduBody:"Semua sel pada potensial istirahat. Tekan ▶.",ref:"📚 Klabunde."},
+ {id:"SA_FIRE",name_id:"SA Node Firing",durationMs:40,activeNodes:["sa"],activePaths:[],seg:null,wave:"—",mech:"SA node memicu",eduTitle:"Pacu SA Node",eduBody:"SA node = pacemaker.",ref:"📚 Klabunde."},
+ {id:"ATRIAL_DEPOL",name_id:"Atrial Depolarization",durationMs:80,activeNodes:["sa","av"],activePaths:["path-atrial-la","path-int-ant","path-sa-av","path-int-post"],seg:"P",wave:"P",comp:"P",mech:"Atrium depolarisasi (normal)",eduTitle:"Depolarisasi Atrium",eduBody:"Atrium & AV normal pada BBB — P & PR tidak terpengaruh.",ref:"📚 AHA/ACCF/HRS 2009."},
+ {id:"AV_DELAY",name_id:"AV Node Delay",durationMs:70,activeNodes:["av"],activePaths:[],seg:"PR",wave:"PR",mech:"Tunda AV node (normal)",eduTitle:"Tunda AV Node",eduBody:"PR normal 0,12–0,20 s.",ref:"📚 Frontiers 2023."},
+ {id:"HIS_DEPOL",name_id:"His Bundle",durationMs:10,activeNodes:["his"],activePaths:["path-av-his"],seg:"PR",wave:"PR",mech:"Impuls lewat His",eduTitle:"Bundle of His",eduBody:"His normal; blok di bawah bifurkasi.",ref:"📚 TeachMeAnatomy."},
+ {id:"SEPTAL_DEPOL",name_id:"Septal (terbalik R→L)",durationMs:20,activeNodes:["his","rbb"],activePaths:["path-his-rbb"],seg:"Q",wave:"Q",mech:"Septum diaktifkan dari KANAN (terbalik) → q lateral HILANG",eduTitle:"Septum Terbalik",eduBody:"LBB blok → septum diaktifkan dari kanan ke kiri (terbalik) → gelombang q septal lateral HILANG (I, V5–V6).",ref:"📚 Aktivasi septum terbalik (LITFL)."},
+ {id:"VENTRICULAR_DEPOL",name_id:"RV via RBB (LBB blok)",durationMs:100,activeNodes:["rbb","purkR"],activePaths:["path-his-rbb","path-rbb-purkR"],seg:"R",wave:"R",comp:"MAIN",mech:"RV via RBB; LV menunggu (LBB terblok)",eduTitle:"Depolarisasi RV + LV lambat",eduBody:"Impuls turun via RBB ke RV dulu, lalu menyeberang septum perlahan ke LV. Sapuan lambat kiri → R lebar monofasik di I/aVL/V5–V6, QS/rS dalam di V1.",ref:"📚 Vektor RV→LV (LITFL)."},
+ {id:"TERMINAL_DEPOL",name_id:"LV Late (transseptal)",durationMs:50,activeNodes:["lbb","laf","lpf","purkLa","purkLp"],activePaths:["path-his-lbb","path-lbb-laf","path-lbb-lpf","path-laf-purkL","path-lpf-purkL"],seg:"S",wave:"S",comp:"TERM",mech:"LV lateral diaktifkan paling akhir",eduTitle:"Aktivasi LV Terlambat",eduBody:"Dinding lateral LV diaktifkan paling akhir → R monofasik lebar bertakik. QRS ≥120 ms (sering ≥140).",ref:"📚 QRS ≥120 ms; R takik V5–V6 (AHA 2009)."},
+ {id:"ST_SEGMENT",name_id:"ST Segment",durationMs:40,activeNodes:[],activePaths:[],seg:"ST",wave:"ST",mech:"Plateau (ST diskordan)",eduTitle:"Segmen ST",eduBody:"ST-T diskordan: elevasi ST di V1–V3 (QRS negatif), depresi/T terbalik di I/V5–V6 (QRS positif).",ref:"📚 Diskordansi sekunder; STEMI tak bisa dinilai → Sgarbossa."},
+ {id:"REPOLARIZATION",name_id:"Repolarization",durationMs:170,activeNodes:[],activePaths:[],seg:"T",wave:"T",comp:"T",mech:"Repolarisasi diskordan",eduTitle:"Repolarisasi (LBBB)",eduBody:"T diskordan: terbalik di lead dengan R tinggi (I, V5–V6), tegak di V1–V3.",ref:"📚 Diskordansi LBBB."},
+ {id:"DIASTOLE",name_id:"Diastole (TP)",durationMs:240,activeNodes:[],activePaths:[],seg:null,wave:"TP",mech:"Diastol",eduTitle:"Diastol (TP)",eduBody:"Siklus 820 ms → HR ≈ 73 ×/mnt.",ref:"📚 60000/820 ≈ 73 bpm."}
+ ],
+  morph:{Pvec:{x:1.0,y:1.6,z:0.5,tc:80,sig:16},Tvec:{x:-2.2,y:-2.0,z:0.5,tc:500,s1:44,s2:30},QRS_KF:[[200,0,0,0],[220,1.2,1.4,0.4],[248,4.5,5.6,1.4],[272,7.0,8.6,2.2],[296,8.2,9.8,2.6],[320,6.4,7.6,2.4],[342,3.0,3.6,1.4],[356,0.8,1.0,0.4],[366,0,0,0]],
+   REGIONS:{P:[40,120,80],Q:[200,220,210],R:[220,330,290],S:[330,366,350],T:[420,600,500]},
+   PRECORDIAL_TPL:{V1:[{t:70,a:1.0,w:11},{t:96,a:-0.6,w:12},{t:280,a:-12,w:34},{t:480,a:2,w:46,w2:30}],
+   V2:[{t:82,a:1.2,w:16},{t:285,a:-14,w:34},{t:490,a:3,w:46,w2:30}],
+   V3:[{t:82,a:1.3,w:16},{t:290,a:-9,w:32},{t:495,a:3,w:44,w2:28}],
+   V4:[{t:82,a:1.3,w:16},{t:295,a:6,w:30},{t:500,a:-2,w:44,w2:28}],
+   V5:[{t:82,a:1.2,w:16},{t:298,a:12,w:30},{t:505,a:-3,w:44,w2:28}],
+   V6:[{t:82,a:1.0,w:16},{t:300,a:11,w:30},{t:508,a:-3,w:44,w2:28}]}},
+  disclaimer:"⚠️ Profil LBBB — template (AHA/ACCF/HRS 2009: QRS ≥120 ms, QS/rS V1, R monofasik takik V5–V6 tanpa q lateral, ST-T diskordan). STEMI tak dinilai langsung → Sgarbossa. Bukan rekaman pasien."},
+ stemi_inf:{name:"STEMI Inferior (RCA)",cycleLen:700,phases:[
+  {id:"RESTING",name_id:"Resting",durationMs:0,activeNodes:[],activePaths:[],seg:null,wave:"—",mech:"Istirahat",eduTitle:"Resting",eduBody:"Tekan ▶.",ref:"📚 Klabunde."},
+  {id:"SA_FIRE",name_id:"SA Node Firing",durationMs:40,activeNodes:["sa"],activePaths:[],seg:null,wave:"—",mech:"SA memicu",eduTitle:"Pacu SA",eduBody:"Pacemaker.",ref:"📚 Klabunde."},
+  {id:"ATRIAL_DEPOL",name_id:"Atrial Depolarization",durationMs:80,activeNodes:["sa","av"],activePaths:["path-atrial-la","path-int-ant","path-sa-av","path-int-post"],seg:"P",wave:"P",comp:"P",mech:"Atrium depolarisasi (normal)",eduTitle:"Depolarisasi Atrium",eduBody:"Atrium normal pada STEMI.",ref:"📚 ecgwaves."},
+  {id:"AV_DELAY",name_id:"AV Node Delay",durationMs:70,activeNodes:["av"],activePaths:[],seg:"PR",wave:"PR",mech:"Tunda AV (normal)",eduTitle:"Tunda AV",eduBody:"PR 0,12–0,20 s. ⚠️ STEMI inferior (RCA) dapat disertai blok AV — belum dimodelkan.",ref:"📚 RCA → AV node."},
+  {id:"HIS_DEPOL",name_id:"His Bundle",durationMs:10,activeNodes:["his"],activePaths:["path-av-his"],seg:"PR",wave:"PR",mech:"His",eduTitle:"His",eduBody:"Konduksi normal.",ref:"📚 TeachMeAnatomy."},
+  {id:"SEPTAL_DEPOL",name_id:"Septal Depolarization",durationMs:18,activeNodes:["his","lbb"],activePaths:["path-his-lbb"],seg:"Q",wave:"Q",comp:"SEP",mech:"Septum L→R (normal)",eduTitle:"Septum",eduBody:"QRS lebar normal pada fase akut.",ref:"📚 Septum L→R."},
+  {id:"VENTRICULAR_DEPOL",name_id:"Ventricular Depolarization",durationMs:52,activeNodes:["rbb","lbb","laf","lpf","purkR","purkLa","purkLp"],activePaths:["path-his-rbb","path-rbb-purkR","path-lbb-laf","path-lbb-lpf","path-laf-purkL","path-lpf-purkL"],seg:"R",wave:"R",comp:"MAIN",mech:"Depolarisasi ventrikel (konduksi utuh)",eduTitle:"Depolarisasi Ventrikel",eduBody:"Konduksi utuh; QRS ≈normal pada fase akut/hiperakut. Gelombang Q patologis berkembang kemudian (belum dimodelkan).",ref:"📚 QRS 70–100 ms."},
+  {id:"TERMINAL_DEPOL",name_id:"Terminal Depolarization",durationMs:28,activeNodes:["purkR","purkLa"],activePaths:["path-rbb-purkR","path-laf-purkL"],seg:"S",wave:"S",comp:"TERM",mech:"Basal terakhir",eduTitle:"Terminal",eduBody:"Normal.",ref:"📚 ke basis."},
+  {id:"ST_SEGMENT",name_id:"ST Segment (ELEVASI)",durationMs:72,activeNodes:[],activePaths:[],seg:"ST",wave:"ST↑",mech:"Arus cedera → elevasi ST inferior",eduTitle:"Elevasi ST (Arus Cedera)",eduBody:"Cedera transmural inferior → vektor arus cedera mengarah INFERIOR → elevasi ST di II, III, aVF; depresi resiprokal di I & aVL. Ambang ESC: ≥1 mm di ≥2 lead ekstremitas berdekatan.",ref:"📚 ESC/4th UDMI; resiprokal (CMR 2013)."},
+  {id:"REPOLARIZATION",name_id:"Repolarization (T hiperakut)",durationMs:170,activeNodes:[],activePaths:[],seg:"T",wave:"T",comp:"T",mech:"T inferior tinggi/hiperakut",eduTitle:"Repolarisasi (STEMI)",eduBody:"T hiperakut tinggi di lead inferior; menyatu dengan ST yang terangkat.",ref:"📚 T hiperakut (ESC)."},
+  {id:"DIASTOLE",name_id:"Diastole (TP)",durationMs:160,activeNodes:[],activePaths:[],seg:null,wave:"TP",mech:"Diastol",eduTitle:"Diastol (TP)",eduBody:"Siklus 700 ms → HR ≈ 86 ×/mnt.",ref:"📚 60000/700."}
+ ],
+  morph:{Pvec:{x:1.0,y:1.6,z:0.5,tc:80,sig:16},Tvec:{x:1.0,y:3.0,z:-0.3,tc:450,s1:42,s2:30},QRS_KF:[[200,0,0,0],[211,-1.2,-0.8,-1.6],[223,-0.4,-0.25,-0.6],[235,6.6,7.6,1.0],[245,8.0,9.2,1.3],[256,5.8,6.6,1.3],[267,1.2,1.9,1.0],[278,-0.55,-0.45,0.9],[288,-0.22,-0.18,0.45],[298,0,0,0]],
+   REGIONS:{P:[40,120,80],Q:[200,222,210],R:[222,272,250],S:[272,300,285],T:[380,540,450]},
+   STvec:{x:0,y:3.5,z:0.3,t0:298,t1:480},
+   PRECORDIAL_TPL:{V1:[{t:70,a:1.2,w:11},{t:96,a:-0.8,w:12},{t:212,a:2.5,w:8},{t:242,a:-10,w:11},{t:455,a:1.0,w:34,w2:22}],
+   V2:[{t:82,a:1.5,w:16},{t:214,a:4,w:8},{t:242,a:-14,w:11},{t:458,a:5,w:38,w2:24}],
+   V3:[{t:82,a:1.5,w:16},{t:220,a:7,w:9},{t:247,a:-8,w:10},{t:460,a:6,w:40,w2:26}],
+   V4:[{t:82,a:1.3,w:16},{t:227,a:11,w:9},{t:268,a:-4,w:8},{t:462,a:6,w:40,w2:26}],
+   V5:[{t:82,a:1.2,w:16},{t:209,a:-1.3,w:5},{t:238,a:13,w:9},{t:274,a:-2,w:8},{t:464,a:5,w:40,w2:26}],
+   V6:[{t:82,a:1.0,w:16},{t:209,a:-1.3,w:5},{t:240,a:10,w:9},{t:275,a:-1.5,w:8},{t:466,a:4,w:40,w2:26}]}},
+  disclaimer:"⚠️ STEMI Inferior (RCA) — elevasi ST II/III/aVF + depresi resiprokal I/aVL (ESC/4th UDMI: ≥1 mm, ≥2 lead berdekatan). Fase akut; gel. Q evolusioner & blok AV belum dimodelkan. Berbasis template, bukan rekaman pasien."},
+ stemi_ant:{name:"STEMI Anterior (LAD)",cycleLen:700,phases:[
+  {id:"RESTING",name_id:"Resting",durationMs:0,activeNodes:[],activePaths:[],seg:null,wave:"—",mech:"Istirahat",eduTitle:"Resting",eduBody:"Tekan ▶.",ref:"📚 Klabunde."},
+  {id:"SA_FIRE",name_id:"SA Node Firing",durationMs:40,activeNodes:["sa"],activePaths:[],seg:null,wave:"—",mech:"SA memicu",eduTitle:"Pacu SA",eduBody:"Pacemaker.",ref:"📚 Klabunde."},
+  {id:"ATRIAL_DEPOL",name_id:"Atrial Depolarization",durationMs:80,activeNodes:["sa","av"],activePaths:["path-atrial-la","path-int-ant","path-sa-av","path-int-post"],seg:"P",wave:"P",comp:"P",mech:"Atrium normal",eduTitle:"Depolarisasi Atrium",eduBody:"Atrium normal pada STEMI.",ref:"📚 ecgwaves."},
+  {id:"AV_DELAY",name_id:"AV Node Delay",durationMs:70,activeNodes:["av"],activePaths:[],seg:"PR",wave:"PR",mech:"Tunda AV (normal)",eduTitle:"Tunda AV",eduBody:"PR normal.",ref:"📚 AV node."},
+  {id:"HIS_DEPOL",name_id:"His Bundle",durationMs:10,activeNodes:["his"],activePaths:["path-av-his"],seg:"PR",wave:"PR",mech:"His",eduTitle:"His",eduBody:"Konduksi normal.",ref:"📚 TeachMeAnatomy."},
+  {id:"SEPTAL_DEPOL",name_id:"Septal Depolarization",durationMs:18,activeNodes:["his","lbb"],activePaths:["path-his-lbb"],seg:"Q",wave:"Q",comp:"SEP",mech:"Septum L→R",eduTitle:"Septum",eduBody:"Normal.",ref:"📚 Septum L→R."},
+  {id:"VENTRICULAR_DEPOL",name_id:"Ventricular Depolarization",durationMs:52,activeNodes:["rbb","lbb","laf","lpf","purkR","purkLa","purkLp"],activePaths:["path-his-rbb","path-rbb-purkR","path-lbb-laf","path-lbb-lpf","path-laf-purkL","path-lpf-purkL"],seg:"R",wave:"R",comp:"MAIN",mech:"Depolarisasi ventrikel (konduksi utuh)",eduTitle:"Depolarisasi Ventrikel",eduBody:"QRS ≈normal fase akut. Gel. Q patologis berkembang kemudian (belum dimodelkan).",ref:"📚 QRS 70–100 ms."},
+  {id:"TERMINAL_DEPOL",name_id:"Terminal Depolarization",durationMs:28,activeNodes:["purkR","purkLa"],activePaths:["path-rbb-purkR","path-laf-purkL"],seg:"S",wave:"S",comp:"TERM",mech:"Basal terakhir",eduTitle:"Terminal",eduBody:"Normal.",ref:"📚 ke basis."},
+  {id:"ST_SEGMENT",name_id:"ST Segment (ELEVASI)",durationMs:72,activeNodes:[],activePaths:[],seg:"ST",wave:"ST↑",mech:"Arus cedera anteroseptal (LAD)",eduTitle:"Elevasi ST (Arus Cedera)",eduBody:"Oklusi LAD → elevasi ST V1–V4 (maks V2–V3); depresi resiprokal inferior (II/III/aVF) & elevasi high-lateral aVL. Ambang ESC: ≥1 mm ≥2 lead berdekatan; V2–V3 ≥2 mm (pria ≥40), ≥2,5 mm (pria <40), ≥1,5 mm (wanita).",ref:"📚 ESC/4th UDMI."},
+  {id:"REPOLARIZATION",name_id:"Repolarization (T hiperakut)",durationMs:170,activeNodes:[],activePaths:[],seg:"T",wave:"T",comp:"T",mech:"T hiperakut",eduTitle:"Repolarisasi (STEMI)",eduBody:"T hiperakut tinggi V2–V4.",ref:"📚 T hiperakut (ESC)."},
+  {id:"DIASTOLE",name_id:"Diastole (TP)",durationMs:160,activeNodes:[],activePaths:[],seg:null,wave:"TP",mech:"Diastol",eduTitle:"Diastol (TP)",eduBody:"Siklus 700 ms → HR ≈ 86.",ref:"📚 60000/700."}
+ ],
+  morph:{Pvec:{x:1.0,y:1.6,z:0.5,tc:80,sig:16},Tvec:{x:2.4,y:2.2,z:-0.5,tc:450,s1:42,s2:26},QRS_KF:[[200,0,0,0],[211,-1.2,-0.8,-1.6],[223,-0.4,-0.25,-0.6],[235,6.6,7.6,1.0],[245,8.0,9.2,1.3],[256,5.8,6.6,1.3],[267,1.2,1.9,1.0],[278,-0.55,-0.45,0.9],[288,-0.22,-0.18,0.45],[298,0,0,0]],
+   REGIONS:{P:[40,120,80],Q:[200,222,210],R:[222,272,250],S:[272,300,285],T:[380,540,450]},STvec:{x:0.5,y:-2.0,z:0,t0:298,t1:480},
+   PRECORDIAL_TPL:{V1:[{t:70,a:1.0,w:11},{t:96,a:-0.6,w:12},{t:212,a:1.5,w:8},{t:242,a:-8,w:11},{t:335,a:3,w:40},{t:455,a:3,w:38,w2:26}],
+   V2:[{t:82,a:1.2,w:16},{t:214,a:2.5,w:8},{t:242,a:-11,w:11},{t:338,a:5,w:42},{t:460,a:5,w:40,w2:28}],
+   V3:[{t:82,a:1.3,w:16},{t:220,a:5,w:9},{t:247,a:-7,w:10},{t:340,a:5,w:42},{t:462,a:6,w:42,w2:28}],
+   V4:[{t:82,a:1.3,w:16},{t:227,a:9,w:9},{t:268,a:-3,w:8},{t:340,a:3,w:40},{t:464,a:6,w:42,w2:28}],
+   V5:[{t:82,a:1.2,w:16},{t:209,a:-1.3,w:5},{t:238,a:11,w:9},{t:340,a:1.5,w:38},{t:466,a:5,w:40,w2:26}],
+   V6:[{t:82,a:1.0,w:16},{t:209,a:-1.3,w:5},{t:240,a:9,w:9},{t:468,a:4,w:40,w2:26}]}},
+  disclaimer:"⚠️ STEMI Anterior (LAD) — elevasi ST V1–V4 + resiprokal inferior (ESC/4th UDMI). Fase akut; gel. Q & R-loss evolusioner belum dimodelkan. Template, bukan rekaman pasien."},
+ stemi_lat:{name:"STEMI Lateral (LCx)",cycleLen:700,phases:[
+  {id:"RESTING",name_id:"Resting",durationMs:0,activeNodes:[],activePaths:[],seg:null,wave:"—",mech:"Istirahat",eduTitle:"Resting",eduBody:"Tekan ▶.",ref:"📚 Klabunde."},
+  {id:"SA_FIRE",name_id:"SA Node Firing",durationMs:40,activeNodes:["sa"],activePaths:[],seg:null,wave:"—",mech:"SA memicu",eduTitle:"Pacu SA",eduBody:"Pacemaker.",ref:"📚 Klabunde."},
+  {id:"ATRIAL_DEPOL",name_id:"Atrial Depolarization",durationMs:80,activeNodes:["sa","av"],activePaths:["path-atrial-la","path-int-ant","path-sa-av","path-int-post"],seg:"P",wave:"P",comp:"P",mech:"Atrium normal",eduTitle:"Depolarisasi Atrium",eduBody:"Atrium normal pada STEMI.",ref:"📚 ecgwaves."},
+  {id:"AV_DELAY",name_id:"AV Node Delay",durationMs:70,activeNodes:["av"],activePaths:[],seg:"PR",wave:"PR",mech:"Tunda AV (normal)",eduTitle:"Tunda AV",eduBody:"PR normal.",ref:"📚 AV node."},
+  {id:"HIS_DEPOL",name_id:"His Bundle",durationMs:10,activeNodes:["his"],activePaths:["path-av-his"],seg:"PR",wave:"PR",mech:"His",eduTitle:"His",eduBody:"Konduksi normal.",ref:"📚 TeachMeAnatomy."},
+  {id:"SEPTAL_DEPOL",name_id:"Septal Depolarization",durationMs:18,activeNodes:["his","lbb"],activePaths:["path-his-lbb"],seg:"Q",wave:"Q",comp:"SEP",mech:"Septum L→R",eduTitle:"Septum",eduBody:"Normal.",ref:"📚 Septum L→R."},
+  {id:"VENTRICULAR_DEPOL",name_id:"Ventricular Depolarization",durationMs:52,activeNodes:["rbb","lbb","laf","lpf","purkR","purkLa","purkLp"],activePaths:["path-his-rbb","path-rbb-purkR","path-lbb-laf","path-lbb-lpf","path-laf-purkL","path-lpf-purkL"],seg:"R",wave:"R",comp:"MAIN",mech:"Depolarisasi ventrikel (konduksi utuh)",eduTitle:"Depolarisasi Ventrikel",eduBody:"QRS ≈normal fase akut. Gel. Q patologis berkembang kemudian (belum dimodelkan).",ref:"📚 QRS 70–100 ms."},
+  {id:"TERMINAL_DEPOL",name_id:"Terminal Depolarization",durationMs:28,activeNodes:["purkR","purkLa"],activePaths:["path-rbb-purkR","path-laf-purkL"],seg:"S",wave:"S",comp:"TERM",mech:"Basal terakhir",eduTitle:"Terminal",eduBody:"Normal.",ref:"📚 ke basis."},
+  {id:"ST_SEGMENT",name_id:"ST Segment (ELEVASI)",durationMs:72,activeNodes:[],activePaths:[],seg:"ST",wave:"ST↑",mech:"Arus cedera lateral (LCx)",eduTitle:"Elevasi ST (Arus Cedera)",eduBody:"Oklusi LCx → elevasi ST I, aVL, V5–V6; depresi resiprokal V1–V2 & inferior (III). Ambang ESC: ≥1 mm ≥2 lead berdekatan; V2–V3 ≥2 mm (pria ≥40), ≥2,5 mm (pria <40), ≥1,5 mm (wanita).",ref:"📚 ESC/4th UDMI."},
+  {id:"REPOLARIZATION",name_id:"Repolarization (T hiperakut)",durationMs:170,activeNodes:[],activePaths:[],seg:"T",wave:"T",comp:"T",mech:"T hiperakut",eduTitle:"Repolarisasi (STEMI)",eduBody:"T hiperakut lateral.",ref:"📚 T hiperakut (ESC)."},
+  {id:"DIASTOLE",name_id:"Diastole (TP)",durationMs:160,activeNodes:[],activePaths:[],seg:null,wave:"TP",mech:"Diastol",eduTitle:"Diastol (TP)",eduBody:"Siklus 700 ms → HR ≈ 86.",ref:"📚 60000/700."}
+ ],
+  morph:{Pvec:{x:1.0,y:1.6,z:0.5,tc:80,sig:16},Tvec:{x:2.4,y:2.2,z:-0.5,tc:450,s1:42,s2:26},QRS_KF:[[200,0,0,0],[211,-1.2,-0.8,-1.6],[223,-0.4,-0.25,-0.6],[235,6.6,7.6,1.0],[245,8.0,9.2,1.3],[256,5.8,6.6,1.3],[267,1.2,1.9,1.0],[278,-0.55,-0.45,0.9],[288,-0.22,-0.18,0.45],[298,0,0,0]],
+   REGIONS:{P:[40,120,80],Q:[200,222,210],R:[222,272,250],S:[272,300,285],T:[380,540,450]},STvec:{x:3.0,y:0.3,z:0,t0:298,t1:480},
+   PRECORDIAL_TPL:{V1:[{t:70,a:1.2,w:11},{t:96,a:-0.8,w:12},{t:212,a:2.5,w:8},{t:242,a:-10,w:11},{t:335,a:-2,w:40},{t:455,a:1.0,w:34,w2:22}],
+   V2:[{t:82,a:1.5,w:16},{t:214,a:4,w:8},{t:242,a:-14,w:11},{t:338,a:-1.5,w:40},{t:458,a:4,w:38,w2:24}],
+   V3:[{t:82,a:1.5,w:16},{t:220,a:7,w:9},{t:247,a:-8,w:10},{t:460,a:6,w:40,w2:26}],
+   V4:[{t:82,a:1.3,w:16},{t:227,a:11,w:9},{t:268,a:-4,w:8},{t:340,a:1.5,w:38},{t:462,a:6,w:40,w2:26}],
+   V5:[{t:82,a:1.2,w:16},{t:209,a:-1.3,w:5},{t:238,a:13,w:9},{t:274,a:-2,w:8},{t:340,a:3,w:40},{t:464,a:6,w:40,w2:26}],
+   V6:[{t:82,a:1.0,w:16},{t:209,a:-1.3,w:5},{t:240,a:10,w:9},{t:340,a:3,w:40},{t:466,a:5,w:40,w2:26}]}},
+  disclaimer:"⚠️ STEMI Lateral (LCx) — elevasi ST I/aVL/V5–V6 + resiprokal V1–V2 (ESC/4th UDMI). Fase akut. Template, bukan rekaman pasien."},
+ avblock1:{name:"AV Block Derajat 1",cycleLen:860,phases:[
+  {id:"RESTING",name_id:"Resting",durationMs:0,activeNodes:[],activePaths:[],seg:null,wave:"—",mech:"Istirahat",eduTitle:"Resting",eduBody:"Tekan ▶.",ref:"📚 Klabunde."},
+  {id:"SA_FIRE",name_id:"SA Node Firing",durationMs:40,activeNodes:["sa"],activePaths:[],seg:null,wave:"—",mech:"SA memicu",eduTitle:"Pacu SA",eduBody:"Pacemaker.",ref:"📚 Klabunde."},
+  {id:"ATRIAL_DEPOL",name_id:"Atrial Depolarization",durationMs:80,activeNodes:["sa","av"],activePaths:["path-atrial-la","path-int-ant","path-sa-av","path-int-post"],seg:"P",wave:"P",comp:"P",mech:"Atrium normal",eduTitle:"Depolarisasi Atrium",eduBody:"P normal; tiap P dikonduksi (1°).",ref:"📚 ecgwaves."},
+  {id:"AV_DELAY",name_id:"AV Node Delay (MEMANJANG)",durationMs:190,activeNodes:["av"],activePaths:[],seg:"PR",wave:"PR↑",mech:"Tunda AV memanjang → PR >200 ms",eduTitle:"Blok AV Derajat 1",eduBody:"Konduksi AV melambat → PR memanjang konstan (≈280 ms; normal 120–200). SETIAP P diikuti QRS — tidak ada beat hilang. QRS sempit.",ref:"📚 PR >200 ms (Merck)."},
+  {id:"HIS_DEPOL",name_id:"His Bundle",durationMs:10,activeNodes:["his"],activePaths:["path-av-his"],seg:"PR",wave:"PR",mech:"His",eduTitle:"His",eduBody:"Infranodal normal.",ref:"📚 TeachMeAnatomy."},
+  {id:"SEPTAL_DEPOL",name_id:"Septal Depolarization",durationMs:18,activeNodes:["his","lbb"],activePaths:["path-his-lbb"],seg:"Q",wave:"Q",comp:"SEP",mech:"Septum L→R",eduTitle:"Septum",eduBody:"Normal.",ref:"📚 Septum L→R."},
+  {id:"VENTRICULAR_DEPOL",name_id:"Ventricular Depolarization",durationMs:52,activeNodes:["rbb","lbb","laf","lpf","purkR","purkLa","purkLp"],activePaths:["path-his-rbb","path-rbb-purkR","path-lbb-laf","path-lbb-lpf","path-laf-purkL","path-lpf-purkL"],seg:"R",wave:"R",comp:"MAIN",mech:"Depolarisasi ventrikel normal",eduTitle:"Depolarisasi Ventrikel",eduBody:"QRS sempit (blok di AV node, di atas His).",ref:"📚 QRS 70–100 ms."},
+  {id:"TERMINAL_DEPOL",name_id:"Terminal Depolarization",durationMs:28,activeNodes:["purkR","purkLa"],activePaths:["path-rbb-purkR","path-laf-purkL"],seg:"S",wave:"S",comp:"TERM",mech:"Basal terakhir",eduTitle:"Terminal",eduBody:"Normal.",ref:"📚 ke basis."},
+  {id:"ST_SEGMENT",name_id:"ST Segment",durationMs:72,activeNodes:[],activePaths:[],seg:"ST",wave:"ST",mech:"Plateau",eduTitle:"Segmen ST",eduBody:"Isoelektrik.",ref:"📚 ecgwaves."},
+  {id:"REPOLARIZATION",name_id:"Repolarization",durationMs:170,activeNodes:[],activePaths:[],seg:"T",wave:"T",comp:"T",mech:"Repolarisasi normal",eduTitle:"Repolarisasi",eduBody:"T normal.",ref:"📚 CV Physiology."},
+  {id:"DIASTOLE",name_id:"Diastole (TP)",durationMs:200,activeNodes:[],activePaths:[],seg:null,wave:"TP",mech:"Diastol",eduTitle:"Diastol (TP)",eduBody:"Siklus 860 ms → HR ≈ 70.",ref:"📚 60000/860."}
+ ],
+  morph:{Pvec:{x:1.0,y:1.6,z:0.5,tc:80,sig:16},Tvec:{x:2.4,y:2.2,z:-0.5,tc:570,s1:42,s2:26},QRS_KF:[[320,0,0,0],[331,-1.2,-0.8,-1.6],[343,-0.4,-0.25,-0.6],[355,6.6,7.6,1.0],[365,8.0,9.2,1.3],[376,5.8,6.6,1.3],[387,1.2,1.9,1.0],[398,-0.55,-0.45,0.9],[408,-0.22,-0.18,0.45],[418,0,0,0]],
+   REGIONS:{P:[40,120,80],Q:[320,342,330],R:[342,392,370],S:[392,420,405],T:[500,660,570]},
+   PRECORDIAL_TPL:{V1:[{t:70,a:1.2,w:11},{t:96,a:-0.8,w:12},{t:332,a:2.5,w:8},{t:362,a:-10,w:11},{t:575,a:1.0,w:34,w2:22}],
+   V2:[{t:82,a:1.5,w:16},{t:334,a:4,w:8},{t:362,a:-14,w:11},{t:578,a:5,w:38,w2:24}],
+   V3:[{t:82,a:1.5,w:16},{t:340,a:7,w:9},{t:367,a:-8,w:10},{t:580,a:6,w:40,w2:26}],
+   V4:[{t:82,a:1.3,w:16},{t:347,a:11,w:9},{t:388,a:-4,w:8},{t:582,a:6,w:40,w2:26}],
+   V5:[{t:82,a:1.2,w:16},{t:329,a:-1.3,w:5},{t:358,a:13,w:9},{t:394,a:-2,w:8},{t:584,a:5,w:40,w2:26}],
+   V6:[{t:82,a:1.0,w:16},{t:329,a:-1.3,w:5},{t:360,a:10,w:9},{t:395,a:-1.5,w:8},{t:586,a:4,w:40,w2:26}]}},
+  disclaimer:"⚠️ AV Block Derajat 1 — PR memanjang konstan >200 ms (≈280 ms), tiap P dikonduksi, QRS sempit (Merck). Derajat 2 (Mobitz I/II) & 3 butuh mesin ritme multi-beat — belum tersedia. Bukan rekaman pasien."},
+ stemi_post:{name:"STEMI Posterior (mirror)",cycleLen:700,phases:[
+  {id:"RESTING",name_id:"Resting",durationMs:0,activeNodes:[],activePaths:[],seg:null,wave:"—",mech:"Istirahat",eduTitle:"Resting",eduBody:"Tekan ▶.",ref:"📚 Klabunde."},
+  {id:"SA_FIRE",name_id:"SA Node Firing",durationMs:40,activeNodes:["sa"],activePaths:[],seg:null,wave:"—",mech:"SA",eduTitle:"Pacu SA",eduBody:"Pacemaker.",ref:"📚 Klabunde."},
+  {id:"ATRIAL_DEPOL",name_id:"Atrial Depolarization",durationMs:80,activeNodes:["sa","av"],activePaths:["path-atrial-la","path-int-ant","path-sa-av","path-int-post"],seg:"P",wave:"P",comp:"P",mech:"Atrium normal",eduTitle:"Depolarisasi Atrium",eduBody:"Atrium normal.",ref:"📚 ecgwaves."},
+  {id:"AV_DELAY",name_id:"AV Node Delay",durationMs:70,activeNodes:["av"],activePaths:[],seg:"PR",wave:"PR",mech:"Tunda AV",eduTitle:"Tunda AV",eduBody:"PR normal.",ref:"📚 AV node."},
+  {id:"HIS_DEPOL",name_id:"His Bundle",durationMs:10,activeNodes:["his"],activePaths:["path-av-his"],seg:"PR",wave:"PR",mech:"His",eduTitle:"His",eduBody:"Normal.",ref:"📚 TeachMeAnatomy."},
+  {id:"SEPTAL_DEPOL",name_id:"Septal Depolarization",durationMs:18,activeNodes:["his","lbb"],activePaths:["path-his-lbb"],seg:"Q",wave:"Q",comp:"SEP",mech:"Septum L→R",eduTitle:"Septum",eduBody:"Normal.",ref:"📚 Septum."},
+  {id:"VENTRICULAR_DEPOL",name_id:"Ventricular Depolarization",durationMs:52,activeNodes:["rbb","lbb","laf","lpf","purkR","purkLa","purkLp"],activePaths:["path-his-rbb","path-rbb-purkR","path-lbb-laf","path-lbb-lpf","path-laf-purkL","path-lpf-purkL"],seg:"R",wave:"R",comp:"MAIN",mech:"Depolarisasi ventrikel",eduTitle:"Depolarisasi Ventrikel",eduBody:"Cermin posterior → R dominan V1–V3.",ref:"📚 QRS 70–100 ms."},
+  {id:"TERMINAL_DEPOL",name_id:"Terminal Depolarization",durationMs:28,activeNodes:["purkR","purkLa"],activePaths:["path-rbb-purkR","path-laf-purkL"],seg:"S",wave:"S",comp:"TERM",mech:"Basal terakhir",eduTitle:"Terminal",eduBody:"Normal.",ref:"📚 ke basis."},
+  {id:"ST_SEGMENT",name_id:"ST Segment (DEPRESI cermin)",durationMs:72,activeNodes:[],activePaths:[],seg:"ST",wave:"ST↓",mech:"Cermin: depresi ST V1–V3",eduTitle:"Depresi ST (Cermin)",eduBody:"Infark posterior = BAYANGAN CERMIN di V1–V3: depresi ST + R dominan (R/S>1) + T terminal tegak. Konfirmasi lead posterior V7–V9 (elevasi ≥0,5 mm).",ref:"📚 Posterior mirror (ESC)."},
+  {id:"REPOLARIZATION",name_id:"Repolarization",durationMs:170,activeNodes:[],activePaths:[],seg:"T",wave:"T",comp:"T",mech:"T tegak V1–V3",eduTitle:"Repolarisasi (posterior)",eduBody:"T tegak tinggi V1–V3 (cermin).",ref:"📚 T tegak terminal."},
+  {id:"DIASTOLE",name_id:"Diastole (TP)",durationMs:160,activeNodes:[],activePaths:[],seg:null,wave:"TP",mech:"Diastol",eduTitle:"Diastol (TP)",eduBody:"Siklus 700 ms → HR ≈ 86.",ref:"📚 60000/700."}
+ ],
+  morph:{Pvec:{x:1.0,y:1.6,z:0.5,tc:80,sig:16},Tvec:{x:2.4,y:2.2,z:-0.5,tc:450,s1:42,s2:26},QRS_KF:[[200,0,0,0],[211,-1.2,-0.8,-1.6],[223,-0.4,-0.25,-0.6],[235,6.6,7.6,1.0],[245,8.0,9.2,1.3],[256,5.8,6.6,1.3],[267,1.2,1.9,1.0],[278,-0.55,-0.45,0.9],[288,-0.22,-0.18,0.45],[298,0,0,0]],
+   REGIONS:{P:[40,120,80],Q:[200,222,210],R:[222,272,250],S:[272,300,285],T:[380,540,450]},
+   STvec:{x:0,y:0.3,z:1.4,t0:298,t1:480},
+   PRECORDIAL_TPL:{V1:[{t:70,a:1.2,w:11},{t:96,a:-0.8,w:12},{t:235,a:8,w:11},{t:280,a:-2,w:8},{t:335,a:-2.5,w:40},{t:455,a:4,w:38,w2:26}],
+   V2:[{t:82,a:1.5,w:16},{t:238,a:9,w:11},{t:285,a:-2,w:8},{t:338,a:-2.5,w:42},{t:460,a:5,w:40,w2:28}],
+   V3:[{t:82,a:1.5,w:16},{t:240,a:7,w:11},{t:282,a:-3,w:8},{t:340,a:-1.5,w:40},{t:460,a:5,w:42,w2:26}],
+   V4:[{t:82,a:1.3,w:16},{t:240,a:9,w:9},{t:280,a:-4,w:8},{t:462,a:6,w:40,w2:26}],
+   V5:[{t:82,a:1.2,w:16},{t:209,a:-1.3,w:5},{t:238,a:13,w:9},{t:274,a:-2,w:8},{t:464,a:5,w:40,w2:26}],
+   V6:[{t:82,a:1.0,w:16},{t:209,a:-1.3,w:5},{t:240,a:10,w:9},{t:275,a:-1.5,w:8},{t:466,a:4,w:40,w2:26}]}},
+  disclaimer:"⚠️ STEMI Posterior — pola cermin V1–V3 (depresi ST + R dominan + T tegak); konfirmasi V7–V9. Lead ekstremitas ≈normal pada posterior terisolasi. Template, bukan rekaman pasien."},
+ avb2_mobitz1:{name:"AV Block 2° Mobitz I (Wenckebach)",cycleLen:4000,rhythm:{atrial:[400,1400,2400,3400],vent:[520,1640,2700]},phases:[
+  {id:"RESTING",name_id:"Resting",durationMs:0,activeNodes:[],activePaths:[],seg:null,wave:"—",mech:"Istirahat",eduTitle:"Resting",eduBody:"Tekan ▶ untuk menjalankan strip.",ref:"📚 Klabunde."},
+  {id:"RHYTHM",name_id:"AV Block 2° Mobitz I (Wenckebach)",durationMs:4000,activeNodes:[],activePaths:[],seg:null,wave:"strip",mech:"Mobitz I / Wenckebach (4:3)",eduTitle:"Mobitz I / Wenckebach (4:3)",eduBody:"PR memanjang PROGRESIF tiap denyut (160→220→300 ms) sampai 1 gelombang P tidak dikonduksi → QRS HILANG; lalu siklus berulang. Interval RR memendek; tampak pengelompokan denyut (grouped beating). Biasanya blok di AV node, sering reversibel.",ref:"📚 Lihat strip EKG (mode ritme)."}
+ ],
+  morph:{Pvec:{x:1.0,y:1.6,z:0.5,tc:80,sig:16},Tvec:{x:2.4,y:2.2,z:-0.5,tc:450,s1:42,s2:26},QRS_KF:[[200,0,0,0],[211,-1.2,-0.8,-1.6],[223,-0.4,-0.25,-0.6],[235,6.6,7.6,1.0],[245,8.0,9.2,1.3],[256,5.8,6.6,1.3],[267,1.2,1.9,1.0],[278,-0.55,-0.45,0.9],[288,-0.22,-0.18,0.45],[298,0,0,0]],
+   REGIONS:{P:[40,120,80],Q:[200,222,210],R:[222,272,250],S:[272,300,285],T:[380,540,450]},
+   PRECORDIAL_TPL:{V1:[{t:70,a:1.2,w:11},{t:96,a:-0.8,w:12},{t:212,a:2.5,w:8},{t:242,a:-10,w:11},{t:455,a:1.0,w:34,w2:22}],V2:[{t:82,a:1.5,w:16},{t:214,a:4,w:8},{t:242,a:-14,w:11},{t:458,a:5,w:38,w2:24}],V3:[{t:82,a:1.5,w:16},{t:220,a:7,w:9},{t:247,a:-8,w:10},{t:460,a:6,w:40,w2:26}],V4:[{t:82,a:1.3,w:16},{t:227,a:11,w:9},{t:268,a:-4,w:8},{t:462,a:6,w:40,w2:26}],V5:[{t:82,a:1.2,w:16},{t:209,a:-1.3,w:5},{t:238,a:13,w:9},{t:274,a:-2,w:8},{t:464,a:5,w:40,w2:26}],V6:[{t:82,a:1.0,w:16},{t:209,a:-1.3,w:5},{t:240,a:10,w:9},{t:275,a:-1.5,w:8},{t:466,a:4,w:40,w2:26}]}},
+  disclaimer:"⚠️ AV Block 2° Mobitz I — mode ritme multi-beat (strip EKG). PR progresif lalu 1 QRS drop (4:3). Animasi konduksi dibekukan di mode ritme. Skematik, bukan rekaman pasien."},
+ avb2_mobitz2:{name:"AV Block 2° Mobitz II",cycleLen:3000,rhythm:{atrial:[400,1400,2400],vent:[540,1540]},phases:[
+  {id:"RESTING",name_id:"Resting",durationMs:0,activeNodes:[],activePaths:[],seg:null,wave:"—",mech:"Istirahat",eduTitle:"Resting",eduBody:"Tekan ▶ untuk menjalankan strip.",ref:"📚 Klabunde."},
+  {id:"RHYTHM",name_id:"AV Block 2° Mobitz II",durationMs:3000,activeNodes:[],activePaths:[],seg:null,wave:"strip",mech:"Mobitz II (3:2)",eduTitle:"Mobitz II (3:2)",eduBody:"PR KONSTAN; tiba-tiba 1 gelombang P tidak dikonduksi → QRS hilang mendadak pada interval tetap (di sini 3:2). PR yang dikonduksi tetap sama. Sering blok INFRANODAL (His-Purkinje), berisiko progres ke blok total → indikasi pacu jantung.",ref:"📚 Lihat strip EKG (mode ritme)."}
+ ],
+  morph:{Pvec:{x:1.0,y:1.6,z:0.5,tc:80,sig:16},Tvec:{x:2.4,y:2.2,z:-0.5,tc:450,s1:42,s2:26},QRS_KF:[[200,0,0,0],[211,-1.2,-0.8,-1.6],[223,-0.4,-0.25,-0.6],[235,6.6,7.6,1.0],[245,8.0,9.2,1.3],[256,5.8,6.6,1.3],[267,1.2,1.9,1.0],[278,-0.55,-0.45,0.9],[288,-0.22,-0.18,0.45],[298,0,0,0]],
+   REGIONS:{P:[40,120,80],Q:[200,222,210],R:[222,272,250],S:[272,300,285],T:[380,540,450]},
+   PRECORDIAL_TPL:{V1:[{t:70,a:1.2,w:11},{t:96,a:-0.8,w:12},{t:212,a:2.5,w:8},{t:242,a:-10,w:11},{t:455,a:1.0,w:34,w2:22}],V2:[{t:82,a:1.5,w:16},{t:214,a:4,w:8},{t:242,a:-14,w:11},{t:458,a:5,w:38,w2:24}],V3:[{t:82,a:1.5,w:16},{t:220,a:7,w:9},{t:247,a:-8,w:10},{t:460,a:6,w:40,w2:26}],V4:[{t:82,a:1.3,w:16},{t:227,a:11,w:9},{t:268,a:-4,w:8},{t:462,a:6,w:40,w2:26}],V5:[{t:82,a:1.2,w:16},{t:209,a:-1.3,w:5},{t:238,a:13,w:9},{t:274,a:-2,w:8},{t:464,a:5,w:40,w2:26}],V6:[{t:82,a:1.0,w:16},{t:209,a:-1.3,w:5},{t:240,a:10,w:9},{t:275,a:-1.5,w:8},{t:466,a:4,w:40,w2:26}]}},
+  disclaimer:"⚠️ AV Block 2° Mobitz II — mode ritme. PR konstan, QRS drop mendadak (3:2). Animasi konduksi dibekukan. Skematik, bukan rekaman pasien."},
+ avb3:{name:"AV Block Derajat 3 (Total)",cycleLen:3000,rhythm:{atrial:[400,1400,2400],vent:[200,1700],escape:true},phases:[
+  {id:"RESTING",name_id:"Resting",durationMs:0,activeNodes:[],activePaths:[],seg:null,wave:"—",mech:"Istirahat",eduTitle:"Resting",eduBody:"Tekan ▶ untuk menjalankan strip.",ref:"📚 Klabunde."},
+  {id:"RHYTHM",name_id:"AV Block Derajat 3 (Total)",durationMs:3000,activeNodes:[],activePaths:[],seg:null,wave:"strip",mech:"Blok AV Total — Disosiasi AV",eduTitle:"Blok AV Total — Disosiasi AV",eduBody:"Tidak ada impuls atrium yang dikonduksi. Atrium (P, ≈laju SA) & ventrikel (QRS escape) berdenyut INDEPENDEN tanpa hubungan → disosiasi AV. Laju P > laju QRS; PR tampak acak. Escape di sini junctional (QRS sempit); escape ventrikel akan LEBAR & lebih lambat.",ref:"📚 Lihat strip EKG (mode ritme)."}
+ ],
+  morph:{Pvec:{x:1.0,y:1.6,z:0.5,tc:80,sig:16},Tvec:{x:2.4,y:2.2,z:-0.5,tc:450,s1:42,s2:26},QRS_KF:[[200,0,0,0],[211,-1.2,-0.8,-1.6],[223,-0.4,-0.25,-0.6],[235,6.6,7.6,1.0],[245,8.0,9.2,1.3],[256,5.8,6.6,1.3],[267,1.2,1.9,1.0],[278,-0.55,-0.45,0.9],[288,-0.22,-0.18,0.45],[298,0,0,0]],
+   REGIONS:{P:[40,120,80],Q:[200,222,210],R:[222,272,250],S:[272,300,285],T:[380,540,450]},
+   PRECORDIAL_TPL:{V1:[{t:70,a:1.2,w:11},{t:96,a:-0.8,w:12},{t:212,a:2.5,w:8},{t:242,a:-10,w:11},{t:455,a:1.0,w:34,w2:22}],V2:[{t:82,a:1.5,w:16},{t:214,a:4,w:8},{t:242,a:-14,w:11},{t:458,a:5,w:38,w2:24}],V3:[{t:82,a:1.5,w:16},{t:220,a:7,w:9},{t:247,a:-8,w:10},{t:460,a:6,w:40,w2:26}],V4:[{t:82,a:1.3,w:16},{t:227,a:11,w:9},{t:268,a:-4,w:8},{t:462,a:6,w:40,w2:26}],V5:[{t:82,a:1.2,w:16},{t:209,a:-1.3,w:5},{t:238,a:13,w:9},{t:274,a:-2,w:8},{t:464,a:5,w:40,w2:26}],V6:[{t:82,a:1.0,w:16},{t:209,a:-1.3,w:5},{t:240,a:10,w:9},{t:275,a:-1.5,w:8},{t:466,a:4,w:40,w2:26}]}},
+  disclaimer:"⚠️ AV Block Derajat 3 — mode ritme. Disosiasi AV: P & QRS independen, P>QRS. Escape junctional sempit (escape ventrikel akan lebar). Animasi konduksi dibekukan. Skematik, bukan rekaman pasien."},
+ stemi_rv:{name:"STEMI Inferior + RV (RCA proksimal)",cycleLen:700,phases:[
+  {id:"RESTING",name_id:"Resting",durationMs:0,activeNodes:[],activePaths:[],seg:null,wave:"—",mech:"Istirahat",eduTitle:"Resting",eduBody:"Tekan ▶.",ref:"📚 Klabunde."},
+  {id:"SA_FIRE",name_id:"SA Node Firing",durationMs:40,activeNodes:["sa"],activePaths:[],seg:null,wave:"—",mech:"SA",eduTitle:"Pacu SA",eduBody:"Pacemaker.",ref:"📚 Klabunde."},
+  {id:"ATRIAL_DEPOL",name_id:"Atrial Depolarization",durationMs:80,activeNodes:["sa","av"],activePaths:["path-atrial-la","path-int-ant","path-sa-av","path-int-post"],seg:"P",wave:"P",comp:"P",mech:"Atrium normal",eduTitle:"Depolarisasi Atrium",eduBody:"Atrium normal.",ref:"📚 ecgwaves."},
+  {id:"AV_DELAY",name_id:"AV Node Delay",durationMs:70,activeNodes:["av"],activePaths:[],seg:"PR",wave:"PR",mech:"Tunda AV",eduTitle:"Tunda AV",eduBody:"PR normal. ⚠️ RV infark (RCA proksimal) sering disertai bradikardia/blok AV.",ref:"📚 RCA proksimal."},
+  {id:"HIS_DEPOL",name_id:"His Bundle",durationMs:10,activeNodes:["his"],activePaths:["path-av-his"],seg:"PR",wave:"PR",mech:"His",eduTitle:"His",eduBody:"Normal.",ref:"📚 TeachMeAnatomy."},
+  {id:"SEPTAL_DEPOL",name_id:"Septal Depolarization",durationMs:18,activeNodes:["his","lbb"],activePaths:["path-his-lbb"],seg:"Q",wave:"Q",comp:"SEP",mech:"Septum L→R",eduTitle:"Septum",eduBody:"Normal.",ref:"📚 Septum."},
+  {id:"VENTRICULAR_DEPOL",name_id:"Ventricular Depolarization",durationMs:52,activeNodes:["rbb","lbb","laf","lpf","purkR","purkLa","purkLp"],activePaths:["path-his-rbb","path-rbb-purkR","path-lbb-laf","path-lbb-lpf","path-laf-purkL","path-lpf-purkL"],seg:"R",wave:"R",comp:"MAIN",mech:"Depolarisasi ventrikel",eduTitle:"Depolarisasi Ventrikel",eduBody:"QRS ≈normal fase akut.",ref:"📚 QRS 70–100 ms."},
+  {id:"TERMINAL_DEPOL",name_id:"Terminal Depolarization",durationMs:28,activeNodes:["purkR","purkLa"],activePaths:["path-rbb-purkR","path-laf-purkL"],seg:"S",wave:"S",comp:"TERM",mech:"Basal terakhir",eduTitle:"Terminal",eduBody:"Normal.",ref:"📚 ke basis."},
+  {id:"ST_SEGMENT",name_id:"ST Segment (RV)",durationMs:72,activeNodes:[],activePaths:[],seg:"ST",wave:"ST↑",mech:"Arus cedera RV → elevasi V4R, inferior",eduTitle:"Elevasi ST RV",eduBody:"Oklusi RCA PROKSIMAL → infark RV + inferior. Elevasi ST inferior (III>II) + elevasi ST di lead SISI KANAN, terutama V4R (≥0,5 mm; ≥1 mm pria <30). I & aVL resiprokal. Pilih lead V4R untuk melihat tanda RV.",ref:"📚 V4R ≥0,5 mm (ESC); III>II proksimal RCA."},
+  {id:"REPOLARIZATION",name_id:"Repolarization",durationMs:170,activeNodes:[],activePaths:[],seg:"T",wave:"T",comp:"T",mech:"T hiperakut inferior/RV",eduTitle:"Repolarisasi",eduBody:"T hiperakut inferior & V4R.",ref:"📚 T hiperakut."},
+  {id:"DIASTOLE",name_id:"Diastole (TP)",durationMs:160,activeNodes:[],activePaths:[],seg:null,wave:"TP",mech:"Diastol",eduTitle:"Diastol (TP)",eduBody:"Siklus 700 ms → HR ≈ 86.",ref:"📚 60000/700."}
+ ],
+  morph:{Pvec:{x:1.0,y:1.6,z:0.5,tc:80,sig:16},Tvec:{x:1.0,y:3.0,z:-0.3,tc:450,s1:42,s2:30},QRS_KF:[[200,0,0,0],[211,-1.2,-0.8,-1.6],[223,-0.4,-0.25,-0.6],[235,6.6,7.6,1.0],[245,8.0,9.2,1.3],[256,5.8,6.6,1.3],[267,1.2,1.9,1.0],[278,-0.55,-0.45,0.9],[288,-0.22,-0.18,0.45],[298,0,0,0]],
+   REGIONS:{P:[40,120,80],Q:[200,222,210],R:[222,272,250],S:[272,300,285],T:[380,540,450]},STvec:{x:-1.5,y:3.0,z:-1.5,t0:298,t1:480},
+   PRECORDIAL_TPL:{V1:[{t:70,a:1.2,w:11},{t:96,a:-0.8,w:12},{t:212,a:2.5,w:8},{t:242,a:-10,w:11},{t:335,a:2,w:40},{t:455,a:1.5,w:38,w2:24}],
+   V2:[{t:82,a:1.5,w:16},{t:214,a:4,w:8},{t:242,a:-14,w:11},{t:458,a:5,w:38,w2:24}],
+   V3:[{t:82,a:1.5,w:16},{t:220,a:7,w:9},{t:247,a:-8,w:10},{t:460,a:6,w:40,w2:26}],
+   V4:[{t:82,a:1.3,w:16},{t:227,a:11,w:9},{t:268,a:-4,w:8},{t:462,a:6,w:40,w2:26}],
+   V5:[{t:82,a:1.2,w:16},{t:209,a:-1.3,w:5},{t:238,a:13,w:9},{t:274,a:-2,w:8},{t:464,a:5,w:40,w2:26}],
+   V6:[{t:82,a:1.0,w:16},{t:209,a:-1.3,w:5},{t:240,a:10,w:9},{t:275,a:-1.5,w:8},{t:466,a:4,w:40,w2:26}]}},
+  disclaimer:"⚠️ STEMI Inferior + RV (RCA proksimal) — elevasi ST inferior (III>II) + lead sisi kanan (V4R ≥0,5 mm) + V1; I/aVL resiprokal. Pilih lead V4R/V1. Fase akut; blok AV sering menyertai (belum dimodelkan). Template/proyeksi, bukan rekaman pasien."}
+};
+var activeProfile=CONDUCTION_PROFILES.normal,phases=activeProfile.phases,cycleLen=activeProfile.cycleLen,loopStart=1;
+var phaseStarts=[];(function(){var a=0;for(var i=0;i<phases.length;i++){if(i<loopStart){phaseStarts[i]=0;continue;}phaseStarts[i]=a;a+=phases[i].durationMs;}})();
+function phaseIndexAt(t){for(var i=phases.length-1;i>=loopStart;i--){if(t>=phaseStarts[i])return i;}return loopStart;}
+function setProfile(id){
+ var p=CONDUCTION_PROFILES[id];if(!p)return;
+ activeProfile=p;phases=p.phases;cycleLen=p.cycleLen;loopStart=1;
+ Pvec=p.morph.Pvec;Tvec=p.morph.Tvec;QRS_KF=p.morph.QRS_KF;PRECORDIAL_TPL=p.morph.PRECORDIAL_TPL;REGIONS=p.morph.REGIONS;STvec=p.morph.STvec||null;
+ phaseStarts=[];var a=0;for(var i=0;i<phases.length;i++){if(i<loopStart){phaseStarts[i]=0;continue;}phaseStarts[i]=a;a+=phases[i].durationMs;}
+ curIdx=loopStart;beatClock=phaseStarts[loopStart];scrollT=beatClock;setPaused(true);renderedIdx=-1;leadDirty=true;
+ buildSamples();updateLeadGraphics();
+ var dz=document.getElementById("profileDisclaimer");if(dz)dz.textContent=p.disclaimer||"";
+ if(p.rhythm)document.getElementById("planeBadge").textContent="Mode Ritme — strip EKG";
+ renderPanels(curIdx,getDefl(phases[curIdx]));renderVector(getDefl(phases[curIdx]));
+ if(mode3D&&H3D&&H3D.ready)H3D.setLead(LEADS[currentLead]);
+}
+
+/* ECG synthesis per lead */
+var STEP=2,SAMPLES=[],QLABELS=[];
+function buildSamples(){
+ var lead=LEADS[currentLead];
+ if(activeProfile&&activeProfile.rhythm){buildRhythmSamples(lead);return;}
+ SAMPLES=[];for(var t=0;t<=cycleLen;t+=STEP){SAMPLES.push({t:t,mm:leadValueAt(lead,t)});}
+ QLABELS=[];
+ function peakIn(a,b){var best={t:a,mm:0};for(var i=0;i<SAMPLES.length;i++){var s=SAMPLES[i];if(s.t<a||s.t>b)continue;if(Math.abs(s.mm)>Math.abs(best.mm))best=s;}return best;}
+ var Pw=REGIONS.P,Qw=REGIONS.Q,Sw=REGIONS.S,Tw=REGIONS.T;
+ var pk=peakIn(Pw[0]-10,Pw[1]+10);if(Math.abs(pk.mm)>0.4)QLABELS.push({t:pk.t,mm:pk.mm,label:"P"});
+ // QRS deflections via local extrema across the (profile-aware) QRS window, thresholded & named by convention
+ var q0=Qw[0]-6,q1=Sw[1]+6,ext=[];
+ for(var i=1;i<SAMPLES.length-1;i++){var s=SAMPLES[i];if(s.t<q0||s.t>q1)continue;var a=SAMPLES[i-1].mm,b=s.mm,c=SAMPLES[i+1].mm;if((b>a&&b>=c)||(b<a&&b<=c))ext.push(s);}
+ var df=ext.filter(function(e){return Math.abs(e.mm)>1.0;});
+ var seq=[];for(var k=0;k<df.length;k++){var sgn=df[k].mm>0?1:-1;if(seq.length&&(seq[seq.length-1].mm>0?1:-1)===sgn){if(Math.abs(df[k].mm)>Math.abs(seq[seq.length-1].mm))seq[seq.length-1]=df[k];}else seq.push(df[k]);}
+ if(seq.length===1&&seq[0].mm<0&&Math.abs(seq[0].mm)>=4.5){QLABELS.push({t:seq[0].t,mm:seq[0].mm,label:"QS"});}
+ else{var hadR=false;for(var k=0;k<seq.length;k++){var v=seq[k].mm,big=Math.abs(v)>=4.5,lab;
+  if(v<0)lab=hadR?(big?"S":"s"):(big?"Q":"q");else{lab=hadR?(big?"R'":"r'"):(big?"R":"r");hadR=true;}
+  QLABELS.push({t:seq[k].t,mm:v,label:lab});}}
+ var tk=peakIn(Tw[0]-10,Tw[1]+10);if(Math.abs(tk.mm)>0.4)QLABELS.push({t:tk.t,mm:tk.mm,label:"T"});
+}
+
+/* state */
+var svgNS="http://www.w3.org/2000/svg";
+var beatClock=0,paused=true,speed=1,curIdx=0,lastTs=null,acc=0,BEAT_RATE=0.18;
+
+/* helpers */
+function lerp(a,b,t){return a+(b-a)*t;}
+function d2r(d){return d*Math.PI/180;}
+function normDeg(a){a=((a%360)+360)%360;return a>180?a-360:a;}
+function vecScreen(ang,len,cx,cy){var r=d2r(ang);return{x:cx-Math.cos(r)*len,y:cy+Math.sin(r)*len};}
+function deflColor(d){return d==="positive"?C.mossLight:d==="negative"?C.red:C.grey;}
+function getDefl(p){if(!p.seg||!REGIONS[p.seg]||p.seg==="PR"||p.seg==="ST")return{cls:"isoelectric",cos:0};var lead=LEADS[currentLead];return lead.plane==="horizontal"?liveDeflPrecordial(lead,p.seg):liveDefl(lead,p.seg);}
+
+/* nodes */
+var nodeLayer=document.getElementById("nodeLayer"),cometLayer=document.getElementById("cometLayer"),nodeEls={},nodeHalos={};
+NODES.forEach(function(n){var g=document.createElementNS(svgNS,"g");
+ var halo=document.createElementNS(svgNS,"circle");halo.setAttribute("cx",n.x);halo.setAttribute("cy",n.y);halo.setAttribute("r",13);halo.setAttribute("fill","var(--moss)");halo.setAttribute("opacity","0");
+ var c=document.createElementNS(svgNS,"circle");
+ c.setAttribute("cx",n.x);c.setAttribute("cy",n.y);c.setAttribute("r",7.5);c.setAttribute("fill","var(--bg-elevated)");c.setAttribute("stroke","var(--border-bright)");c.setAttribute("stroke-width","1.5");
+ var t=document.createElementNS(svgNS,"text");t.setAttribute("x",n.lx);t.setAttribute("y",n.ly);t.setAttribute("class","node-label");t.setAttribute("text-anchor",n.lx<n.x?"end":"start");t.textContent=n.label;
+ g.appendChild(halo);g.appendChild(c);g.appendChild(t);nodeLayer.appendChild(g);nodeEls[n.id]=c;nodeHalos[n.id]=halo;});
+
+/* lead graphics (electrodes, V dots, axis) */
+var leadFront=document.getElementById("leadFront"),elecEls={},vEls=[];
+var axisLine=document.getElementById("axisLine"),vAxis=document.getElementById("vAxis"),projLine=document.getElementById("projLine"),axisLabel=document.getElementById("axisLabel");
+var axisPlus,axisMinus;
+(function buildLeadStatic(){
+ for(var k in ELEC){var e=ELEC[k];var c=document.createElementNS(svgNS,"circle");c.setAttribute("cx",e.x);c.setAttribute("cy",e.y);c.setAttribute("r",12);c.setAttribute("fill","var(--bg-elevated)");c.setAttribute("stroke","var(--border-bright)");c.setAttribute("stroke-width","1.6");
+  var t=document.createElementNS(svgNS,"text");t.setAttribute("x",e.x);t.setAttribute("y",e.y+3.5);t.setAttribute("text-anchor","middle");t.setAttribute("class","mono");t.setAttribute("font-size","8.5");t.setAttribute("fill","var(--text-muted)");t.textContent=e.lbl;
+  var g=document.createElementNS(svgNS,"g");g.setAttribute("class","elec");g.appendChild(c);g.appendChild(t);leadFront.appendChild(g);elecEls[k]={c:c,t:t};}
+ Vpos.forEach(function(p,i){var c=document.createElementNS(svgNS,"circle");c.setAttribute("cx",p.x);c.setAttribute("cy",p.y);c.setAttribute("r",7);c.setAttribute("fill","var(--bg-elevated)");c.setAttribute("stroke","var(--border-bright)");c.setAttribute("stroke-width","1.4");c.setAttribute("opacity","0.3");
+  var t=document.createElementNS(svgNS,"text");t.setAttribute("x",p.x);t.setAttribute("y",p.y+3);t.setAttribute("text-anchor","middle");t.setAttribute("class","mono");t.setAttribute("font-size","7.5");t.setAttribute("fill","var(--text-muted)");t.setAttribute("opacity","0.25");t.textContent="V"+(i+1);
+  leadFront.appendChild(c);leadFront.appendChild(t);vEls.push({c:c,t:t});});
+ axisPlus=document.createElementNS(svgNS,"text");axisPlus.setAttribute("class","mono");axisPlus.setAttribute("font-size","13");axisPlus.setAttribute("fill","var(--moss-pale)");axisPlus.setAttribute("text-anchor","middle");axisPlus.setAttribute("opacity","0");axisPlus.textContent="+";
+ axisMinus=document.createElementNS(svgNS,"text");axisMinus.setAttribute("class","mono");axisMinus.setAttribute("font-size","13");axisMinus.setAttribute("fill","var(--red)");axisMinus.setAttribute("text-anchor","middle");axisMinus.setAttribute("opacity","0");axisMinus.textContent="−";
+ leadFront.appendChild(axisPlus);leadFront.appendChild(axisMinus);
+})();
+function setElec(k,fill,stroke,tcol){if(!elecEls[k])return;elecEls[k].c.setAttribute("fill",fill);elecEls[k].c.setAttribute("stroke",stroke);elecEls[k].t.setAttribute("fill",tcol);}
+function updateLeadGraphics(){
+ var lead=LEADS[currentLead];
+ var horiz=lead.plane==="horizontal";
+ coronalView.style.display=horiz?"none":"";axialView.style.display=horiz?"":"none";
+ if(horiz)highlightAxialLead();
+ if(mode3D&&H3D&&H3D.ready)H3D.setLead(lead);
+ for(var k in elecEls)setElec(k,"var(--bg-elevated)","var(--border-bright)","var(--text-muted)");
+ vEls.forEach(function(v){v.c.setAttribute("fill","var(--bg-elevated)");v.c.setAttribute("stroke","var(--border-bright)");var on=lead.plane==="horizontal";v.c.setAttribute("opacity",on?"1":"0.28");v.t.setAttribute("opacity",on?"1":"0.22");v.t.setAttribute("fill","var(--text-muted)");});
+ document.getElementById("leadBadge").textContent="Lead "+lead.name;
+ document.getElementById("leadTitle").textContent="Lead "+lead.name;
+ document.getElementById("planeBadge").textContent=lead.plane==="frontal"?"Bidang frontal":"Bidang transversal";
+ if(lead.plane==="frontal"){
+  setElec(lead.pos,"var(--moss-dim)","var(--moss)","var(--moss-pale)");
+  (Array.isArray(lead.neg)?lead.neg:[lead.neg]).forEach(function(nk){setElec(nk,"var(--red-bg)","var(--red)","var(--red)");});
+  var ep=vecScreen(lead.axis,140,CX,CY),en=vecScreen(lead.axis+180,140,CX,CY);
+  axisLine.setAttribute("x1",en.x);axisLine.setAttribute("y1",en.y);axisLine.setAttribute("x2",ep.x);axisLine.setAttribute("y2",ep.y);axisLine.setAttribute("opacity","0.7");
+  axisPlus.setAttribute("x",ep.x);axisPlus.setAttribute("y",ep.y);axisPlus.setAttribute("opacity","1");
+  axisMinus.setAttribute("x",en.x);axisMinus.setAttribute("y",en.y);axisMinus.setAttribute("opacity","1");
+  vAxis.setAttribute("opacity","0");
+  axisLabel.textContent="Sumbu Lead "+lead.name+" ("+normDeg(lead.axis)+"°)";
+  document.getElementById("leadNote").textContent="Bidang frontal (hexaxial) — proyeksi vektor eksak: amplitudo ∝ cos(θ).";
+ } else {
+  var v=(lead.vidx!=null)?vEls[lead.vidx]:null;if(v){v.c.setAttribute("fill","var(--moss-dim)");v.c.setAttribute("stroke","var(--moss)");v.t.setAttribute("fill","var(--moss-pale)");}
+  axisLine.setAttribute("opacity","0");axisPlus.setAttribute("opacity","0");axisMinus.setAttribute("opacity","0");projLine.setAttribute("opacity","0");
+  var vp=(lead.vidx!=null)?Vpos[lead.vidx]:null;if(vp){vAxis.setAttribute("x1",CX);vAxis.setAttribute("y1",CY);vAxis.setAttribute("x2",vp.x);vAxis.setAttribute("y2",vp.y);vAxis.setAttribute("opacity","0.6");}else vAxis.setAttribute("opacity","0");
+  axisLabel.textContent="Lead "+lead.name+(lead.tpl===false?" — lead tambahan (proyeksi dipol)":" — elektroda dada (transversal)");
+  document.getElementById("leadNote").textContent=lead.tpl===false?"Lead tambahan ("+lead.name+") — diturunkan dari proyeksi dipol (arah & tanda; amplitudo perkiraan, bukan template). Berguna untuk arah cedera STEMI.":"Bidang transversal — potongan axial menampilkan vektor & proyeksi (cos θ) ke sumbu lead. ⚠️ Amplitudo gelombang dari template morfologi (efek proximity), bukan proyeksi dipol.";
+ }
+}
+
+/* render heart */
+function setActive(p){
+ NODES.forEach(function(n){var a=p.activeNodes.indexOf(n.id)>=0,c=nodeEls[n.id];
+  if(a){c.setAttribute("fill","var(--moss)");c.setAttribute("stroke","var(--moss-light)");c.setAttribute("r","9.5");nodeHalos[n.id].setAttribute("opacity","0.32");}
+  else{c.setAttribute("fill","var(--bg-elevated)");c.setAttribute("stroke","var(--border-bright)");c.setAttribute("r","7.5");nodeHalos[n.id].setAttribute("opacity","0");}});
+ for(var i=0;i<condPaths.length;i++)condPaths[i].classList.toggle("active",p.activePaths.indexOf(condPaths[i].id)>=0);
+}
+/* comet pool — elements + sampled points built once; zero getPointAtLength/filters per frame */
+var COMET_POOL={},condPaths=document.querySelectorAll(".cond-path");
+(function buildComets(){
+ for(var i=0;i<condPaths.length;i++){var path=condPaths[i];var len=path.getTotalLength();
+  var pts=[],SS=2;for(var d=0;d<=len;d+=SS){var pt=path.getPointAtLength(d);pts.push(pt.x,pt.y);}pts.push.apply(pts,[path.getPointAtLength(len).x,path.getPointAtLength(len).y]);
+  var g=document.createElementNS(svgNS,"g");g.style.display="none";
+  var halo=document.createElementNS(svgNS,"circle");halo.setAttribute("r",9);halo.setAttribute("fill","var(--moss-light)");halo.setAttribute("opacity","0.18");g.appendChild(halo);
+  var specs=[[4,.45,6],[3,.3,11],[2,.17,16],[1.3,.1,21]],tail=[];
+  for(var j=0;j<specs.length;j++){var c=document.createElementNS(svgNS,"circle");c.setAttribute("r",specs[j][0]);c.setAttribute("fill","var(--moss-light)");c.setAttribute("opacity",specs[j][1]);g.appendChild(c);tail.push({el:c,off:specs[j][2]});}
+  var head=document.createElementNS(svgNS,"circle");head.setAttribute("r",4.5);head.setAttribute("fill","var(--moss)");g.appendChild(head);
+  cometLayer.appendChild(g);COMET_POOL[path.id]={pts:pts,step:SS,len:len,head:head,halo:halo,tail:tail,group:g,shown:false};}
+})();
+function ptAt(e,L){var idx=Math.round(Math.max(0,Math.min(e.len,L))/e.step)*2;if(idx>e.pts.length-2)idx=e.pts.length-2;return [e.pts[idx],e.pts[idx+1]];}
+function renderComets(p,prog){
+ for(var id in COMET_POOL){var e=COMET_POOL[id];var active=p.activePaths.indexOf(id)>=0;
+  if(!active){if(e.shown){e.group.style.display="none";e.shown=false;}continue;}
+  if(!e.shown){e.group.style.display="";e.shown=true;}
+  var hl=prog*e.len;var h=ptAt(e,hl);e.head.setAttribute("cx",h[0]);e.head.setAttribute("cy",h[1]);e.halo.setAttribute("cx",h[0]);e.halo.setAttribute("cy",h[1]);
+  for(var j=0;j<e.tail.length;j++){var t=e.tail[j];var pos=ptAt(e,hl-t.off);t.el.setAttribute("cx",pos[0]);t.el.setAttribute("cy",pos[1]);}}
+}
+/* RHYTHM-MODE conduction animation: comets driven by strip time, not a single phase.
+   Atrial wave (SA->atria->AV) on each P; ventricular wave (His->bundles->Purkinje) on each QRS.
+   Dropped beats: atrial comets occur but NO ventricular comets -> impulse visibly stops at AV.
+   3rd-degree (escape): AV->His NOT animated (block); ventricular escape runs independently. */
+var RC_ATRIAL={"path-atrial-la":1,"path-int-ant":1,"path-sa-av":1,"path-int-post":1};
+var RC_VENT={"path-his-rbb":1,"path-his-lbb":1,"path-lbb-laf":1,"path-lbb-lpf":1,"path-laf-purkL":1,"path-lpf-purkL":1,"path-rbb-purkR":1};
+function rcNode(nid,on){var c=nodeEls[nid];if(!c)return;if(on){c.setAttribute("fill","var(--moss)");c.setAttribute("stroke","var(--moss-light)");c.setAttribute("r","9.5");nodeHalos[nid].setAttribute("opacity","0.32");}else{c.setAttribute("fill","var(--bg-elevated)");c.setAttribute("stroke","var(--border-bright)");c.setAttribute("r","7.5");nodeHalos[nid].setAttribute("opacity","0");}}
+function renderRhythmComets(t){
+ var R=activeProfile.rhythm,i,aProg=-1,vProg=-1,avhP=-1;
+ for(i=0;i<R.atrial.length;i++){var ta=R.atrial[i],s=ta-40;if(t>=s&&t<=s+90){aProg=(t-s)/90;break;}}
+ for(i=0;i<R.vent.length;i++){var tv=R.vent[i];if(t>=tv&&t<=tv+60){vProg=(t-tv)/60;break;}}
+ if(!R.escape){for(i=0;i<R.vent.length;i++){var tv2=R.vent[i];if(t>=tv2-50&&t<tv2){avhP=(t-(tv2-50))/50;break;}}}
+ for(var id in COMET_POOL){var e=COMET_POOL[id],prog=-1;
+  if(RC_ATRIAL[id])prog=aProg;else if(id==="path-av-his")prog=avhP;else if(RC_VENT[id])prog=vProg;
+  if(prog<0){if(e.shown){e.group.style.display="none";e.shown=false;}continue;}
+  if(!e.shown){e.group.style.display="";e.shown=true;}
+  var hl=prog*e.len,h=ptAt(e,hl);e.head.setAttribute("cx",h[0]);e.head.setAttribute("cy",h[1]);e.halo.setAttribute("cx",h[0]);e.halo.setAttribute("cy",h[1]);
+  for(var j=0;j<e.tail.length;j++){var tl=e.tail[j],pos=ptAt(e,hl-tl.off);tl.el.setAttribute("cx",pos[0]);tl.el.setAttribute("cy",pos[1]);}}
+ for(i=0;i<condPaths.length;i++){var pid=condPaths[i].id,on=RC_ATRIAL[pid]?aProg>=0:(pid==="path-av-his"?avhP>=0:(RC_VENT[pid]?vProg>=0:false));condPaths[i].classList.toggle("active",on);}
+ rcNode("sa",aProg>=0&&aProg<0.55);rcNode("av",(aProg>=0.35)||avhP>=0);rcNode("his",avhP>=0||(vProg>=0&&vProg<0.35));
+ var vOn=vProg>=0.15;["rbb","lbb","laf","lpf","purkR","purkLa","purkLp"].forEach(function(n){rcNode(n,vOn);});
+}
+var vecLine=document.getElementById("vecLine"),vecBadge=document.getElementById("vecBadge"),vecArrowHead=document.getElementById("vecArrowHeadPoly");
+function renderVector(defl){
+ var v=liveDipole();                              // TRUE live vector — same source as the ECG (rhythm-aware)
+ var mag=Math.hypot(v.x,v.y);                      // frontal magnitude (mm)
+ var ang=Math.atan2(v.y,v.x)*180/Math.PI;          // frontal angle in vecScreen convention (x=left, y=inferior)
+ var len=Math.min(118,mag*9.5),tip=vecScreen(ang,len,CX,CY);
+ vecLine.setAttribute("x2",tip.x);vecLine.setAttribute("y2",tip.y);
+ var lead=LEADS[currentLead];
+ var rhythm=activeProfile&&activeProfile.rhythm;
+ var inT=!rhythm&&REGIONS.T&&beatClock>=REGIONS.T[0]-15&&beatClock<=REGIONS.T[1]+15;
+ var inQRS=!rhythm&&REGIONS.Q&&beatClock>=REGIONS.Q[0]-6&&beatClock<=REGIONS.S[1]+10;
+ var col,lbl;
+ if(rhythm){col="var(--moss)";lbl="Vektor (ritme): ";}
+ else if(inT){col="var(--amber)";lbl="Vektor T — repolarisasi: ";}      // repolarization arrow (amber)
+ else if(inQRS){col=lead.plane==="frontal"?deflColor(defl.cls):"var(--moss)";lbl="Vektor QRS — depolarisasi: ";}
+ else{col=lead.plane==="frontal"?deflColor(defl.cls):"var(--moss)";lbl="Vektor: ";}
+ vecLine.setAttribute("stroke",mag<=0.08?"var(--grey)":col);
+ vecArrowHead.setAttribute("fill",mag<=0.08?"var(--grey)":col);
+ vecBadge.textContent=lbl+Math.round(normDeg(ang))+"°";
+ if(lead.plane==="frontal"&&mag>0.1){
+  var u=vecScreen(lead.axis,1,0,0);var tx=tip.x-CX,ty=tip.y-CY;var pr=tx*u.x+ty*u.y;var fx=CX+u.x*pr,fy=CY+u.y*pr;
+  projLine.setAttribute("x1",tip.x);projLine.setAttribute("y1",tip.y);projLine.setAttribute("x2",fx);projLine.setAttribute("y2",fy);
+  projLine.setAttribute("stroke",col);projLine.setAttribute("opacity","0.85");
+ } else projLine.setAttribute("opacity","0");
+}
+
+/* ── Axial (transverse) view: precordial leads ─────────────────────────────
+   from-cranial convention to match coronal (patient-left = screen-left).
+   Screen dir from (x=left,z=post): sx = -x, sy = +z. Shows the LIVE transverse
+   dipole (x,z) and its projection onto the selected chest lead's axis (cos θ).
+   ⚠️ Direction/sign only — V-lead amplitude comes from the template, not this projection. */
+var AXC={x:180,y:205},axialElec=document.getElementById("axialElec"),axialAxes=document.getElementById("axialAxes");
+var axVec=document.getElementById("axVec"),axProj=document.getElementById("axProj"),axVecLabel=document.getElementById("axVecLabel");
+var coronalView=document.getElementById("coronalView"),axialView=document.getElementById("axialView"),axElecEls=[];
+(function buildAxial(){["V1","V2","V3","V4","V5","V6"].forEach(function(name){var u=LEADS[name].uvec;
+ var ex=AXC.x-u[0]*150,ey=AXC.y+u[1]*118;
+ var ax=document.createElementNS(svgNS,"line");ax.setAttribute("x1",AXC.x);ax.setAttribute("y1",AXC.y);ax.setAttribute("x2",ex);ax.setAttribute("y2",ey);ax.setAttribute("stroke","#33433a");ax.setAttribute("stroke-width","0.8");ax.setAttribute("stroke-dasharray","3 3");axialAxes.appendChild(ax);
+ var c=document.createElementNS(svgNS,"circle");c.setAttribute("cx",ex);c.setAttribute("cy",ey);c.setAttribute("r",8.5);c.setAttribute("fill","var(--bg-elevated)");c.setAttribute("stroke","var(--border-bright)");c.setAttribute("stroke-width","1.5");
+ var t=document.createElementNS(svgNS,"text");t.setAttribute("x",ex);t.setAttribute("y",ey+3);t.setAttribute("text-anchor","middle");t.setAttribute("class","mono");t.setAttribute("font-size","8");t.setAttribute("fill","var(--text-muted)");t.textContent=name;
+ axialElec.appendChild(c);axialElec.appendChild(t);axElecEls.push({name:name,c:c,t:t,ax:ax});});})();
+function highlightAxialLead(){var nm=LEADS[currentLead].name;axElecEls.forEach(function(e){var on=e.name===nm;
+ e.c.setAttribute("fill",on?"var(--moss-dim)":"var(--bg-elevated)");e.c.setAttribute("stroke",on?"var(--moss)":"var(--border-bright)");
+ e.t.setAttribute("fill",on?"var(--moss-pale)":"var(--text-muted)");e.ax.setAttribute("stroke",on?"var(--moss-border)":"#33433a");e.ax.setAttribute("opacity",on?"0.9":"0.45");});}
+function renderAxialVector(defl){var v=liveDipole(),tvx=v.x,tvz=v.z,m=Math.hypot(tvx,tvz),lead=LEADS[currentLead],col=deflColor(defl.cls);
+ if(m<0.05){axVec.setAttribute("opacity","0");axProj.setAttribute("opacity","0");return;}
+ axVec.setAttribute("opacity","1");var L=Math.min(122,m*9),ux=-tvx/m,uz=tvz/m,tipx=AXC.x+ux*L,tipy=AXC.y+uz*L;
+ axVec.setAttribute("x1",AXC.x);axVec.setAttribute("y1",AXC.y);axVec.setAttribute("x2",tipx);axVec.setAttribute("y2",tipy);axVec.setAttribute("stroke",col);
+ var a=lead.uvec,axu=-a[0],azu=a[1],an=Math.hypot(axu,azu);axu/=an;azu/=an;
+ var sx=tipx-AXC.x,sy=tipy-AXC.y,dot=sx*axu+sy*azu,fx=AXC.x+axu*dot,fy=AXC.y+azu*dot;
+ axProj.setAttribute("x1",tipx);axProj.setAttribute("y1",tipy);axProj.setAttribute("x2",fx);axProj.setAttribute("y2",fy);axProj.setAttribute("stroke",col);axProj.setAttribute("opacity","0.85");
+ vecBadge.textContent="Vektor: "+Math.round(normDeg(Math.atan2(tvz,tvx)*180/Math.PI))+"° (transversal)";}
+
+/* ── Overview 3D (Three.js) — one live vector, all 12 lead axes ───────────────
+   Body coords (x=left,y=inf,z=post) → three (x,-y,-z). Schematic shells + conduction
+   tubes + 3D electrodes; NO photoreal mesh. ⚠️ Visualisasi geometri; morfologi tetap template. */
+var H3D=(function(){
+ if(typeof THREE==="undefined")return null;
+ var SC=0.02,HC=[5,8,0];
+ var ELEC3={RA:[-95,-150,0],LA:[95,-150,0],LL:[58,178,0],RL:[-58,178,0],
+   V1:[-18,-6,-58],V2:[18,-6,-58],V3:[37,8,-52],V4:[55,20,-44],V5:[82,20,-22],V6:[98,20,4]};
+ function B(p){return new THREE.Vector3(p[0]*SC,-p[1]*SC,-p[2]*SC);}
+ var cv=document.getElementById("heart3dCanvas"),labelBox=document.getElementById("heart3dLabels");
+ var renderer,scene,camera,arrow,axisLine,projLine3,ready=false,cam={theta:0.7,phi:1.05,r:6.2},spans={},elecMesh={},curAxis=null;
+ function tube(pts,rad,col,op){var c=new THREE.CatmullRomCurve3(pts.map(B));var g=new THREE.TubeGeometry(c,Math.max(8,pts.length*6),rad,8,false);
+  return new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:0.35,transparent:true,opacity:op||1,roughness:0.6}));}
+ function shell(c,rx,ry,rz,col){var g=new THREE.SphereGeometry(1,20,16);var m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:col,transparent:true,opacity:0.16,depthWrite:false,roughness:0.8}));
+  m.position.copy(B(c));m.scale.set(rx*SC,ry*SC,rz*SC);return m;}
+ function init(){
+  renderer=new THREE.WebGLRenderer({canvas:cv,alpha:true,antialias:true});renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+  scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(40,1,0.1,100);
+  scene.add(new THREE.AmbientLight(0xffffff,0.75));var dl=new THREE.DirectionalLight(0xffffff,0.7);dl.position.set(2,3,4);scene.add(dl);
+  // chambers
+  scene.add(shell([15,18,8],38,48,32,0x1A2430));   // LV
+  scene.add(shell([-22,6,-26],30,42,26,0x2A2018));  // RV
+  scene.add(shell([42,-52,16],26,30,24,0x1F2A1F));  // LA
+  scene.add(shell([-42,-52,-4],26,30,24,0x2A1F1F)); // RA
+  // conduction tubes (SA → internodal → AV → His → branches → Purkinje; + Bachmann)
+  var M=0x7BAB72;
+  scene.add(tube([[-30,-70,-8],[-18,-45,-6],[-6,-26,-4]],0.018,M));        // internodal SA->AV
+  scene.add(tube([[-30,-70,-8],[10,-64,6],[46,-58,12]],0.014,0xD9A441,0.95)); // Bachmann SA->LA
+  scene.add(tube([[-6,-26,-4],[-3,-14,-1],[0,-2,2]],0.02,M));             // AV->His
+  scene.add(tube([[0,-2,2],[-12,18,-6],[-26,46,-16]],0.015,M));           // RBB
+  scene.add(tube([[0,-2,2],[8,4,6],[16,2,8]],0.016,M));                   // His->LBB->LAF
+  scene.add(tube([[8,4,6],[12,22,12],[14,40,16]],0.015,M));               // LPF
+  scene.add(tube([[16,2,8],[30,22,4],[44,34,-2]],0.012,M,0.85));         // LAF->Purkinje anterosuperior
+  scene.add(tube([[14,40,16],[28,56,16],[34,68,18]],0.012,M,0.85));      // LPF->Purkinje inferoposterior
+  scene.add(tube([[-26,46,-16],[-30,54,-16],[-32,58,-14]],0.012,M,0.85)); // RBB->Purkinje RV
+  // electrodes
+  Object.keys(ELEC3).forEach(function(k){var pre=k[0]==="V";
+   var m=new THREE.Mesh(new THREE.SphereGeometry(pre?0.075:0.09,14,12),new THREE.MeshStandardMaterial({color:pre?0x4E7D42:0xC09040,emissive:pre?0x21331c:0x4a3410,roughness:0.5}));
+   m.position.copy(B(ELEC3[k]));scene.add(m);elecMesh[k]=m;
+   var s=document.createElement("span");s.textContent=k;s.style.cssText="position:absolute;transform:translate(-50%,-160%);color:"+(pre?"#A8CDA0":"#D9A441")+";white-space:nowrap";labelBox.appendChild(s);spans[k]=s;});
+  // Einthoven triangle
+  var tri=new THREE.Line(new THREE.BufferGeometry().setFromPoints([B(ELEC3.RA),B(ELEC3.LA),B(ELEC3.LL),B(ELEC3.RA)]),new THREE.LineBasicMaterial({color:0x3d5238,transparent:true,opacity:0.6}));scene.add(tri);
+  // vector arrow + lead axis + projection
+  arrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),B(HC),1,0x7BAB72,0.16,0.1);scene.add(arrow);
+  axisLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]),new THREE.LineDashedMaterial({color:0x7BAB72,dashSize:0.06,gapSize:0.05,transparent:true,opacity:0.7}));scene.add(axisLine);
+  projLine3=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]),new THREE.LineBasicMaterial({color:0x7BAB72}));scene.add(projLine3);
+  bindControls();resize();ready=true;
+ }
+ function bindControls(){var dragging=false,px=0,py=0;
+  cv.addEventListener("pointerdown",function(e){dragging=true;px=e.clientX;py=e.clientY;cv.setPointerCapture(e.pointerId);cv.style.cursor="grabbing";});
+  cv.addEventListener("pointermove",function(e){if(!dragging)return;cam.theta-=(e.clientX-px)*0.01;cam.phi=Math.max(0.25,Math.min(Math.PI-0.25,cam.phi-(e.clientY-py)*0.01));px=e.clientX;py=e.clientY;});
+  cv.addEventListener("pointerup",function(e){dragging=false;cv.style.cursor="grab";});
+  cv.addEventListener("wheel",function(e){e.preventDefault();cam.r=Math.max(3.2,Math.min(11,cam.r+e.deltaY*0.004));},{passive:false});
+  window.addEventListener("resize",function(){if(visible())resize();});}
+ function visible(){return document.getElementById("heart3d").style.display!=="none";}
+ function resize(){var w=cv.clientWidth||360,h=cv.clientHeight||410;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+ function axisDirBody(lead){if(lead.plane==="frontal"){var a=d2r(lead.axis);return[Math.cos(a),Math.sin(a),0];}var u=lead.uvec;return[u[0],0,u[1]];}
+ function setLead(lead){curAxis=axisDirBody(lead);
+  var hc=B(HC),d=new THREE.Vector3(curAxis[0],-curAxis[1],-curAxis[2]).normalize().multiplyScalar(2.0);
+  axisLine.geometry.setFromPoints([hc.clone().sub(d),hc.clone().add(d)]);axisLine.computeLineDistances();
+  Object.keys(elecMesh).forEach(function(k){var on=(k===lead.name)||(lead.plane==="frontal"&&(k===lead.pos||k===lead.neg));elecMesh[k].scale.setScalar(on?1.4:1);});}
+ function project(vec3){var v=vec3.clone().project(camera);return{x:(v.x*0.5+0.5)*cv.clientWidth,y:(-v.y*0.5+0.5)*cv.clientHeight,vis:v.z<1};}
+ function render(defl){if(!ready)return;
+  var sp=Math.sin(cam.phi);camera.position.set(cam.r*sp*Math.cos(cam.theta),cam.r*Math.cos(cam.phi),cam.r*sp*Math.sin(cam.theta));camera.lookAt(0,0,0);
+  var v=liveDipole(),mag=Math.sqrt(v.x*v.x+v.y*v.y+v.z*v.z);
+  var col=new THREE.Color(deflColor(defl.cls));
+  if(mag>0.08){arrow.visible=true;var dir=new THREE.Vector3(v.x,-v.y,-v.z).normalize();arrow.setDirection(dir);arrow.setLength(Math.min(1.9,mag*SC*7),0.16,0.1);arrow.setColor(col);
+   if(curAxis){var A=new THREE.Vector3(curAxis[0],-curAxis[1],-curAxis[2]).normalize();var Vw=new THREE.Vector3(v.x,-v.y,-v.z).multiplyScalar(SC*7);var dot=Vw.dot(A);var hc=B(HC);var foot=hc.clone().add(A.multiplyScalar(dot));var tip=hc.clone().add(Vw);
+    projLine3.visible=true;projLine3.geometry.setFromPoints([tip,foot]);projLine3.material.color=col;}
+  }else{arrow.visible=false;projLine3.visible=false;}
+  renderer.render(scene,camera);
+  Object.keys(spans).forEach(function(k){var s=project(elecMesh[k].position);spans[k].style.left=s.x+"px";spans[k].style.top=s.y+"px";spans[k].style.opacity=s.vis?1:0;});}
+ return{init:function(){if(!ready)init();},render:render,setLead:setLead,resize:resize,get ready(){return ready;}};
+})();
+var mode3D=false;
+
+/* panels */
+var bWave=document.getElementById("bWave"),bMech=document.getElementById("bMech"),bVrel=document.getElementById("bVrel"),bDipole=document.getElementById("bDipole"),bResult=document.getElementById("bResult"),bCos=document.getElementById("bCos");
+var mechTitle=document.getElementById("mechTitle"),mechBody=document.getElementById("mechBody"),mechRef=document.getElementById("mechRef"),phaseInd=document.getElementById("phaseInd"),ecgNow=document.getElementById("ecgNow");
+var rowDepol=document.getElementById("rowDepol"),rowRepol=document.getElementById("rowRepol"),dipoleWhy=document.getElementById("dipoleWhy");
+var lastIdx=-1,lastLead="";
+function renderPanels(idx,defl){
+ var p=phases[idx],col=deflColor(defl.cls);
+ bWave.textContent=p.wave;bWave.style.color=(p.seg&&defl.cls!=="isoelectric")?col:C.grey;
+ bMech.textContent=p.mech;
+ var segT=(p.seg&&REGIONS[p.seg])?REGIONS[p.seg][2]:beatClock,pv=dipoleAt(segT);
+ var ld=LEADS[currentLead],fang=Math.atan2(pv.y,pv.x)*180/Math.PI;
+ var planeMag=ld.plane==="horizontal"?Math.hypot(pv.x,pv.z):Math.hypot(pv.x,pv.y);
+ var noDipole=!(p.seg&&REGIONS[p.seg])||p.seg==="PR"||p.seg==="ST"||planeMag<0.3;
+ bVrel.textContent=noDipole?"vektor ≈ 0":(ld.plane==="frontal"?Math.round(normDeg(fang))+"° vs "+normDeg(ld.axis)+"°":"horizontal vs "+ld.name);
+ var repol=(p.id==="REPOLARIZATION");
+ if(noDipole)bDipole.textContent="Tidak ada dipol terekam";
+ else if(defl.cls==="positive")bDipole.textContent=(repol?"Vektor-T searah +":"Depol MENUJU +")+" ⇒ (+)";
+ else if(defl.cls==="negative")bDipole.textContent=(repol?"Vektor-T menjauhi +":"Depol MENJAUHI +")+" ⇒ (−)";
+ else bDipole.textContent="≈ tegak lurus sumbu";
+ var lbl=defl.cls==="positive"?"POSITIF":defl.cls==="negative"?"NEGATIF":"ISOELEKTRIK";
+ bResult.textContent=lbl;bResult.style.color=col;bCos.textContent="cos θ = "+(defl.cos>=0?"+":"")+defl.cos.toFixed(2);
+ ecgNow.textContent="menggambar: "+p.wave+(defl.cls!=="isoelectric"?" ("+lbl.toLowerCase()+")":"");
+ var depolWave=(p.id==="ATRIAL_DEPOL"||p.id==="SEPTAL_DEPOL"||p.id==="VENTRICULAR_DEPOL"||p.id==="TERMINAL_DEPOL");
+ rowDepol.style.opacity=depolWave?"1":"0.4";rowRepol.style.opacity=repol?"1":"0.4";
+ dipoleWhy.textContent=repol?"← lihat baris bawah":"— aturan dipol";
+ if(idx!==lastIdx){lastIdx=idx;mechTitle.textContent=p.eduTitle;mechBody.style.opacity=0;
+  setTimeout(function(){mechBody.innerHTML=p.eduBody.replace(/\n/g,"<br>");mechRef.textContent=p.ref||"";mechBody.style.opacity=1;mechBody.scrollTop=0;},110);}
+ phaseInd.textContent="Phase "+idx+" / "+(phases.length-1)+" — "+p.name_id;
+}
+
+/* ECG canvas */
+var canvas=document.getElementById("ecgCanvas"),ctx=canvas.getContext("2d");
+var dpr=Math.max(1,window.devicePixelRatio||1),W=600,Hc=162,PAD=10,mmPx=5,baseY=81,scrollT=0;
+var PX_PER_MS=mmPx*25/1000;   /* clinical ECG aspect: 25 mm/s : (mmPx px = 1 mm). Locks QRS to crisp, tall-narrow proportions */
+var gridCanvas=document.createElement("canvas"),gctx=gridCanvas.getContext("2d");
+function resize(){var r=canvas.getBoundingClientRect();W=r.width;Hc=162;canvas.width=W*dpr;canvas.height=Hc*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);buildGrid();}
+function xAt(t){return PAD+(t/cycleLen)*(W-2*PAD);}
+function yAt(mm){return baseY-mm*mmPx;}
+/* sample the (periodic) one-cycle SAMPLES at absolute time tau — enables a scrolling multi-beat strip */
+function sampleAt(tau){if(!SAMPLES.length)return 0;var tt=((tau%cycleLen)+cycleLen)%cycleLen;var idx=tt/STEP,i=Math.floor(idx),f=idx-i;var a=SAMPLES[Math.min(i,SAMPLES.length-1)].mm,b=SAMPLES[Math.min(i+1,SAMPLES.length-1)].mm;return a+(b-a)*f;}
+function buildGrid(){gridCanvas.width=W*dpr;gridCanvas.height=Hc*dpr;gctx.setTransform(dpr,0,0,dpr,0,0);gctx.clearRect(0,0,W,Hc);
+ var sb=mmPx,bb=mmPx*5,oy=baseY%bb;   /* 1mm small box = mmPx px (and 40ms = mmPx px → square, true ECG paper) */
+ gctx.lineWidth=1;gctx.strokeStyle="rgba(80,144,192,0.06)";gctx.beginPath();for(var x=0;x<=W;x+=sb){gctx.moveTo(x,0);gctx.lineTo(x,Hc);}for(var y=oy;y<=Hc;y+=sb){gctx.moveTo(0,y);gctx.lineTo(W,y);}gctx.stroke();
+ gctx.strokeStyle="rgba(80,144,192,0.15)";gctx.beginPath();for(var x2=0;x2<=W;x2+=bb){gctx.moveTo(x2,0);gctx.lineTo(x2,Hc);}for(var y2=oy;y2<=Hc;y2+=bb){gctx.moveTo(0,y2);gctx.lineTo(W,y2);}gctx.stroke();
+ gctx.strokeStyle="rgba(255,255,255,0.07)";gctx.lineWidth=1;gctx.beginPath();gctx.moveTo(PAD,baseY);gctx.lineTo(W-PAD,baseY);gctx.stroke();}
+function drawEcg(p,defl){
+ ctx.clearRect(0,0,W,Hc);ctx.drawImage(gridCanvas,0,0,W,Hc);
+ var winMs=(W-2*PAD)/PX_PER_MS,t0=scrollT-winMs;   /* visible window ends at the playhead (now) */
+ ctx.strokeStyle="rgba(123,171,114,0.92)";ctx.lineWidth=1.7;ctx.lineCap="round";ctx.lineJoin="round";ctx.beginPath();
+ for(var px=PAD;px<=W-PAD;px++){var tau=t0+(px-PAD)/PX_PER_MS,Y=baseY-sampleAt(tau)*mmPx;if(px===PAD)ctx.moveTo(px,Y);else ctx.lineTo(px,Y);}
+ ctx.stroke();
+ ctx.font="10px 'JetBrains Mono',monospace";ctx.textAlign="center";
+ var m=Math.floor(scrollT/cycleLen);                /* label only the 1-2 beats nearest the playhead (uncluttered, ECG-like) */
+ for(var mb=m-1;mb<=m;mb++){for(var q=0;q<QLABELS.length;q++){var L=QLABELS[q],tau2=mb*cycleLen+L.t;if(tau2>scrollT||tau2<t0)continue;var lx=PAD+(tau2-t0)*PX_PER_MS;if(lx<PAD+6||lx>W-PAD-6)continue;var pos=L.mm>=0;ctx.fillStyle=Math.abs(L.mm)<0.6?"rgba(150,150,148,0.7)":(pos?C.mossLight:C.red);var ly=pos?baseY-Math.max(L.mm,0.5)*mmPx-7:baseY-Math.min(L.mm,-0.5)*mmPx+13;ctx.fillText(L.label,lx,ly);}}
+ var cx=W-PAD,cy=baseY-sampleAt(scrollT)*mmPx;
+ ctx.strokeStyle="rgba(168,205,160,0.32)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx,8);ctx.lineTo(cx,Hc-8);ctx.stroke();
+ ctx.fillStyle="rgba(123,171,114,0.25)";ctx.beginPath();ctx.arc(cx,cy,7,0,7);ctx.fill();
+ ctx.fillStyle=C.mossPale;ctx.beginPath();ctx.arc(cx,cy,4,0,7);ctx.fill();
+}
+
+/* loop */
+var renderedIdx=-1,leadDirty=false;
+function frame(ts){if(lastTs===null)lastTs=ts;var dt=ts-lastTs;lastTs=ts;if(dt>100)dt=100;
+ if(!paused){acc+=dt*speed*BEAT_RATE;while(acc>=STEP){scrollT+=STEP;acc-=STEP;}beatClock=((scrollT%cycleLen)+cycleLen)%cycleLen;if(!(activeProfile&&activeProfile.rhythm))curIdx=phaseIndexAt(beatClock);}
+ if(activeProfile&&activeProfile.rhythm){var ip=phases[loopStart],iso={cls:"isoelectric",cos:0};
+  if(renderedIdx!==-2||leadDirty){setActive(ip);renderPanels(loopStart,iso);renderedIdx=-2;leadDirty=false;}
+  renderRhythmComets(beatClock);
+  renderVector(iso);
+  if(mode3D){if(H3D&&H3D.ready)H3D.render(iso);}
+  else if(LEADS[currentLead].plane==="horizontal")renderAxialVector(iso);
+  drawEcg(ip,iso);requestAnimationFrame(frame);return;}
+ var p=phases[curIdx];var defl=getDefl(p);
+ var prog=p.durationMs>0?Math.max(0,Math.min(1,(beatClock-phaseStarts[curIdx])/p.durationMs)):0;
+ if(curIdx!==renderedIdx||leadDirty){setActive(p);renderPanels(curIdx,defl);renderedIdx=curIdx;leadDirty=false;}
+ renderComets(p,prog);
+ renderVector(defl);
+ if(mode3D){if(H3D&&H3D.ready)H3D.render(defl);}
+ else if(LEADS[currentLead].plane==="horizontal")renderAxialVector(defl);
+ drawEcg(p,defl);requestAnimationFrame(frame);}
+
+/* controls */
+var btnPlay=document.getElementById("btnPlay");
+function setPaused(v){paused=v;btnPlay.textContent=paused?"▶ Play":"⏸ Pause";sessionStorage.setItem("vectus_playing",paused?"0":"1");}
+function jump(i){curIdx=Math.max(0,Math.min(phases.length-1,i));setPaused(true);beatClock=curIdx===0?0:phaseStarts[curIdx];scrollT=beatClock;}
+btnPlay.onclick=function(){if(curIdx===0&&paused){curIdx=loopStart;beatClock=phaseStarts[loopStart];scrollT=beatClock;}setPaused(!paused);};
+document.getElementById("btnReset").onclick=function(){jump(0);};
+document.getElementById("btnPrev").onclick=function(){jump(curIdx<=loopStart?0:curIdx-1);};
+document.getElementById("btnNext").onclick=function(){jump(curIdx>=phases.length-1?loopStart:curIdx+1);};
+document.getElementById("btnEnd").onclick=function(){jump(phases.length-1);};
+var pills=document.querySelectorAll(".pill");pills.forEach(function(pill){pill.onclick=function(){pills.forEach(function(x){x.classList.remove("active");});pill.classList.add("active");speed=parseFloat(pill.dataset.speed);sessionStorage.setItem("vectus_speed",speed);};});
+document.getElementById("diseaseSelect").onchange=function(){setProfile(this.value);sessionStorage.setItem("vectus_profile",this.value);};
+var leadSelect=document.getElementById("leadSelect");
+leadSelect.onchange=function(){currentLead=this.value;buildSamples();updateLeadGraphics();leadDirty=true;sessionStorage.setItem("vectus_lead",currentLead);};
+
+var view3dToggle=document.getElementById("view3dToggle"),heart3d=document.getElementById("heart3d"),heartSvgEl=document.getElementById("heartSvg");
+if(!H3D){view3dToggle.disabled=true;view3dToggle.title="Three.js gagal dimuat (perlu koneksi internet)";view3dToggle.style.opacity="0.4";}
+view3dToggle.onclick=function(){if(!H3D)return;mode3D=!mode3D;
+ view3dToggle.classList.toggle("active",mode3D);view3dToggle.textContent=mode3D?"Tampilan 2D":"Overview 3D";
+ heart3d.style.display=mode3D?"block":"none";heartSvgEl.style.display=mode3D?"none":"block";
+ document.getElementById("planeBadge").textContent=mode3D?"Overview 3D":(LEADS[currentLead].plane==="frontal"?"Bidang frontal":"Bidang transversal");
+ if(mode3D){H3D.init();H3D.resize();H3D.setLead(LEADS[currentLead]);}};
+
+/* init */
+function restore(){var sp=sessionStorage.getItem("vectus_speed");if(sp){speed=parseFloat(sp);pills.forEach(function(x){x.classList.toggle("active",parseFloat(x.dataset.speed)===speed);});}
+ var pf=sessionStorage.getItem("vectus_profile");if(pf&&CONDUCTION_PROFILES[pf]){setProfile(pf);document.getElementById("diseaseSelect").value=pf;}
+ var ld=sessionStorage.getItem("vectus_lead");if(ld&&LEADS[ld]){currentLead=ld;leadSelect.value=ld;}
+ var pl=sessionStorage.getItem("vectus_playing");if(pl==="1"){curIdx=loopStart;beatClock=phaseStarts[loopStart];scrollT=beatClock;setPaused(false);}else setPaused(true);}
+window.addEventListener("resize",resize);
+window.addEventListener("load",function(){resize();restore();buildSamples();updateLeadGraphics();renderPanels(curIdx,getDefl(phases[curIdx]));renderVector(getDefl(phases[curIdx]));requestAnimationFrame(frame);});
+</script>
+</body>
+</html>
