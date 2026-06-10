@@ -214,7 +214,7 @@ body{background:var(--bg-base);color:var(--text-primary);font-family:'Outfit',sy
     <div id="heart3d" style="display:none;position:relative;width:100%;flex:1 1 auto;min-height:300px;">
       <canvas id="heart3dCanvas" style="width:100%;height:100%;display:block;touch-action:none;cursor:grab"></canvas>
       <div id="heart3dLabels" style="position:absolute;inset:0;pointer-events:none;font-family:'JetBrains Mono',monospace;font-size:9px"></div>
-      <div id="heart3dHint" style="position:absolute;left:8px;bottom:6px;font-size:8px;color:var(--text-muted);opacity:.7">drag = putar · scroll = zoom</div>
+      <div id="heart3dHint" style="position:absolute;left:8px;bottom:6px;font-size:8px;color:var(--text-muted);opacity:.7">drag = putar · scroll/pinch = zoom</div>
     </div>
     <div class="controls">
       <button class="btn" id="btnReset">⏮</button><button class="btn" id="btnPrev">⏪</button>
@@ -859,7 +859,8 @@ var H3D=(function(){
  Object.keys(CHEST_ELEC).forEach(function(k){ELEC3[k]=CHEST_ELEC[k];});  // V1–V6, V7–V9, V3R–V6R from single source
  function B(p){return new THREE.Vector3(p[0]*SC,-p[1]*SC,-p[2]*SC);}
  var cv=document.getElementById("heart3dCanvas"),labelBox=document.getElementById("heart3dLabels");
- var renderer,scene,camera,arrow,axisLine,projLine3,ready=false,cam={theta:0.7,phi:1.05,r:6.2},spans={},elecMesh={},curAxis=null;
+ var renderer,scene,camera,arrow,axisLine,projLine3,ready=false,cam={theta:0.7,phi:1.05,r:6.2},spans={},elecMesh={},curAxis=null,curLeadName=null,orientSpans={};
+ var ORIENT={ANTERIOR:[0,0,-95],KIRI:[112,0,0],SUPERIOR:[0,-165,0]};   // body-axis orientation anchors
  function tube(pts,rad,col,op){var c=new THREE.CatmullRomCurve3(pts.map(B));var g=new THREE.TubeGeometry(c,Math.max(8,pts.length*6),rad,8,false);
   return new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:0.35,transparent:true,opacity:op||1,roughness:0.6}));}
  function shell(c,rx,ry,rz,col){var g=new THREE.SphereGeometry(1,20,16);var m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:col,transparent:true,opacity:0.16,depthWrite:false,roughness:0.8}));
@@ -884,11 +885,14 @@ var H3D=(function(){
   scene.add(tube([[16,2,8],[30,22,4],[44,34,-2]],0.012,M,0.85));         // LAF->Purkinje anterosuperior
   scene.add(tube([[14,40,16],[28,56,16],[34,68,18]],0.012,M,0.85));      // LPF->Purkinje inferoposterior
   scene.add(tube([[-26,46,-16],[-30,54,-16],[-32,58,-14]],0.012,M,0.85)); // RBB->Purkinje RV
-  // electrodes
-  Object.keys(ELEC3).forEach(function(k){var pre=k[0]==="V";
-   var m=new THREE.Mesh(new THREE.SphereGeometry(pre?0.075:0.09,14,12),new THREE.MeshStandardMaterial({color:pre?0x4E7D42:0xC09040,emissive:pre?0x21331c:0x4a3410,roughness:0.5}));
+  // electrodes — colour-coded by group for recognizability
+  Object.keys(ELEC3).forEach(function(k){var limb=k[0]!=="V",right=/R$/.test(k)&&k[0]==="V",post=/^V[789]$/.test(k);
+   var col=limb?0xC09040:right?0xC0504E:post?0xD9A441:0x4E7D42,lcol=limb?"#D9A441":right?"#D98A88":post?"#E0C070":"#A8CDA0";
+   var m=new THREE.Mesh(new THREE.SphereGeometry(limb?0.09:0.07,16,12),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:0.3,roughness:0.5}));
    m.position.copy(B(ELEC3[k]));scene.add(m);elecMesh[k]=m;
-   var s=document.createElement("span");s.textContent=k;s.style.cssText="position:absolute;transform:translate(-50%,-160%);color:"+(pre?"#A8CDA0":"#D9A441")+";white-space:nowrap";labelBox.appendChild(s);spans[k]=s;});
+   var s=document.createElement("span");s.textContent=k;s.dataset.col=lcol;s.style.cssText="position:absolute;transform:translate(-50%,-160%);color:"+lcol+";white-space:nowrap;transition:opacity .08s,font-size .1s";labelBox.appendChild(s);spans[k]=s;});
+  // orientation anchors (rotate with the heart so the view is always readable)
+  Object.keys(ORIENT).forEach(function(k){var s=document.createElement("span");s.textContent=k;s.style.cssText="position:absolute;transform:translate(-50%,-50%);color:#5A82A0;white-space:nowrap;font-size:8px;letter-spacing:1.5px;font-weight:600";labelBox.appendChild(s);orientSpans[k]=s;});
   // Einthoven triangle
   var tri=new THREE.Line(new THREE.BufferGeometry().setFromPoints([B(ELEC3.RA),B(ELEC3.LA),B(ELEC3.LL),B(ELEC3.RA)]),new THREE.LineBasicMaterial({color:0x3d5238,transparent:true,opacity:0.6}));scene.add(tri);
   // vector arrow + lead axis + projection
@@ -897,16 +901,22 @@ var H3D=(function(){
   projLine3=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]),new THREE.LineBasicMaterial({color:0x7BAB72}));scene.add(projLine3);
   bindControls();resize();ready=true;
  }
- function bindControls(){var dragging=false,px=0,py=0;
-  cv.addEventListener("pointerdown",function(e){dragging=true;px=e.clientX;py=e.clientY;cv.setPointerCapture(e.pointerId);cv.style.cursor="grabbing";});
-  cv.addEventListener("pointermove",function(e){if(!dragging)return;cam.theta-=(e.clientX-px)*0.01;cam.phi=Math.max(0.25,Math.min(Math.PI-0.25,cam.phi-(e.clientY-py)*0.01));px=e.clientX;py=e.clientY;});
-  cv.addEventListener("pointerup",function(e){dragging=false;cv.style.cursor="grab";});
+ function bindControls(){var pointers={},lastSingle=null,pinchPrev=0;
+  function count(){return Object.keys(pointers).length;}
+  function pinchDist(){var ks=Object.keys(pointers);if(ks.length<2)return 0;var a=pointers[ks[0]],b=pointers[ks[1]];return Math.hypot(a.x-b.x,a.y-b.y);}
+  cv.addEventListener("pointerdown",function(e){pointers[e.pointerId]={x:e.clientX,y:e.clientY};try{cv.setPointerCapture(e.pointerId);}catch(_){}cv.style.cursor="grabbing";if(count()===1)lastSingle={x:e.clientX,y:e.clientY};else if(count()===2)pinchPrev=pinchDist();});
+  cv.addEventListener("pointermove",function(e){if(!pointers[e.pointerId])return;pointers[e.pointerId]={x:e.clientX,y:e.clientY};
+   if(count()===1&&lastSingle){cam.theta-=(e.clientX-lastSingle.x)*0.01;cam.phi=Math.max(0.25,Math.min(Math.PI-0.25,cam.phi-(e.clientY-lastSingle.y)*0.01));lastSingle={x:e.clientX,y:e.clientY};}
+   else if(count()>=2){var d=pinchDist();if(pinchPrev>0&&d>0)cam.r=Math.max(3.2,Math.min(11,cam.r*(pinchPrev/d)));pinchPrev=d;}});
+  function endP(e){if(pointers[e.pointerId])delete pointers[e.pointerId];if(count()<2)pinchPrev=0;
+   if(count()===1){var id=Object.keys(pointers)[0];lastSingle={x:pointers[id].x,y:pointers[id].y};}else if(count()===0){lastSingle=null;cv.style.cursor="grab";}}
+  cv.addEventListener("pointerup",endP);cv.addEventListener("pointercancel",endP);
   cv.addEventListener("wheel",function(e){e.preventDefault();cam.r=Math.max(3.2,Math.min(11,cam.r+e.deltaY*0.004));},{passive:false});
   window.addEventListener("resize",function(){if(visible())resize();});}
  function visible(){return document.getElementById("heart3d").style.display!=="none";}
  function resize(){var w=cv.clientWidth||360,h=cv.clientHeight||410;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
  function axisDirBody(lead){if(lead.plane==="frontal"){var a=d2r(lead.axis);return[Math.cos(a),Math.sin(a),0];}var u=lead.uvec;return[u[0],0,u[1]];}
- function setLead(lead){curAxis=axisDirBody(lead);
+ function setLead(lead){curAxis=axisDirBody(lead);curLeadName=lead.name;
   var hc=B(HC),d=new THREE.Vector3(curAxis[0],-curAxis[1],-curAxis[2]).normalize().multiplyScalar(2.0);
   axisLine.geometry.setFromPoints([hc.clone().sub(d),hc.clone().add(d)]);axisLine.computeLineDistances();
   Object.keys(elecMesh).forEach(function(k){var on=(k===lead.name)||(lead.plane==="frontal"&&(k===lead.pos||k===lead.neg));elecMesh[k].scale.setScalar(on?1.4:1);});}
@@ -920,7 +930,15 @@ var H3D=(function(){
     projLine3.visible=true;projLine3.geometry.setFromPoints([tip,foot]);projLine3.material.color=col;}
   }else{arrow.visible=false;projLine3.visible=false;}
   renderer.render(scene,camera);
-  Object.keys(spans).forEach(function(k){var s=project(elecMesh[k].position);spans[k].style.left=s.x+"px";spans[k].style.top=s.y+"px";spans[k].style.opacity=s.vis?1:0;});}
+  var camN=camera.position.clone().normalize();
+  Object.keys(spans).forEach(function(k){var pos=elecMesh[k].position,s=project(pos),sp=spans[k];
+   var facing=pos.clone().normalize().dot(camN),sel=(k===curLeadName),show=s.vis&&facing>-0.12;  // hide far-hemisphere labels → no scrambling
+   sp.style.left=s.x+"px";sp.style.top=s.y+"px";
+   sp.style.opacity=show?(sel?1:0.3+0.45*Math.max(0,facing)):0;
+   sp.style.color=sel?"#FFFFFF":sp.dataset.col;sp.style.fontWeight=sel?"600":"400";sp.style.fontSize=sel?"11px":"9px";
+   elecMesh[k].material.emissiveIntensity=sel?0.85:0.3;});
+  Object.keys(orientSpans).forEach(function(k){var pos=B(ORIENT[k]),s=project(pos),facing=pos.clone().normalize().dot(camN);
+   orientSpans[k].style.left=s.x+"px";orientSpans[k].style.top=s.y+"px";orientSpans[k].style.opacity=(s.vis&&facing>-0.05)?0.5:0;});}
  return{init:function(){if(!ready)init();},render:render,setLead:setLead,resize:resize,get ready(){return ready;}};
 })();
 var mode3D=false;
